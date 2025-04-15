@@ -1,15 +1,18 @@
-version: '3.8'
-
-# Two service profiles are available:
+# Three service profiles are available:
 # - production: Uses real data, requires proper GitHub/Gitea setup
 # - development: Uses mock data for UI development without real connections
+# - development-real: Uses real data but in development mode
 
 services:
   # Production service with real data
   gitea-mirror:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE:-gitea-mirror}:${DOCKER_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
     container_name: gitea-mirror
     restart: unless-stopped
     ports:
@@ -23,13 +26,23 @@ services:
       - PORT=3000
       - JWT_SECRET=your-secret-key-change-this-in-production
       - USE_MOCK_DATA=false
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     profiles: ["production"]
 
   # Development database setup
   gitea-mirror-db-setup:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE:-gitea-mirror}:${DOCKER_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
     container_name: gitea-mirror-db-setup
     volumes:
       - gitea-mirror-dev-data:/app/data
@@ -38,9 +51,13 @@ services:
 
   # Development service with mock data
   gitea-mirror-dev:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE:-gitea-mirror}:${DOCKER_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
     container_name: gitea-mirror-dev
     restart: unless-stopped
     ports:
@@ -54,15 +71,25 @@ services:
       - PORT=3000
       - JWT_SECRET=dev-secret-key
       - USE_MOCK_DATA=true
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     depends_on:
       - gitea-mirror-db-setup
     profiles: ["development"]
 
   # Development service with real data
   gitea-mirror-dev-real:
+    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE:-gitea-mirror}:${DOCKER_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
     container_name: gitea-mirror-dev-real
     restart: unless-stopped
     ports:
@@ -76,6 +103,12 @@ services:
       - PORT=3000
       - JWT_SECRET=dev-secret-key
       - USE_MOCK_DATA=false
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     profiles: ["development-real"]
 
 # Define named volumes for database persistence

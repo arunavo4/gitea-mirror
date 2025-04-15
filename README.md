@@ -66,9 +66,35 @@ The production database (`data/gitea-mirror.db`) is created when the application
 
 #### Using Docker (Recommended)
 
-```bash
-# Using docker-compose (recommended)
+Gitea Mirror provides multi-architecture Docker images that work on both ARM64 (e.g., Apple Silicon, Raspberry Pi) and x86_64 (Intel/AMD) platforms.
 
+##### Using Pre-built Images from GitHub Container Registry
+
+```bash
+# Pull the latest multi-architecture image
+docker pull ghcr.io/jaedle/gitea-mirror:latest
+
+# Run in production mode (real data)
+docker run -d \
+  -p 3000:3000 \
+  -v gitea-mirror-prod-data:/app/data \
+  -e DATABASE_URL=sqlite://data/gitea-mirror.db \
+  -e USE_MOCK_DATA=false \
+  --name gitea-mirror \
+  ghcr.io/jaedle/gitea-mirror:latest
+
+# Or run in development mode (mock data)
+docker run -d \
+  -p 3000:3000 \
+  -v gitea-mirror-dev-data:/app/data \
+  -e USE_MOCK_DATA=true \
+  --name gitea-mirror-dev \
+  ghcr.io/jaedle/gitea-mirror:latest
+```
+
+##### Using Docker Compose (Recommended)
+
+```bash
 # For production mode with real data
 docker-compose --profile production up -d
 
@@ -78,33 +104,33 @@ docker-compose --profile development up -d
 
 # For development mode with real data (requires configuration)
 docker-compose --profile development-real up -d
+```
 
-# Or using Docker directly
+##### Building Your Own Image
 
-# Build the Docker image
+```bash
+# Build the Docker image for your current architecture
 docker build -t gitea-mirror:latest .
 
-# Run in production mode (real data)
-docker run -d \
-  -p 3000:3000 \
-  -v gitea-mirror-prod-data:/app/data \
-  -e DATABASE_URL=sqlite://data/gitea-mirror.db \
-  -e USE_MOCK_DATA=false \
-  --name gitea-mirror \
-  gitea-mirror:latest
+# Build multi-architecture images (requires Docker Buildx)
+docker buildx create --name multiarch --driver docker-container --use
+docker buildx build --platform linux/amd64,linux/arm64 -t gitea-mirror:latest .
 
-# Or run in development mode (mock data)
-docker run -d \
-  -p 3000:3000 \
-  -v gitea-mirror-dev-data:/app/data \
-  -e USE_MOCK_DATA=true \
-  --name gitea-mirror-dev \
-  gitea-mirror:latest
-
-# Create a named volume for database persistence
+# Create named volumes for database persistence
 docker volume create gitea-mirror-prod-data
 docker volume create gitea-mirror-dev-data
 ```
+
+##### Environment Variables
+
+The Docker container can be configured with the following environment variables:
+
+- `NODE_ENV`: Set to `production` or `development`
+- `DATABASE_URL`: SQLite database URL (default: `sqlite://data/gitea-mirror.db`)
+- `USE_MOCK_DATA`: Set to `true` for development mode with mock data, `false` for production
+- `HOST`: Host to bind to (default: `0.0.0.0`)
+- `PORT`: Port to listen on (default: `3000`)
+- `JWT_SECRET`: Secret for JWT token generation (required in production)
 
 #### Manual Installation
 
