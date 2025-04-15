@@ -22,10 +22,15 @@ jobs:
   scan:
     name: Scan Docker Image
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
 
       - name: Build Docker image
         uses: docker/build-push-action@v5
@@ -34,8 +39,8 @@ jobs:
           push: false
           load: true
           tags: gitea-mirror:scan
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Disable GitHub Actions cache for this workflow
+          no-cache: true
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
