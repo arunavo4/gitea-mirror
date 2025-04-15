@@ -95,18 +95,18 @@ services:
     restart: unless-stopped
     container_name: gitea-mirror
     environment:
-      - GITHUB_USERNAME=${mockGitHubConfig.username}
-      - GITEA_URL=${mockGiteaConfig.url}
+      - GITHUB_USERNAME=${githubConfig.username}
+      - GITEA_URL=${giteaConfig.url}
       - GITEA_TOKEN=your-gitea-token
       - GITHUB_TOKEN=your-github-token
-      - MIRROR_ISSUES=${mockGitHubConfig.mirrorIssues}
-      - MIRROR_STARRED=${mockGitHubConfig.mirrorStarred}
-      - MIRROR_ORGANIZATIONS=${mockGitHubConfig.mirrorOrganizations}
-      - PRESERVE_ORG_STRUCTURE=${mockGitHubConfig.preserveOrgStructure}
-      - ONLY_MIRROR_ORGS=${mockGitHubConfig.onlyMirrorOrgs}
-      - GITEA_ORGANIZATION=${mockGiteaConfig.organization}
-      - GITEA_ORG_VISIBILITY=${mockGiteaConfig.visibility}
-      - DELAY=${mockScheduleConfig.interval}`}
+      - MIRROR_ISSUES=${githubConfig.mirrorIssues}
+      - MIRROR_STARRED=${githubConfig.mirrorStarred}
+      - MIRROR_ORGANIZATIONS=${githubConfig.mirrorOrganizations}
+      - PRESERVE_ORG_STRUCTURE=${githubConfig.preserveOrgStructure}
+      - ONLY_MIRROR_ORGS=${githubConfig.onlyMirrorOrgs}
+      - GITEA_ORGANIZATION=${giteaConfig.organization}
+      - GITEA_ORG_VISIBILITY=${giteaConfig.visibility}
+      - DELAY=${scheduleConfig.interval}`}
           </pre>
         </CardContent>
       </Card>
