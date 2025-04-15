@@ -3,13 +3,19 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "USE_MOCK_DATA=true astro dev",
+    "dev:real": "USE_MOCK_DATA=false astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "preview:mock": "USE_MOCK_DATA=true astro preview",
+    "preview:real": "USE_MOCK_DATA=false astro preview",
+    "start": "USE_MOCK_DATA=false node dist/server/entry.mjs",
+    "start:mock": "USE_MOCK_DATA=true node dist/server/entry.mjs",
     "astro": "astro",
     "test": "vitest run",
     "test:watch": "vitest",
-    "create-dev-db": "tsx scripts/create-dev-db.ts"
+    "create-dev-db": "tsx scripts/create-dev-db.ts",
+    "setup:dev": "pnpm install && pnpm create-dev-db"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.4",

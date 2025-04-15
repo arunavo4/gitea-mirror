@@ -35,19 +35,23 @@ Before you begin, make sure you have:
    cd gitea-mirror
    ```
 
-2. Install dependencies:
+2. Quick setup for development:
    ```bash
-   pnpm install
+   pnpm setup:dev
+   ```
+   This installs dependencies and creates the development database.
+
+3. Choose how to run the application:
+
+   **Development Mode (with mock data):**
+   ```bash
+   pnpm dev
    ```
 
-3. Build the application:
+   **Production Mode:**
    ```bash
    pnpm build
-   ```
-
-4. Start the application:
-   ```bash
-   USE_MOCK_DATA=false pnpm start
+   pnpm start
    ```
 
 5. Access the application at http://localhost:3000

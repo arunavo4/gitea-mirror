@@ -57,3 +57,23 @@ services:
     depends_on:
       - gitea-mirror-db-setup
     profiles: ["development"]
+
+  # Development service with real data
+  gitea-mirror-dev-real:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gitea-mirror-dev-real
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=sqlite://data/gitea-mirror.db
+      - HOST=0.0.0.0
+      - PORT=3000
+      - JWT_SECRET=dev-secret-key
+      - USE_MOCK_DATA=false
+    profiles: ["development-real"]

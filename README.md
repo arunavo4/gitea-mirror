@@ -76,6 +76,9 @@ docker-compose --profile production up -d
 # This will automatically create and populate the development database
 docker-compose --profile development up -d
 
+# For development mode with real data (requires configuration)
+docker-compose --profile development-real up -d
+
 # Or using Docker directly
 
 # Build the Docker image
@@ -104,21 +107,38 @@ docker run -d \
 git clone https://github.com/jaedle/gitea-mirror.git
 cd gitea-mirror
 
-# Install dependencies
-pnpm install
+# Quick setup for development (installs dependencies and creates dev database)
+pnpm setup:dev
 
-# Create/regenerate the development database with mock data
-pnpm create-dev-db
+# Development Mode Options
 
-# Run in development mode with the mock database
+# Run in development mode with mock data (default)
 pnpm dev
 
-# Or run in production mode with a real database
+# Run in development mode with real data (requires configuration)
+pnpm dev:real
+
+# Production Mode Options
+
 # Build the application
 pnpm build
 
-# Start the application in production mode
-USE_MOCK_DATA=false pnpm start
+# Preview the production build with mock data
+pnpm preview:mock
+
+# Preview the production build with real data
+pnpm preview:real
+
+# Start the production server with real data (default)
+pnpm start
+
+# Start the production server with mock data
+pnpm start:mock
+
+# Database Management
+
+# Create/regenerate the development database with mock data
+pnpm create-dev-db
 ```
 
 ### Configuration

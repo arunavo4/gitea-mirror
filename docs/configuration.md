@@ -93,7 +93,9 @@ Patterns support wildcards:
 - `*` - Matches any number of characters
 - Example: `org-name/*` matches all repositories in the organization `org-name`
 
-## Development Mode
+## Running in Different Modes
+
+### Development Mode
 
 In development mode (`USE_MOCK_DATA=true`), Gitea Mirror uses a pre-populated database with mock data:
 
@@ -105,9 +107,35 @@ In development mode (`USE_MOCK_DATA=true`), Gitea Mirror uses a pre-populated da
 
 This allows developers to work on the UI without setting up GitHub and Gitea accounts.
 
-## Production Mode
+**Available Scripts:**
+
+```bash
+# Run in development mode with mock data
+pnpm dev
+
+# Preview production build with mock data
+pnpm preview:mock
+
+# Start production server with mock data
+pnpm start:mock
+```
+
+### Production Mode
 
 In production mode (`USE_MOCK_DATA=false`), Gitea Mirror requires proper configuration:
+
+**Available Scripts:**
+
+```bash
+# Run in development mode with real data
+pnpm dev:real
+
+# Preview production build with real data
+pnpm preview:real
+
+# Start production server with real data
+pnpm start
+```
 
 1. Set up a GitHub account and create a personal access token
 2. Set up a Gitea instance and create an access token
