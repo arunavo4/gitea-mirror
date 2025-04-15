@@ -17,7 +17,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // Database path
-const dbPath = process.env.DATABASE_URL || 'sqlite://data/gitea-mirror.db';
+const dbPath = process.env.DATABASE_URL || 'file:./data/gitea-mirror.db';
 
 async function main() {
   console.log(`Initializing database at ${dbPath}...`);

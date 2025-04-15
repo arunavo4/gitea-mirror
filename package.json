@@ -4,20 +4,22 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "USE_MOCK_DATA=true astro dev",
-    "dev:real": "USE_MOCK_DATA=false astro dev",
+    "dev:real": "pnpm check-db && USE_MOCK_DATA=false astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "preview:mock": "USE_MOCK_DATA=true astro preview",
     "preview:real": "USE_MOCK_DATA=false astro preview",
-    "start": "USE_MOCK_DATA=false node dist/server/entry.mjs",
+    "start": "pnpm check-db && USE_MOCK_DATA=false node dist/server/entry.mjs",
     "start:mock": "USE_MOCK_DATA=true node dist/server/entry.mjs",
     "astro": "astro",
     "test": "vitest run",
     "test:watch": "vitest",
     "create-dev-db": "tsx scripts/create-dev-db.ts",
     "init-db": "tsx scripts/init-db.ts",
-    "setup:dev": "pnpm install && pnpm create-dev-db",
-    "setup:real": "pnpm install && pnpm init-db"
+    "check-db": "tsx scripts/check-db.ts",
+    "cleanup-db": "rm -f gitea-mirror.db && rm -f gitea-mirror-dev.db",
+    "setup:dev": "pnpm install && pnpm cleanup-db && pnpm create-dev-db",
+    "setup:real": "pnpm install && pnpm cleanup-db && pnpm init-db"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.4",

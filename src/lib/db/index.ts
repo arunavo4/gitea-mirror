@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/libsql';
 import { sqliteTable, text, integer, blob } from 'drizzle-orm/sqlite-core';
 
 // Define the database URL - for development we'll use a local SQLite file
-const dbUrl = process.env.DATABASE_URL || 'file:./gitea-mirror.db';
+const dbUrl = process.env.DATABASE_URL || 'file:./data/gitea-mirror.db';
 
 // Create a client connection to the database
 export const client = createClient({ url: dbUrl });
