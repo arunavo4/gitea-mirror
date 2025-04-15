@@ -5,46 +5,33 @@ import { OrganizationList } from '@/components/organizations/OrganizationList';
 import { AddOrganizationDialog } from '@/components/organizations/AddOrganizationDialog';
 import { Button } from '@/components/ui/button';
 import { Users, RefreshCw } from 'lucide-react';
+import { ENV, MOCK_DATA } from '@/lib/config';
+import { db, organizations } from '@/lib/db';
 
-// Mock data for demonstration
-const mockOrganizations = [
-  {
-    id: '1',
-    name: 'microsoft',
-    type: 'public',
-    isIncluded: true,
-    repositoryCount: 42,
-    configId: '1',
-    createdAt: new Date('2023-10-01'),
-    updatedAt: new Date('2023-10-15'),
-  },
-  {
-    id: '2',
-    name: 'google',
-    type: 'public',
-    isIncluded: true,
-    repositoryCount: 38,
-    configId: '1',
-    createdAt: new Date('2023-10-01'),
-    updatedAt: new Date('2023-10-14'),
-  },
-  {
-    id: '3',
-    name: 'my-org',
-    type: 'member',
-    isIncluded: true,
-    repositoryCount: 12,
-    configId: '1',
-    createdAt: new Date('2023-10-01'),
-    updatedAt: new Date('2023-10-10'),
-  },
-];
+// In production mode, fetch real data from the database
+// In development mode, use mock data
+let orgData = [];
+
+if (ENV.USE_MOCK_DATA) {
+  console.log('Using mock data for development');
+  orgData = MOCK_DATA.organizations;
+} else {
+  try {
+    // Fetch organizations from database
+    const dbOrgs = await db.select().from(organizations);
+    orgData = dbOrgs;
+  } catch (error) {
+    console.error('Error fetching organizations:', error);
+    // Fallback to empty array if database access fails
+    orgData = [];
+  }
+}
 
 // Client-side state for dialog
 let isDialogOpen = false;
 
 // Client-side functions
-const handleToggleInclude = (id, included) => {
+const handleToggleInclude = (id: string, included: boolean) => {
   console.log(`Toggle organization ${id} to ${included ? 'included' : 'excluded'}`);
   // In a real implementation, this would call the API to update the organization
 };
@@ -57,7 +44,7 @@ const handleCloseDialog = () => {
   isDialogOpen = false;
 };
 
-const handleAddOrg = (name, type) => {
+const handleAddOrg = (name: string, type: string) => {
   console.log(`Add organization ${name} of type ${type}`);
   // In a real implementation, this would call the API to add the organization
 };
@@ -65,7 +52,7 @@ const handleAddOrg = (name, type) => {
 
 <html lang="en">
   <head>
-    <meta charSet="utf-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
@@ -88,7 +75,7 @@ const handleAddOrg = (name, type) => {
       </div>
 
       <OrganizationList
-        organizations={mockOrganizations}
+        organizations={orgData}
         onToggleInclude={handleToggleInclude}
         onAddOrganization={handleAddOrganization}
         client:load

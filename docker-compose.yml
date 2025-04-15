@@ -1,6 +1,11 @@
 version: '3.8'
 
+# Two service profiles are available:
+# - production: Uses real data, requires proper GitHub/Gitea setup
+# - development: Uses mock data for UI development without real connections
+
 services:
+  # Production service with real data
   gitea-mirror:
     build:
       context: .
@@ -17,3 +22,25 @@ services:
       - HOST=0.0.0.0
       - PORT=3000
       - JWT_SECRET=your-secret-key-change-this-in-production
+      - USE_MOCK_DATA=false
+    profiles: ["production"]
+
+  # Development service with mock data
+  gitea-mirror-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gitea-mirror-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=sqlite://data/gitea-mirror.db
+      - HOST=0.0.0.0
+      - PORT=3000
+      - JWT_SECRET=dev-secret-key
+      - USE_MOCK_DATA=true
+    profiles: ["development"]

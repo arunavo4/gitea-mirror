@@ -2,109 +2,47 @@
 import '../styles/global.css';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Dashboard } from '@/components/dashboard/Dashboard';
+import { ENV, MOCK_DATA } from '@/lib/config';
+import { db, repositories, mirrorJobs } from '@/lib/db';
 
-// Mock data for demonstration
-const mockRepositories = [
-  {
-    id: '1',
-    name: 'mirror-to-gitea',
-    fullName: 'jaedle/mirror-to-gitea',
-    url: 'https://github.com/jaedle/mirror-to-gitea',
-    isPrivate: false,
-    isFork: false,
-    owner: 'jaedle',
-    organization: null,
-    hasIssues: true,
-    isStarred: false,
-    status: 'mirrored',
-    lastMirrored: new Date('2023-10-15'),
-    configId: '1',
-    createdAt: new Date('2023-10-01'),
-    updatedAt: new Date('2023-10-15'),
-  },
-  {
-    id: '2',
-    name: 'astro',
-    fullName: 'withastro/astro',
-    url: 'https://github.com/withastro/astro',
-    isPrivate: false,
-    isFork: false,
-    owner: 'withastro',
-    organization: 'withastro',
-    hasIssues: true,
-    isStarred: true,
-    status: 'mirrored',
-    lastMirrored: new Date('2023-10-14'),
-    configId: '1',
-    createdAt: new Date('2023-10-01'),
-    updatedAt: new Date('2023-10-14'),
-  },
-  {
-    id: '3',
-    name: 'react',
-    fullName: 'facebook/react',
-    url: 'https://github.com/facebook/react',
-    isPrivate: false,
-    isFork: false,
-    owner: 'facebook',
-    organization: 'facebook',
-    hasIssues: true,
-    isStarred: false,
-    status: 'pending',
-    configId: '1',
-    createdAt: new Date('2023-10-01'),
-    updatedAt: new Date('2023-10-01'),
-  },
-  {
-    id: '4',
-    name: 'private-repo',
-    fullName: 'user/private-repo',
-    url: 'https://github.com/user/private-repo',
-    isPrivate: true,
-    isFork: false,
-    owner: 'user',
-    organization: null,
-    hasIssues: true,
-    isStarred: false,
-    status: 'failed',
-    errorMessage: 'Authentication failed',
-    configId: '1',
-    createdAt: new Date('2023-10-01'),
-    updatedAt: new Date('2023-10-10'),
-  },
-];
+// In production mode, fetch real data from the database
+// In development mode, use mock data
+let repoData = [];
+let activityData = [];
 
-const mockActivities = [
-  {
-    id: '1',
-    message: 'Successfully mirrored repository: mirror-to-gitea',
-    timestamp: new Date('2023-10-15T14:30:00'),
-    status: 'success',
-  },
-  {
-    id: '2',
-    message: 'Successfully mirrored repository: astro',
-    timestamp: new Date('2023-10-14T10:15:00'),
-    status: 'success',
-  },
-  {
-    id: '3',
-    message: 'Failed to mirror repository: private-repo',
-    timestamp: new Date('2023-10-10T08:45:00'),
-    status: 'error',
-  },
-  {
-    id: '4',
-    message: 'Started mirroring process for 3 repositories',
-    timestamp: new Date('2023-10-10T08:30:00'),
-    status: 'info',
-  },
-];
+if (ENV.USE_MOCK_DATA) {
+  console.log('Using mock data for development');
+  repoData = MOCK_DATA.repositories;
+  activityData = MOCK_DATA.activities;
+} else {
+  try {
+    // Fetch repositories from database
+    const dbRepos = await db.select().from(repositories).limit(10);
+    repoData = dbRepos;
+
+    // Fetch recent activity from mirror jobs
+    const jobs = await db.select().from(mirrorJobs).limit(10);
+    activityData = jobs.flatMap((job: any) => {
+      const log = JSON.parse(job.log);
+      return log.map((entry: any) => ({
+        id: `${job.id}-${entry.timestamp}`,
+        message: entry.message,
+        timestamp: new Date(entry.timestamp),
+        status: entry.level,
+      }));
+    }).slice(0, 10);
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    // Fallback to empty arrays if database access fails
+    repoData = [];
+    activityData = [];
+  }
+}
 ---
 
 <html lang="en">
   <head>
-    <meta charSet="utf-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
@@ -113,8 +51,8 @@ const mockActivities = [
   <body>
     <MainLayout>
       <Dashboard client:load
-        repositories={mockRepositories}
-        activities={mockActivities}
+        repositories={repoData}
+        activities={activityData}
       />
     </MainLayout>
 

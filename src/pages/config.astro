@@ -3,48 +3,43 @@ import '../styles/global.css';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ConfigTabs } from '@/components/config/ConfigTabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ENV, MOCK_DATA } from '@/lib/config';
+import { db, configs } from '@/lib/db';
 
-// Mock data for demonstration
-const mockGitHubConfig = {
-  username: 'example-user',
-  token: '',
-  skipForks: true,
-  privateRepositories: true,
-  mirrorIssues: true,
-  mirrorStarred: true,
-  mirrorOrganizations: true,
-  onlyMirrorOrgs: false,
-  preserveOrgStructure: true,
-  skipStarredIssues: false,
-};
+// In production mode, fetch real data from the database
+// In development mode, use mock data
+let githubConfig = MOCK_DATA.githubConfig;
+let giteaConfig = MOCK_DATA.giteaConfig;
+let scheduleConfig = MOCK_DATA.scheduleConfig;
 
-const mockGiteaConfig = {
-  url: 'https://gitea.example.com',
-  token: '',
-  organization: 'github-mirrors',
-  visibility: 'public',
-  starredReposOrg: 'github',
-};
-
-const mockScheduleConfig = {
-  enabled: true,
-  interval: 3600,
-  lastRun: new Date('2023-10-15T14:30:00'),
-  nextRun: new Date('2023-10-15T15:30:00'),
-};
+if (!ENV.USE_MOCK_DATA) {
+  try {
+    // Fetch configuration from database
+    const dbConfigs = await db.select().from(configs).limit(1);
+    if (dbConfigs.length > 0) {
+      const config = dbConfigs[0];
+      githubConfig = JSON.parse(config.githubConfig);
+      giteaConfig = JSON.parse(config.giteaConfig);
+      scheduleConfig = JSON.parse(config.scheduleConfig);
+    }
+  } catch (error) {
+    console.error('Error fetching configuration:', error);
+    // Fallback to mock data if database access fails
+  }
+}
 
 // Client-side functions to handle form submissions
-const handleSaveGitHubConfig = (values) => {
+const handleSaveGitHubConfig = (values: any) => {
   console.log('Saving GitHub config:', values);
   // In a real implementation, this would call the API to save the config
 };
 
-const handleSaveGiteaConfig = (values) => {
+const handleSaveGiteaConfig = (values: any) => {
   console.log('Saving Gitea config:', values);
   // In a real implementation, this would call the API to save the config
 };
 
-const handleSaveScheduleConfig = (values) => {
+const handleSaveScheduleConfig = (values: any) => {
   console.log('Saving schedule config:', values);
   // In a real implementation, this would call the API to save the config
 };
@@ -52,7 +47,7 @@ const handleSaveScheduleConfig = (values) => {
 
 <html lang="en">
   <head>
-    <meta charSet="utf-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
@@ -74,9 +69,9 @@ const handleSaveScheduleConfig = (values) => {
         <CardContent>
           <ConfigTabs
             client:load
-            githubConfig={mockGitHubConfig}
-            giteaConfig={mockGiteaConfig}
-            scheduleConfig={mockScheduleConfig}
+            githubConfig={githubConfig}
+            giteaConfig={giteaConfig}
+            scheduleConfig={scheduleConfig}
             onSaveGitHub={handleSaveGitHubConfig}
             onSaveGitea={handleSaveGiteaConfig}
             onSaveSchedule={handleSaveScheduleConfig}

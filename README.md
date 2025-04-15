@@ -34,18 +34,47 @@ Easily configure your GitHub and Gitea connections, set up automatic mirroring s
 - A GitHub account with a personal access token
 - A Gitea instance with an access token
 
+### Development vs Production Mode
+
+The application can run in two modes:
+
+- **Development Mode**: Uses mock data for UI development without requiring actual GitHub/Gitea setup
+- **Production Mode**: Requires proper configuration and connects to real GitHub/Gitea instances
+
+The mode is controlled by the `USE_MOCK_DATA` environment variable:
+- Set to `true` for development mode with mock data
+- Set to `false` for production mode with real data
+
 ### Installation
 
 #### Using Docker (Recommended)
 
 ```bash
-# Pull and build the Docker image
+# Using docker-compose (recommended)
+
+# For production mode with real data
+docker-compose --profile production up -d
+
+# For development mode with mock data
+docker-compose --profile development up -d
+
+# Or using Docker directly
+
+# Build the Docker image
 docker build -t gitea-mirror:latest .
 
-# Run the container
+# Run in production mode (real data)
 docker run -d \
   -p 3000:3000 \
   -e DATABASE_URL=sqlite://data/gitea-mirror.db \
+  -e USE_MOCK_DATA=false \
+  --name gitea-mirror \
+  gitea-mirror:latest
+
+# Or run in development mode (mock data)
+docker run -d \
+  -p 3000:3000 \
+  -e USE_MOCK_DATA=true \
   --name gitea-mirror \
   gitea-mirror:latest
 ```
@@ -60,11 +89,15 @@ cd gitea-mirror
 # Install dependencies
 pnpm install
 
+# For development mode with mock data
+USE_MOCK_DATA=true pnpm dev
+
+# For production mode with real data
 # Build the application
 pnpm build
 
 # Start the application
-pnpm start
+USE_MOCK_DATA=false pnpm start
 ```
 
 ### Configuration

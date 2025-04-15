@@ -2,58 +2,73 @@
 import '../styles/global.css';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ActivityLog } from '@/components/activity/ActivityLog';
+import { ENV, MOCK_DATA } from '@/lib/config';
+import { db, mirrorJobs } from '@/lib/db';
 
-// Mock data for demonstration
-const mockActivities = [
-  {
-    id: '1',
-    message: 'Successfully mirrored repository: mirror-to-gitea',
-    timestamp: new Date('2023-10-15T14:30:00'),
-    status: 'success',
-    repositoryName: 'jaedle/mirror-to-gitea',
-  },
-  {
-    id: '2',
-    message: 'Successfully mirrored repository: astro',
-    timestamp: new Date('2023-10-14T10:15:00'),
-    status: 'success',
-    repositoryName: 'withastro/astro',
-  },
-  {
-    id: '3',
-    message: 'Failed to mirror repository: private-repo',
-    timestamp: new Date('2023-10-10T08:45:00'),
-    status: 'error',
-    repositoryName: 'user/private-repo',
-    details: 'Error: Authentication failed. Please check your GitHub token and ensure it has the necessary permissions.',
-  },
-  {
-    id: '4',
-    message: 'Started mirroring process for 3 repositories',
-    timestamp: new Date('2023-10-10T08:30:00'),
-    status: 'info',
-  },
-  {
-    id: '5',
-    message: 'Warning: Rate limit approaching',
-    timestamp: new Date('2023-10-09T16:20:00'),
-    status: 'warning',
-    details: 'GitHub API rate limit is at 80% usage. Consider reducing the frequency of mirroring operations.',
-  },
-  {
-    id: '6',
-    message: 'Successfully created organization: github-mirrors',
-    timestamp: new Date('2023-10-08T12:10:00'),
-    status: 'success',
-  },
-  {
-    id: '7',
-    message: 'Configuration updated',
-    timestamp: new Date('2023-10-08T12:05:00'),
-    status: 'info',
-    details: 'Updated GitHub configuration:\n- Enabled mirroring of starred repositories\n- Enabled mirroring of issues\n- Added organization: microsoft',
-  },
-];
+// In production mode, fetch real data from the database
+// In development mode, use mock data
+let activityData = [];
+
+if (ENV.USE_MOCK_DATA) {
+  console.log('Using mock data for development');
+  activityData = [
+    {
+      id: '1',
+      message: 'Successfully mirrored repository: mirror-to-gitea',
+      timestamp: new Date('2023-10-15T14:30:00'),
+      status: 'success',
+      repositoryName: 'jaedle/mirror-to-gitea',
+    },
+    {
+      id: '2',
+      message: 'Successfully mirrored repository: astro',
+      timestamp: new Date('2023-10-14T10:15:00'),
+      status: 'success',
+      repositoryName: 'withastro/astro',
+    },
+    {
+      id: '3',
+      message: 'Failed to mirror repository: private-repo',
+      timestamp: new Date('2023-10-10T08:45:00'),
+      status: 'error',
+      repositoryName: 'user/private-repo',
+      details: 'Error: Authentication failed. Please check your GitHub token and ensure it has the necessary permissions.',
+    },
+    {
+      id: '4',
+      message: 'Started mirroring process for 3 repositories',
+      timestamp: new Date('2023-10-10T08:30:00'),
+      status: 'info',
+    },
+    {
+      id: '5',
+      message: 'Warning: Rate limit approaching',
+      timestamp: new Date('2023-10-09T16:20:00'),
+      status: 'warning',
+      details: 'GitHub API rate limit is at 80% usage. Consider reducing the frequency of mirroring operations.',
+    },
+  ];
+} else {
+  try {
+    // Fetch activity from mirror jobs
+    const jobs = await db.select().from(mirrorJobs).limit(20);
+    activityData = jobs.flatMap((job: any) => {
+      const log = JSON.parse(job.log);
+      return log.map((entry: any) => ({
+        id: `${job.id}-${entry.timestamp}`,
+        message: entry.message,
+        timestamp: new Date(entry.timestamp),
+        status: entry.level,
+        details: entry.details,
+        repositoryName: entry.repositoryName,
+      }));
+    }).slice(0, 20);
+  } catch (error) {
+    console.error('Error fetching activity:', error);
+    // Fallback to empty array if database access fails
+    activityData = [];
+  }
+}
 
 // Client-side function to handle refresh
 const handleRefresh = () => {
@@ -64,7 +79,7 @@ const handleRefresh = () => {
 
 <html lang="en">
   <head>
-    <meta charSet="utf-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
@@ -77,7 +92,7 @@ const handleRefresh = () => {
       </div>
 
       <ActivityLog
-        activities={mockActivities}
+        activities={activityData}
         onRefresh={handleRefresh}
         client:load
       />
