@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 # Base image with common settings for all stages
-FROM node:20-alpine AS base
+FROM node:lts-alpine AS base
 ENV PNPM_HOME=/usr/local/bin
 ENV PATH=$PNPM_HOME:$PATH
 RUN apk add --no-cache libc6-compat
