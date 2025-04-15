@@ -28,6 +28,8 @@ Easily configure your GitHub and Gitea connections, set up automatic mirroring s
 
 ## Getting Started
 
+See the [Quick Start Guide](docs/quickstart.md) for detailed instructions on getting up and running quickly.
+
 ### Prerequisites
 
 - Node.js 18 or later
@@ -122,6 +124,13 @@ USE_MOCK_DATA=false pnpm start
 ### Configuration
 
 Gitea Mirror can be configured through environment variables or through the web UI. See the [Configuration Guide](docs/configuration.md) for more details.
+
+Key configuration options include:
+
+- GitHub connection settings (username, token, repository filters)
+- Gitea connection settings (URL, token, organization)
+- Mirroring options (issues, starred repositories, organizations)
+- Scheduling options for automatic mirroring
 
 ## Development
 
