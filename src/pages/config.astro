@@ -18,9 +18,25 @@ if (!ENV.USE_MOCK_DATA) {
     const dbConfigs = await db.select().from(configs).limit(1);
     if (dbConfigs.length > 0) {
       const config = dbConfigs[0];
-      githubConfig = JSON.parse(config.githubConfig);
-      giteaConfig = JSON.parse(config.giteaConfig);
-      scheduleConfig = JSON.parse(config.scheduleConfig);
+
+      // Check if the config fields are already objects or need to be parsed
+      if (typeof config.githubConfig === 'string') {
+        githubConfig = JSON.parse(config.githubConfig);
+      } else {
+        githubConfig = config.githubConfig;
+      }
+
+      if (typeof config.giteaConfig === 'string') {
+        giteaConfig = JSON.parse(config.giteaConfig);
+      } else {
+        giteaConfig = config.giteaConfig;
+      }
+
+      if (typeof config.scheduleConfig === 'string') {
+        scheduleConfig = JSON.parse(config.scheduleConfig);
+      } else {
+        scheduleConfig = config.scheduleConfig;
+      }
     }
   } catch (error) {
     console.error('Error fetching configuration:', error);
