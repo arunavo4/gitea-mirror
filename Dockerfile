@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 # Base image with common settings for all stages
-FROM node:lts-alpine AS base
+FROM node:18-alpine AS base
 ENV PNPM_HOME=/usr/local/bin
 ENV PATH=$PNPM_HOME:$PATH
 RUN apk add --no-cache libc6-compat
@@ -9,6 +9,9 @@ RUN apk add --no-cache libc6-compat
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ gcc
 
 # Install pnpm globally with corepack for better performance
 RUN --mount=type=cache,target=/root/.npm \
@@ -24,6 +27,9 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++ gcc
 
 # Install pnpm globally with corepack
 RUN --mount=type=cache,target=/root/.npm \
