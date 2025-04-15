@@ -226,12 +226,102 @@ Gitea Mirror follows a modular architecture with clear separation of concerns. S
 
 ## Development
 
+### Local Development Setup
+
 ```bash
 # Install dependencies
 pnpm install
 
-# Start the development server
+# Start the development server with mock data
 pnpm dev
+
+# Or start with real data (requires configuration)
+pnpm dev:real
+```
+
+### Setting Up a Local Gitea Instance for Testing
+
+For full end-to-end testing, you can set up a local Gitea instance using Docker:
+
+```bash
+# Create a Docker network for Gitea and Gitea Mirror to communicate
+docker network create gitea-network
+
+# Create volumes for Gitea data persistence
+docker volume create gitea-data
+docker volume create gitea-config
+
+# Run Gitea container
+docker run -d \
+  --name gitea \
+  --network gitea-network \
+  -p 3001:3000 \
+  -p 2222:22 \
+  -v gitea-data:/data \
+  -v gitea-config:/etc/gitea \
+  -e USER_UID=1000 \
+  -e USER_GID=1000 \
+  -e GITEA__database__DB_TYPE=sqlite3 \
+  -e GITEA__database__PATH=/data/gitea.db \
+  -e GITEA__server__DOMAIN=localhost \
+  -e GITEA__server__ROOT_URL=http://localhost:3001/ \
+  -e GITEA__server__SSH_DOMAIN=localhost \
+  -e GITEA__server__SSH_PORT=2222 \
+  -e GITEA__server__START_SSH_SERVER=true \
+  -e GITEA__security__INSTALL_LOCK=true \
+  -e GITEA__service__DISABLE_REGISTRATION=false \
+  gitea/gitea:latest
+```
+
+After Gitea is running:
+
+1. Access Gitea at http://localhost:3001/
+2. Register a new user
+3. Create a personal access token in Gitea (Settings > Applications > Generate New Token)
+4. Run Gitea Mirror with the local Gitea configuration:
+
+```bash
+# Run Gitea Mirror connected to the local Gitea instance
+docker run -d \
+  --name gitea-mirror-dev-real \
+  --network gitea-network \
+  -p 3000:3000 \
+  -v gitea-mirror-dev-real-data:/app/data \
+  -e NODE_ENV=development \
+  -e USE_MOCK_DATA=false \
+  -e JWT_SECRET=dev-secret-key \
+  -e GITHUB_TOKEN=your-github-token \
+  -e GITHUB_USERNAME=your-github-username \
+  -e GITEA_URL=http://gitea:3000 \
+  -e GITEA_TOKEN=your-local-gitea-token \
+  -e GITEA_USERNAME=your-local-gitea-username \
+  arunavo4/gitea-mirror:latest
+```
+
+This setup allows you to test the full mirroring functionality with a local Gitea instance.
+
+### Using Docker Compose for Development
+
+For convenience, a dedicated development docker-compose file is provided that sets up both Gitea Mirror and a local Gitea instance:
+
+```bash
+# Start with mock data (no Gitea instance)
+docker-compose -f docker-compose.dev.yml --profile with-mock-data up -d
+
+# Start with real data and local Gitea instance
+docker-compose -f docker-compose.dev.yml --profile with-real-data up -d
+```
+
+You can also create a `.env` file with your GitHub and Gitea credentials:
+
+```
+# GitHub credentials
+GITHUB_TOKEN=your-github-token
+GITHUB_USERNAME=your-github-username
+
+# Gitea credentials (will be set up after you create a user in the local Gitea instance)
+GITEA_TOKEN=your-local-gitea-token
+GITEA_USERNAME=your-local-gitea-username
 ```
 
 ## Technologies Used
