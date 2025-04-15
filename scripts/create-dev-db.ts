@@ -103,15 +103,15 @@ async function populateDatabase() {
       },
       {
         timestamp: new Date(fiveMinutesAgo.getTime() + 1 * 60 * 1000),
-        message: 'Mirroring repository: jaedle/mirror-to-gitea',
+        message: 'Mirroring repository: arunavo4/gitea-mirror',
         level: 'info',
-        repositoryName: 'jaedle/mirror-to-gitea',
+        repositoryName: 'arunavo4/gitea-mirror',
       },
       {
         timestamp: new Date(fiveMinutesAgo.getTime() + 2 * 60 * 1000),
-        message: 'Successfully mirrored repository: jaedle/mirror-to-gitea',
+        message: 'Successfully mirrored repository: arunavo4/gitea-mirror',
         level: 'success',
-        repositoryName: 'jaedle/mirror-to-gitea',
+        repositoryName: 'arunavo4/gitea-mirror',
       },
       {
         timestamp: new Date(fiveMinutesAgo.getTime() + 3 * 60 * 1000),

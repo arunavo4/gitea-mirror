@@ -90,10 +90,10 @@ const handleSaveScheduleConfig = (values: any) => {
           <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
 {`version: "3.3"
 services:
-  mirror-to-gitea:
-    image: jaedle/mirror-to-gitea:latest
+  gitea-mirror:
+    image: arunavo4/gitea-mirror:latest
     restart: unless-stopped
-    container_name: mirror-to-gitea
+    container_name: gitea-mirror
     environment:
       - GITHUB_USERNAME=${mockGitHubConfig.username}
       - GITEA_URL=${mockGiteaConfig.url}
