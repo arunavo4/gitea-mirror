@@ -45,19 +45,91 @@ if (!ENV.USE_MOCK_DATA) {
 }
 
 // Client-side functions to handle form submissions
-const handleSaveGitHubConfig = (values: any) => {
-  console.log('Saving GitHub config:', values);
-  // In a real implementation, this would call the API to save the config
+const handleSaveGitHubConfig = async (values: any) => {
+  try {
+    // Save the GitHub config to the database
+    const response = await fetch('/api/config/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        githubConfig: values,
+        giteaConfig,
+        scheduleConfig,
+      }),
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      alert('GitHub configuration saved successfully!');
+      // Refresh the page to get the updated config
+      window.location.reload();
+    } else {
+      alert(`Failed to save GitHub configuration: ${result.message}`);
+    }
+  } catch (error) {
+    console.error('Error saving GitHub config:', error);
+    alert('An error occurred while saving the GitHub configuration.');
+  }
 };
 
-const handleSaveGiteaConfig = (values: any) => {
-  console.log('Saving Gitea config:', values);
-  // In a real implementation, this would call the API to save the config
+const handleSaveGiteaConfig = async (values: any) => {
+  try {
+    // Save the Gitea config to the database
+    const response = await fetch('/api/config/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        githubConfig,
+        giteaConfig: values,
+        scheduleConfig,
+      }),
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      alert('Gitea configuration saved successfully!');
+      // Refresh the page to get the updated config
+      window.location.reload();
+    } else {
+      alert(`Failed to save Gitea configuration: ${result.message}`);
+    }
+  } catch (error) {
+    console.error('Error saving Gitea config:', error);
+    alert('An error occurred while saving the Gitea configuration.');
+  }
 };
 
-const handleSaveScheduleConfig = (values: any) => {
-  console.log('Saving schedule config:', values);
-  // In a real implementation, this would call the API to save the config
+const handleSaveScheduleConfig = async (values: any) => {
+  try {
+    // Save the Schedule config to the database
+    const response = await fetch('/api/config/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        githubConfig,
+        giteaConfig,
+        scheduleConfig: values,
+      }),
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      alert('Schedule configuration saved successfully!');
+      // Refresh the page to get the updated config
+      window.location.reload();
+    } else {
+      alert(`Failed to save Schedule configuration: ${result.message}`);
+    }
+  } catch (error) {
+    console.error('Error saving Schedule config:', error);
+    alert('An error occurred while saving the Schedule configuration.');
+  }
 };
 ---
 
