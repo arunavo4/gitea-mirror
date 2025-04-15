@@ -62,15 +62,31 @@ const handleSaveGitHubConfig = async (values: any) => {
 
     const result = await response.json();
     if (result.success) {
-      alert('GitHub configuration saved successfully!');
-      // Refresh the page to get the updated config
-      window.location.reload();
+      // Use toast instead of alert
+      document.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          message: 'GitHub configuration saved successfully!',
+          type: 'success'
+        }
+      }));
+      // Wait a moment before reloading to show the toast
+      setTimeout(() => window.location.reload(), 1500);
     } else {
-      alert(`Failed to save GitHub configuration: ${result.message}`);
+      document.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          message: `Failed to save GitHub configuration: ${result.message}`,
+          type: 'error'
+        }
+      }));
     }
   } catch (error) {
     console.error('Error saving GitHub config:', error);
-    alert('An error occurred while saving the GitHub configuration.');
+    document.dispatchEvent(new CustomEvent('show-toast', {
+      detail: {
+        message: 'An error occurred while saving the GitHub configuration.',
+        type: 'error'
+      }
+    }));
   }
 };
 
@@ -91,15 +107,29 @@ const handleSaveGiteaConfig = async (values: any) => {
 
     const result = await response.json();
     if (result.success) {
-      alert('Gitea configuration saved successfully!');
-      // Refresh the page to get the updated config
-      window.location.reload();
+      document.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          message: 'Gitea configuration saved successfully!',
+          type: 'success'
+        }
+      }));
+      setTimeout(() => window.location.reload(), 1500);
     } else {
-      alert(`Failed to save Gitea configuration: ${result.message}`);
+      document.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          message: `Failed to save Gitea configuration: ${result.message}`,
+          type: 'error'
+        }
+      }));
     }
   } catch (error) {
     console.error('Error saving Gitea config:', error);
-    alert('An error occurred while saving the Gitea configuration.');
+    document.dispatchEvent(new CustomEvent('show-toast', {
+      detail: {
+        message: 'An error occurred while saving the Gitea configuration.',
+        type: 'error'
+      }
+    }));
   }
 };
 
@@ -120,15 +150,29 @@ const handleSaveScheduleConfig = async (values: any) => {
 
     const result = await response.json();
     if (result.success) {
-      alert('Schedule configuration saved successfully!');
-      // Refresh the page to get the updated config
-      window.location.reload();
+      document.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          message: 'Schedule configuration saved successfully!',
+          type: 'success'
+        }
+      }));
+      setTimeout(() => window.location.reload(), 1500);
     } else {
-      alert(`Failed to save Schedule configuration: ${result.message}`);
+      document.dispatchEvent(new CustomEvent('show-toast', {
+        detail: {
+          message: `Failed to save Schedule configuration: ${result.message}`,
+          type: 'error'
+        }
+      }));
     }
   } catch (error) {
     console.error('Error saving Schedule config:', error);
-    alert('An error occurred while saving the Schedule configuration.');
+    document.dispatchEvent(new CustomEvent('show-toast', {
+      detail: {
+        message: 'An error occurred while saving the Schedule configuration.',
+        type: 'error'
+      }
+    }));
   }
 };
 ---

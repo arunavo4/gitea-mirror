@@ -62,6 +62,19 @@ This allows developers to immediately start working on the UI without setting up
 
 The production database (`data/gitea-mirror.db`) is created when the application runs in production mode. It starts empty and is populated as you configure and use the application.
 
+**Important**: The production database file is excluded from the Git repository as it may contain sensitive information like GitHub and Gitea tokens. Never commit this file to the repository.
+
+##### Database Initialization
+
+Before running the application in production mode for the first time, you need to initialize the database:
+
+```bash
+# Initialize the database for production mode
+pnpm init-db
+```
+
+This will create the necessary tables and a default admin user (username: `admin`, password: `password123`).
+
 ### Installation
 
 #### Using Docker (Recommended)
@@ -142,6 +155,9 @@ cd gitea-mirror
 # Quick setup for development (installs dependencies and creates dev database)
 pnpm setup:dev
 
+# Quick setup for production (installs dependencies and initializes the database)
+pnpm setup:real
+
 # Development Mode Options
 
 # Run in development mode with mock data (default)
@@ -171,6 +187,9 @@ pnpm start:mock
 
 # Create/regenerate the development database with mock data
 pnpm create-dev-db
+
+# Initialize the database for production mode
+pnpm init-db
 ```
 
 ### Configuration
