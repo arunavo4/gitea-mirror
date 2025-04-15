@@ -44,12 +44,12 @@ export const MOCK_DATA = {
   repositories: [
     {
       id: '1',
-      name: 'mirror-to-gitea',
-      fullName: 'jaedle/mirror-to-gitea',
-      url: 'https://github.com/jaedle/mirror-to-gitea',
+      name: 'gitea-mirror',
+      fullName: 'arunavo4/gitea-mirror',
+      url: 'https://github.com/arunavo4/gitea-mirror',
       isPrivate: false,
       isFork: false,
-      owner: 'jaedle',
+      owner: 'arunavo4',
       organization: null,
       hasIssues: true,
       isStarred: false,
@@ -115,7 +115,7 @@ export const MOCK_DATA = {
   activities: [
     {
       id: '1',
-      message: 'Successfully mirrored repository: mirror-to-gitea',
+      message: 'Successfully mirrored repository: gitea-mirror',
       timestamp: new Date('2023-10-15T14:30:00'),
       status: 'success',
     },

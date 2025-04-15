@@ -1,10 +1,10 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { 
-  LayoutDashboard, 
-  GitFork, 
-  Users, 
-  Settings, 
+import {
+  LayoutDashboard,
+  GitFork,
+  Users,
+  Settings,
   Activity,
   ExternalLink
 } from 'lucide-react';
@@ -32,15 +32,15 @@ export function Sidebar({ className }: SidebarProps) {
           {links.map((link) => {
             const isActive = currentPath === link.href;
             const Icon = link.icon;
-            
+
             return (
               <a
                 key={link.href}
                 href={link.href}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive 
-                    ? "bg-primary text-primary-foreground" 
+                  isActive
+                    ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 )}
               >
@@ -50,16 +50,16 @@ export function Sidebar({ className }: SidebarProps) {
             );
           })}
         </nav>
-        
+
         <div className="mt-auto px-4 py-4">
           <div className="rounded-md bg-muted p-3">
             <h4 className="text-sm font-medium mb-2">Need Help?</h4>
             <p className="text-xs text-muted-foreground mb-2">
               Check out the documentation for help with setup and configuration.
             </p>
-            <a 
-              href="https://github.com/jaedle/mirror-to-gitea#readme" 
-              target="_blank" 
+            <a
+              href="https://github.com/arunavo4/gitea-mirror#readme"
+              target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs text-primary hover:underline"
             >

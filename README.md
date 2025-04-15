@@ -72,7 +72,7 @@ Gitea Mirror provides multi-architecture Docker images that work on both ARM64 (
 
 ```bash
 # Pull the latest multi-architecture image
-docker pull ghcr.io/jaedle/gitea-mirror:latest
+docker pull ghcr.io/arunavo4/gitea-mirror:latest
 
 # Run in production mode (real data)
 docker run -d \
@@ -81,7 +81,7 @@ docker run -d \
   -e DATABASE_URL=sqlite://data/gitea-mirror.db \
   -e USE_MOCK_DATA=false \
   --name gitea-mirror \
-  ghcr.io/jaedle/gitea-mirror:latest
+  ghcr.io/arunavo4/gitea-mirror:latest
 
 # Or run in development mode (mock data)
 docker run -d \
@@ -89,7 +89,7 @@ docker run -d \
   -v gitea-mirror-dev-data:/app/data \
   -e USE_MOCK_DATA=true \
   --name gitea-mirror-dev \
-  ghcr.io/jaedle/gitea-mirror:latest
+  ghcr.io/arunavo4/gitea-mirror:latest
 ```
 
 ##### Using Docker Compose (Recommended)
@@ -136,7 +136,7 @@ The Docker container can be configured with the following environment variables:
 
 ```bash
 # Clone the repository
-git clone https://github.com/jaedle/gitea-mirror.git
+git clone https://github.com/arunavo4/gitea-mirror.git
 cd gitea-mirror
 
 # Quick setup for development (installs dependencies and creates dev database)

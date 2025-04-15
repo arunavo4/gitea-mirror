@@ -16,7 +16,7 @@ Before you begin, make sure you have:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jaedle/gitea-mirror.git
+   git clone https://github.com/arunavo4/gitea-mirror.git
    cd gitea-mirror
    ```
 
@@ -31,7 +31,7 @@ Before you begin, make sure you have:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jaedle/gitea-mirror.git
+   git clone https://github.com/arunavo4/gitea-mirror.git
    cd gitea-mirror
    ```
 
