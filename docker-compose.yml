@@ -15,7 +15,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./data:/app/data
+      - gitea-mirror-prod-data:/app/data
     environment:
       - NODE_ENV=production
       - DATABASE_URL=sqlite://data/gitea-mirror.db
@@ -32,7 +32,7 @@ services:
       dockerfile: Dockerfile
     container_name: gitea-mirror-db-setup
     volumes:
-      - ./data:/app/data
+      - gitea-mirror-dev-data:/app/data
     command: pnpm create-dev-db
     profiles: ["development"]
 
@@ -46,7 +46,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./data:/app/data
+      - gitea-mirror-dev-data:/app/data
     environment:
       - NODE_ENV=development
       - DATABASE_URL=sqlite://data/gitea-mirror-dev.db
@@ -68,7 +68,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./data:/app/data
+      - gitea-mirror-dev-real-data:/app/data
     environment:
       - NODE_ENV=development
       - DATABASE_URL=sqlite://data/gitea-mirror.db
@@ -77,3 +77,12 @@ services:
       - JWT_SECRET=dev-secret-key
       - USE_MOCK_DATA=false
     profiles: ["development-real"]
+
+# Define named volumes for database persistence
+volumes:
+  gitea-mirror-prod-data:
+    # Production database volume
+  gitea-mirror-dev-data:
+    # Development database volume with mock data
+  gitea-mirror-dev-real-data:
+    # Development database volume with real data

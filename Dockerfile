@@ -40,6 +40,11 @@ COPY --from=builder --chown=gitea-mirror:nodejs /app/package.json ./package.json
 
 # Create data directory for SQLite database
 RUN mkdir -p /app/data
+
+# Ensure proper permissions for the data directory
+RUN chown -R gitea-mirror:nodejs /app/data
+
+# Define volume for database persistence
 VOLUME /app/data
 
 # Expose the port

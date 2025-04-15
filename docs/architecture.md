@@ -308,7 +308,7 @@ Handles mirroring operations:
                                                     │ created_at      │
                                                     │ updated_at      │
                                                     └─────────────────┘
-                                   
+
                                    ┌─────────────────┐
                                    │   mirror_jobs   │
                                    ├─────────────────┤
@@ -348,35 +348,52 @@ The application supports two environments:
 
 ### Docker Deployment
 
-The application can be deployed using Docker:
+The application can be deployed using Docker with proper database persistence:
 
 ```bash
+# Create a named volume for database persistence
+docker volume create gitea-mirror-prod-data
+
 # Build the Docker image
 docker build -t gitea-mirror:latest .
 
-# Run in production mode
+# Run in production mode with database persistence
 docker run -d \
   -p 3000:3000 \
+  -v gitea-mirror-prod-data:/app/data \
   -e DATABASE_URL=sqlite://data/gitea-mirror.db \
   -e USE_MOCK_DATA=false \
   --name gitea-mirror \
   gitea-mirror:latest
 ```
 
+The SQLite database is stored in a Docker volume (`gitea-mirror-prod-data`) to ensure data persistence across container restarts and updates.
+
 ### Docker Compose Deployment
 
-For more complex deployments, Docker Compose is recommended:
+For more complex deployments, Docker Compose is recommended. The docker-compose.yml file defines named volumes for database persistence:
+
+```yaml
+volumes:
+  gitea-mirror-prod-data:    # Production database volume
+  gitea-mirror-dev-data:     # Development database volume with mock data
+  gitea-mirror-dev-real-data: # Development database volume with real data
+```
+
+To start the application with Docker Compose:
 
 ```bash
-# Production mode
+# Production mode with database persistence
 docker-compose --profile production up -d
 
-# Development mode with mock data
+# Development mode with mock data and database persistence
 docker-compose --profile development up -d
 
-# Development mode with real data
+# Development mode with real data and database persistence
 docker-compose --profile development-real up -d
 ```
+
+Each environment uses its own named volume, ensuring data isolation between different modes while maintaining persistence.
 
 ### Manual Deployment
 

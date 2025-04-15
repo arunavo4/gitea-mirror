@@ -151,6 +151,8 @@ When using Docker, you can set environment variables in your docker-compose.yml 
 services:
   gitea-mirror:
     # ...
+    volumes:
+      - gitea-mirror-prod-data:/app/data  # For database persistence
     environment:
       - NODE_ENV=production
       - DATABASE_URL=sqlite://data/gitea-mirror.db
@@ -158,6 +160,24 @@ services:
       - PORT=3000
       - JWT_SECRET=your-secure-random-string
       - USE_MOCK_DATA=false
+
+# Define named volumes for database persistence
+volumes:
+  gitea-mirror-prod-data:  # Production database volume
+```
+
+### Database Persistence
+
+To ensure your data persists across container restarts and updates, Gitea Mirror uses Docker volumes:
+
+- **Production Mode**: Uses the `gitea-mirror-prod-data` volume
+- **Development Mode**: Uses the `gitea-mirror-dev-data` volume
+- **Development-Real Mode**: Uses the `gitea-mirror-dev-real-data` volume
+
+These volumes are automatically created when you use docker-compose. If you're using Docker CLI directly, you need to create the volumes manually:
+
+```bash
+docker volume create gitea-mirror-prod-data
 ```
 
 ## Troubleshooting

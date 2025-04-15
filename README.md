@@ -87,6 +87,7 @@ docker build -t gitea-mirror:latest .
 # Run in production mode (real data)
 docker run -d \
   -p 3000:3000 \
+  -v gitea-mirror-prod-data:/app/data \
   -e DATABASE_URL=sqlite://data/gitea-mirror.db \
   -e USE_MOCK_DATA=false \
   --name gitea-mirror \
@@ -95,9 +96,14 @@ docker run -d \
 # Or run in development mode (mock data)
 docker run -d \
   -p 3000:3000 \
+  -v gitea-mirror-dev-data:/app/data \
   -e USE_MOCK_DATA=true \
-  --name gitea-mirror \
+  --name gitea-mirror-dev \
   gitea-mirror:latest
+
+# Create a named volume for database persistence
+docker volume create gitea-mirror-prod-data
+docker volume create gitea-mirror-dev-data
 ```
 
 #### Manual Installation
