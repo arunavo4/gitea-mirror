@@ -1,7 +1,9 @@
 ---
 import '../styles/global.css';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Dashboard } from '@/components/dashboard/Dashboard';
+import { RepositoryTable } from '@/components/repositories/RepositoryTable';
+import { Button } from '@/components/ui/button';
+import { GitFork, RefreshCw } from 'lucide-react';
 
 // Mock data for demonstration
 const mockRepositories = [
@@ -74,32 +76,11 @@ const mockRepositories = [
   },
 ];
 
-const mockActivities = [
-  {
-    id: '1',
-    message: 'Successfully mirrored repository: mirror-to-gitea',
-    timestamp: new Date('2023-10-15T14:30:00'),
-    status: 'success',
-  },
-  {
-    id: '2',
-    message: 'Successfully mirrored repository: astro',
-    timestamp: new Date('2023-10-14T10:15:00'),
-    status: 'success',
-  },
-  {
-    id: '3',
-    message: 'Failed to mirror repository: private-repo',
-    timestamp: new Date('2023-10-10T08:45:00'),
-    status: 'error',
-  },
-  {
-    id: '4',
-    message: 'Started mirroring process for 3 repositories',
-    timestamp: new Date('2023-10-10T08:30:00'),
-    status: 'info',
-  },
-];
+// Client-side function to handle mirror now button
+const handleMirrorNow = (repositoryId: string) => {
+  console.log('Mirror now clicked for repository:', repositoryId);
+  // In a real implementation, this would call the API to start mirroring
+};
 ---
 
 <html lang="en">
@@ -108,21 +89,29 @@ const mockActivities = [
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
-    <title>Dashboard - Gitea Mirror</title>
+    <title>Repositories - Gitea Mirror</title>
   </head>
   <body>
     <MainLayout>
-      <Dashboard client:load
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Repositories</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" client:load>
+            <GitFork className="mr-2 h-4 w-4" />
+            Add Repository
+          </Button>
+          <Button client:load>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Mirror All
+          </Button>
+        </div>
+      </div>
+
+      <RepositoryTable
         repositories={mockRepositories}
-        activities={mockActivities}
+        onMirrorNow={handleMirrorNow}
+        client:load
       />
     </MainLayout>
-
-    <script>
-      // This script will run on the client
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('Dashboard loaded');
-      });
-    </script>
   </body>
 </html>

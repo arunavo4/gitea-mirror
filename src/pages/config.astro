@@ -1,0 +1,120 @@
+---
+import '../styles/global.css';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { ConfigTabs } from '@/components/config/ConfigTabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Mock data for demonstration
+const mockGitHubConfig = {
+  username: 'example-user',
+  token: '',
+  skipForks: true,
+  privateRepositories: true,
+  mirrorIssues: true,
+  mirrorStarred: true,
+  mirrorOrganizations: true,
+  onlyMirrorOrgs: false,
+  preserveOrgStructure: true,
+  skipStarredIssues: false,
+};
+
+const mockGiteaConfig = {
+  url: 'https://gitea.example.com',
+  token: '',
+  organization: 'github-mirrors',
+  visibility: 'public',
+  starredReposOrg: 'github',
+};
+
+const mockScheduleConfig = {
+  enabled: true,
+  interval: 3600,
+  lastRun: new Date('2023-10-15T14:30:00'),
+  nextRun: new Date('2023-10-15T15:30:00'),
+};
+
+// Client-side functions to handle form submissions
+const handleSaveGitHubConfig = (values) => {
+  console.log('Saving GitHub config:', values);
+  // In a real implementation, this would call the API to save the config
+};
+
+const handleSaveGiteaConfig = (values) => {
+  console.log('Saving Gitea config:', values);
+  // In a real implementation, this would call the API to save the config
+};
+
+const handleSaveScheduleConfig = (values) => {
+  console.log('Saving schedule config:', values);
+  // In a real implementation, this would call the API to save the config
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Configuration - Gitea Mirror</title>
+  </head>
+  <body>
+    <MainLayout>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Configuration</h1>
+      </div>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Configuration Settings</CardTitle>
+          <CardDescription>
+            Configure your GitHub and Gitea connections, and set up automatic mirroring.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ConfigTabs
+            client:load
+            githubConfig={mockGitHubConfig}
+            giteaConfig={mockGiteaConfig}
+            scheduleConfig={mockScheduleConfig}
+            onSaveGitHub={handleSaveGitHubConfig}
+            onSaveGitea={handleSaveGiteaConfig}
+            onSaveSchedule={handleSaveScheduleConfig}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Docker Configuration</CardTitle>
+          <CardDescription>
+            Equivalent Docker configuration for your current settings.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
+{`version: "3.3"
+services:
+  mirror-to-gitea:
+    image: jaedle/mirror-to-gitea:latest
+    restart: unless-stopped
+    container_name: mirror-to-gitea
+    environment:
+      - GITHUB_USERNAME=${mockGitHubConfig.username}
+      - GITEA_URL=${mockGiteaConfig.url}
+      - GITEA_TOKEN=your-gitea-token
+      - GITHUB_TOKEN=your-github-token
+      - MIRROR_ISSUES=${mockGitHubConfig.mirrorIssues}
+      - MIRROR_STARRED=${mockGitHubConfig.mirrorStarred}
+      - MIRROR_ORGANIZATIONS=${mockGitHubConfig.mirrorOrganizations}
+      - PRESERVE_ORG_STRUCTURE=${mockGitHubConfig.preserveOrgStructure}
+      - ONLY_MIRROR_ORGS=${mockGitHubConfig.onlyMirrorOrgs}
+      - GITEA_ORGANIZATION=${mockGiteaConfig.organization}
+      - GITEA_ORG_VISIBILITY=${mockGiteaConfig.visibility}
+      - DELAY=${mockScheduleConfig.interval}`}
+          </pre>
+        </CardContent>
+      </Card>
+    </MainLayout>
+  </body>
+</html>

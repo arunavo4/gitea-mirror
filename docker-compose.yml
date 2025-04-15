@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  gitea-mirror:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gitea-mirror
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=sqlite://data/gitea-mirror.db
+      - HOST=0.0.0.0
+      - PORT=3000
+      - JWT_SECRET=your-secret-key-change-this-in-production

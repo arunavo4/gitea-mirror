@@ -1,0 +1,105 @@
+---
+import '../styles/global.css';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { OrganizationList } from '@/components/organizations/OrganizationList';
+import { AddOrganizationDialog } from '@/components/organizations/AddOrganizationDialog';
+import { Button } from '@/components/ui/button';
+import { Users, RefreshCw } from 'lucide-react';
+
+// Mock data for demonstration
+const mockOrganizations = [
+  {
+    id: '1',
+    name: 'microsoft',
+    type: 'public',
+    isIncluded: true,
+    repositoryCount: 42,
+    configId: '1',
+    createdAt: new Date('2023-10-01'),
+    updatedAt: new Date('2023-10-15'),
+  },
+  {
+    id: '2',
+    name: 'google',
+    type: 'public',
+    isIncluded: true,
+    repositoryCount: 38,
+    configId: '1',
+    createdAt: new Date('2023-10-01'),
+    updatedAt: new Date('2023-10-14'),
+  },
+  {
+    id: '3',
+    name: 'my-org',
+    type: 'member',
+    isIncluded: true,
+    repositoryCount: 12,
+    configId: '1',
+    createdAt: new Date('2023-10-01'),
+    updatedAt: new Date('2023-10-10'),
+  },
+];
+
+// Client-side state for dialog
+let isDialogOpen = false;
+
+// Client-side functions
+const handleToggleInclude = (id, included) => {
+  console.log(`Toggle organization ${id} to ${included ? 'included' : 'excluded'}`);
+  // In a real implementation, this would call the API to update the organization
+};
+
+const handleAddOrganization = () => {
+  isDialogOpen = true;
+};
+
+const handleCloseDialog = () => {
+  isDialogOpen = false;
+};
+
+const handleAddOrg = (name, type) => {
+  console.log(`Add organization ${name} of type ${type}`);
+  // In a real implementation, this would call the API to add the organization
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Organizations - Gitea Mirror</title>
+  </head>
+  <body>
+    <MainLayout>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Organizations</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" client:load>
+            <Users className="mr-2 h-4 w-4" />
+            Add Organization
+          </Button>
+          <Button client:load>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh Organizations
+          </Button>
+        </div>
+      </div>
+
+      <OrganizationList
+        organizations={mockOrganizations}
+        onToggleInclude={handleToggleInclude}
+        onAddOrganization={handleAddOrganization}
+        client:load
+      />
+
+      <AddOrganizationDialog
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        onAdd={handleAddOrg}
+        client:load
+      />
+    </MainLayout>
+  </body>
+</html>

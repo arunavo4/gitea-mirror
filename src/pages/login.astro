@@ -1,0 +1,87 @@
+---
+import '../styles/global.css';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { GitMerge } from 'lucide-react';
+
+// Client-side function to handle login
+const handleLogin = (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const username = formData.get('username');
+  const password = formData.get('password');
+  
+  console.log('Login attempt:', { username, password });
+  // In a real implementation, this would call the API to authenticate the user
+  
+  // Redirect to dashboard on successful login
+  window.location.href = '/';
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charSet="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Login - Gitea Mirror</title>
+  </head>
+  <body>
+    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <GitMerge className="h-10 w-10" />
+          </div>
+          <CardTitle className="text-2xl">Gitea Mirror</CardTitle>
+          <CardDescription>
+            Log in to manage your GitHub to Gitea mirroring
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form id="login-form" onSubmit={handleLogin}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium mb-1">
+                  Username
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Enter your username"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium mb-1">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  placeholder="Enter your password"
+                />
+              </div>
+            </div>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <Button type="submit" form="login-form" className="w-full">
+            Log In
+          </Button>
+        </CardFooter>
+        <div className="px-6 pb-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Don't have an account? Contact your administrator.
+          </p>
+        </div>
+      </Card>
+    </div>
+  </body>
+</html>
