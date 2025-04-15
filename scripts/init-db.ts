@@ -36,17 +36,21 @@ async function main() {
     );
 
     // Create a default admin user
-    const userCount = await db.select({ count: db.fn.count() }).from(users);
-    if (userCount[0].count === 0) {
+    const userCountResult = await client.execute(`SELECT COUNT(*) as count FROM users`);
+    const userCount = userCountResult.rows[0].count;
+    if (userCount === 0) {
       const userId = uuidv4();
-      await db.insert(users).values({
-        id: userId,
-        username: 'admin',
-        password: '$2a$10$JdJF5JDfWVMiMBtNijMbQuJzGbcoGVDMoT9o8gVrXPTC6zl0Ywd4W', // 'password123'
-        email: 'admin@example.com',
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      });
+      await client.execute(`
+        INSERT INTO users (id, username, password, email, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `, [
+        userId,
+        'admin',
+        '$2a$10$JdJF5JDfWVMiMBtNijMbQuJzGbcoGVDMoT9o8gVrXPTC6zl0Ywd4W', // 'password123'
+        'admin@example.com',
+        Date.now(),
+        Date.now()
+      ]);
       console.log('Default admin user created (username: admin, password: password123)');
     }
 
@@ -120,54 +124,65 @@ async function main() {
     );
 
     // Insert default config if none exists
-    const configCount = await db.select({ count: db.fn.count() }).from(configs);
-    if (configCount[0].count === 0) {
+    const configCountResult = await client.execute(`SELECT COUNT(*) as count FROM configs`);
+    const configCount = configCountResult.rows[0].count;
+    if (configCount === 0) {
       // Get the first user
-      const firstUser = await db.select().from(users).limit(1);
-      if (firstUser.length > 0) {
-        const userId = firstUser[0].id;
-        await db.insert(configs).values({
-          id: uuidv4(),
-          userId: userId,
-          name: 'Default Configuration',
-          isActive: true,
-          githubConfig: JSON.stringify({
-            username: process.env.GITHUB_USERNAME || '',
-            token: process.env.GITHUB_TOKEN || '',
-            skipForks: false,
-            privateRepositories: false,
-            mirrorIssues: false,
-            mirrorStarred: true,
-            mirrorOrganizations: true,
-            onlyMirrorOrgs: false,
-            useSpecificUser: false,
-            singleRepo: '',
-            includeOrgs: [],
-            excludeOrgs: [],
-            mirrorPublicOrgs: false,
-            publicOrgs: [],
-            preserveOrgStructure: true,
-            skipStarredIssues: false,
-          }),
-          giteaConfig: JSON.stringify({
-            url: process.env.GITEA_URL || '',
-            token: process.env.GITEA_TOKEN || '',
-            username: process.env.GITEA_USERNAME || '',
-            organization: '',
-            visibility: 'public',
-            starredReposOrg: 'github',
-          }),
-          include: JSON.stringify(['*']),
-          exclude: JSON.stringify([]),
-          scheduleConfig: JSON.stringify({
-            enabled: false,
-            interval: 3600, // seconds
-            lastRun: null,
-            nextRun: null,
-          }),
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+      const firstUserResult = await client.execute(`SELECT id FROM users LIMIT 1`);
+      if (firstUserResult.rows.length > 0) {
+        const userId = firstUserResult.rows[0].id;
+        const configId = uuidv4();
+        const githubConfig = JSON.stringify({
+          username: process.env.GITHUB_USERNAME || '',
+          token: process.env.GITHUB_TOKEN || '',
+          skipForks: false,
+          privateRepositories: false,
+          mirrorIssues: false,
+          mirrorStarred: true,
+          mirrorOrganizations: true,
+          onlyMirrorOrgs: false,
+          useSpecificUser: false,
+          singleRepo: '',
+          includeOrgs: [],
+          excludeOrgs: [],
+          mirrorPublicOrgs: false,
+          publicOrgs: [],
+          preserveOrgStructure: true,
+          skipStarredIssues: false,
         });
+        const giteaConfig = JSON.stringify({
+          url: process.env.GITEA_URL || '',
+          token: process.env.GITEA_TOKEN || '',
+          username: process.env.GITEA_USERNAME || '',
+          organization: '',
+          visibility: 'public',
+          starredReposOrg: 'github',
+        });
+        const include = JSON.stringify(['*']);
+        const exclude = JSON.stringify([]);
+        const scheduleConfig = JSON.stringify({
+          enabled: false,
+          interval: 3600, // seconds
+          lastRun: null,
+          nextRun: null,
+        });
+
+        await client.execute(`
+          INSERT INTO configs (id, user_id, name, is_active, github_config, gitea_config, include, exclude, schedule_config, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          configId,
+          userId,
+          'Default Configuration',
+          1, // true for SQLite
+          githubConfig,
+          giteaConfig,
+          include,
+          exclude,
+          scheduleConfig,
+          Date.now(),
+          Date.now()
+        ]);
         console.log('Default configuration created.');
       }
     }
