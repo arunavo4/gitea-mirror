@@ -25,6 +25,17 @@ services:
       - USE_MOCK_DATA=false
     profiles: ["production"]
 
+  # Development database setup
+  gitea-mirror-db-setup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gitea-mirror-db-setup
+    volumes:
+      - ./data:/app/data
+    command: pnpm create-dev-db
+    profiles: ["development"]
+
   # Development service with mock data
   gitea-mirror-dev:
     build:
@@ -38,9 +49,11 @@ services:
       - ./data:/app/data
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=sqlite://data/gitea-mirror.db
+      - DATABASE_URL=sqlite://data/gitea-mirror-dev.db
       - HOST=0.0.0.0
       - PORT=3000
       - JWT_SECRET=dev-secret-key
       - USE_MOCK_DATA=true
+    depends_on:
+      - gitea-mirror-db-setup
     profiles: ["development"]

@@ -38,12 +38,27 @@ Easily configure your GitHub and Gitea connections, set up automatic mirroring s
 
 The application can run in two modes:
 
-- **Development Mode**: Uses mock data for UI development without requiring actual GitHub/Gitea setup
-- **Production Mode**: Requires proper configuration and connects to real GitHub/Gitea instances
+- **Development Mode**: Uses a pre-populated development database with mock data for UI development without requiring actual GitHub/Gitea setup
+- **Production Mode**: Uses a separate production database and requires proper configuration to connect to real GitHub/Gitea instances
 
 The mode is controlled by the `USE_MOCK_DATA` environment variable:
-- Set to `true` for development mode with mock data
-- Set to `false` for production mode with real data
+- Set to `true` for development mode with the mock database
+- Set to `false` for production mode with the real database
+
+#### Development Database
+
+The development database (`data/gitea-mirror-dev.db`) is pre-populated with mock data including:
+- Sample repositories
+- Sample organizations
+- Sample mirror jobs and activity logs
+- Default configuration
+- Test user account (username: `admin`, password: `password`)
+
+This allows developers to immediately start working on the UI without setting up GitHub and Gitea accounts.
+
+#### Production Database
+
+The production database (`data/gitea-mirror.db`) is created when the application runs in production mode. It starts empty and is populated as you configure and use the application.
 
 ### Installation
 
@@ -56,6 +71,7 @@ The mode is controlled by the `USE_MOCK_DATA` environment variable:
 docker-compose --profile production up -d
 
 # For development mode with mock data
+# This will automatically create and populate the development database
 docker-compose --profile development up -d
 
 # Or using Docker directly
@@ -89,14 +105,17 @@ cd gitea-mirror
 # Install dependencies
 pnpm install
 
-# For development mode with mock data
-USE_MOCK_DATA=true pnpm dev
+# Create/regenerate the development database with mock data
+pnpm create-dev-db
 
-# For production mode with real data
+# Run in development mode with the mock database
+pnpm dev
+
+# Or run in production mode with a real database
 # Build the application
 pnpm build
 
-# Start the application
+# Start the application in production mode
 USE_MOCK_DATA=false pnpm start
 ```
 

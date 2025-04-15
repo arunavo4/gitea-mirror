@@ -17,6 +17,11 @@ pnpm-debug.log*
 .env
 .env.production
 
+# database files
+data/gitea-mirror.db
+# Keep the development database
+!data/gitea-mirror-dev.db
+
 # macOS-specific files
 .DS_Store
 

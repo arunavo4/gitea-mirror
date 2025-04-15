@@ -6,19 +6,34 @@
 export const ENV = {
   // Node environment (development, production, test)
   NODE_ENV: process.env.NODE_ENV || 'development',
-  
-  // Database URL
-  DATABASE_URL: process.env.DATABASE_URL || 'sqlite://data/gitea-mirror.db',
-  
+
+  // Database URL - use different databases for development and production
+  get DATABASE_URL() {
+    // If explicitly set, use the provided DATABASE_URL
+    if (process.env.DATABASE_URL) {
+      return process.env.DATABASE_URL;
+    }
+
+    // Otherwise, choose based on USE_MOCK_DATA
+    return this.USE_MOCK_DATA
+      ? 'sqlite://data/gitea-mirror-dev.db' // Development database with mock data
+      : 'sqlite://data/gitea-mirror.db';    // Production database
+  },
+
   // JWT secret for authentication
   JWT_SECRET: process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
-  
+
   // Server host and port
   HOST: process.env.HOST || 'localhost',
   PORT: parseInt(process.env.PORT || '3000', 10),
-  
+
   // Use mock data in development mode
-  USE_MOCK_DATA: process.env.USE_MOCK_DATA === 'true' || process.env.NODE_ENV === 'development',
+  // This controls whether to use the development database with mock data
+  get USE_MOCK_DATA() {
+    if (process.env.USE_MOCK_DATA === 'true') return true;
+    if (process.env.USE_MOCK_DATA === 'false') return false;
+    return process.env.NODE_ENV === 'development';
+  },
 };
 
 /**
