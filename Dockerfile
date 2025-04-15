@@ -26,23 +26,25 @@ RUN pnpm build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
+
+# Create data directory for SQLite database
+RUN mkdir -p /app/data
 
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 gitea-mirror
-USER gitea-mirror
+
+# Ensure proper permissions for the data directory
+RUN chown -R gitea-mirror:nodejs /app/data
 
 # Copy necessary files
 COPY --from=builder --chown=gitea-mirror:nodejs /app/dist ./dist
 COPY --from=builder --chown=gitea-mirror:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=gitea-mirror:nodejs /app/package.json ./package.json
 
-# Create data directory for SQLite database
-RUN mkdir -p /app/data
-
-# Ensure proper permissions for the data directory
-RUN chown -R gitea-mirror:nodejs /app/data
+# Switch to non-root user
+USER gitea-mirror
 
 # Define volume for database persistence
 VOLUME /app/data

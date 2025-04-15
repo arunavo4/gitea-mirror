@@ -13,7 +13,7 @@ services:
     container_name: gitea-mirror
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3002:3000"
     volumes:
       - gitea-mirror-prod-data:/app/data
     environment:
@@ -44,7 +44,7 @@ services:
     container_name: gitea-mirror-dev
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - gitea-mirror-dev-data:/app/data
     environment:
@@ -66,7 +66,7 @@ services:
     container_name: gitea-mirror-dev-real
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3003:3000"
     volumes:
       - gitea-mirror-dev-real-data:/app/data
     environment:
