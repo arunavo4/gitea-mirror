@@ -152,6 +152,46 @@ Key configuration options include:
 - Mirroring options (issues, starred repositories, organizations)
 - Scheduling options for automatic mirroring
 
+## Architecture
+
+Gitea Mirror follows a modular architecture with clear separation of concerns. See the [Architecture Document](docs/architecture.md) for a comprehensive overview of the system design, including:
+
+- Component diagrams
+- Data flow
+- Project structure
+- Key components
+- Database schema
+- API endpoints
+
+### High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Gitea Mirror                             │
+│                                                                 │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────┐   │
+│  │             │     │             │     │                 │   │
+│  │  Frontend   │◄───►│   Backend   │◄───►│    Database     │   │
+│  │  (Astro)    │     │  (Node.js)  │     │    (SQLite)     │   │
+│  │             │     │             │     │                 │   │
+│  └─────────────┘     └──────┬──────┘     └─────────────────┘   │
+│                             │                                   │
+└─────────────────────────────┼───────────────────────────────────┘
+                              │
+                              ▼
+          ┌─────────────────────────────────────────┐
+          │                                         │
+          │              External APIs              │
+          │                                         │
+          │  ┌─────────────┐     ┌─────────────┐   │
+          │  │             │     │             │   │
+          │  │  GitHub API │     │  Gitea API  │   │
+          │  │             │     │             │   │
+          │  └─────────────┘     └─────────────┘   │
+          │                                         │
+          └─────────────────────────────────────────┘
+```
+
 ## Development
 
 ```bash
