@@ -1,4 +1,4 @@
-import { db } from '../src/lib/db';
+import { db, client } from '../src/lib/db';
 import {
   repositories,
   organizations,
@@ -6,7 +6,6 @@ import {
   mirrorJobs,
   users
 } from '../src/lib/db';
-import { createClient } from '@libsql/client';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,7 +24,7 @@ async function main() {
 
   try {
     // Create tables if they don't exist
-    await db.execute(
+    await client.execute(
       `CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         username TEXT NOT NULL,
@@ -51,7 +50,7 @@ async function main() {
       console.log('Default admin user created (username: admin, password: password123)');
     }
 
-    await db.execute(
+    await client.execute(
       `CREATE TABLE IF NOT EXISTS configs (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
@@ -68,7 +67,7 @@ async function main() {
       )`
     );
 
-    await db.execute(
+    await client.execute(
       `CREATE TABLE IF NOT EXISTS repositories (
         id TEXT PRIMARY KEY,
         config_id TEXT NOT NULL,
@@ -90,7 +89,7 @@ async function main() {
       )`
     );
 
-    await db.execute(
+    await client.execute(
       `CREATE TABLE IF NOT EXISTS organizations (
         id TEXT PRIMARY KEY,
         config_id TEXT NOT NULL,
@@ -104,7 +103,7 @@ async function main() {
       )`
     );
 
-    await db.execute(
+    await client.execute(
       `CREATE TABLE IF NOT EXISTS mirror_jobs (
         id TEXT PRIMARY KEY,
         config_id TEXT NOT NULL,
