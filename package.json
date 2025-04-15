@@ -15,7 +15,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "create-dev-db": "tsx scripts/create-dev-db.ts",
-    "setup:dev": "pnpm install && pnpm create-dev-db"
+    "init-db": "tsx scripts/init-db.ts",
+    "setup:dev": "pnpm install && pnpm create-dev-db",
+    "setup:real": "pnpm install && pnpm init-db"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.4",
