@@ -26,7 +26,7 @@ async function main() {
   try {
     // Create tables if they don't exist
     await db.execute(
-      `CREATE TABLE IF NOT EXISTS ${users._.name} (
+      `CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         username TEXT NOT NULL,
         password TEXT NOT NULL,
@@ -52,7 +52,7 @@ async function main() {
     }
 
     await db.execute(
-      `CREATE TABLE IF NOT EXISTS ${configs._.name} (
+      `CREATE TABLE IF NOT EXISTS configs (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         name TEXT NOT NULL,
@@ -69,7 +69,7 @@ async function main() {
     );
 
     await db.execute(
-      `CREATE TABLE IF NOT EXISTS ${repositories._.name} (
+      `CREATE TABLE IF NOT EXISTS repositories (
         id TEXT PRIMARY KEY,
         config_id TEXT NOT NULL,
         name TEXT NOT NULL,
@@ -91,7 +91,7 @@ async function main() {
     );
 
     await db.execute(
-      `CREATE TABLE IF NOT EXISTS ${organizations._.name} (
+      `CREATE TABLE IF NOT EXISTS organizations (
         id TEXT PRIMARY KEY,
         config_id TEXT NOT NULL,
         name TEXT NOT NULL,
@@ -105,7 +105,7 @@ async function main() {
     );
 
     await db.execute(
-      `CREATE TABLE IF NOT EXISTS ${mirrorJobs._.name} (
+      `CREATE TABLE IF NOT EXISTS mirror_jobs (
         id TEXT PRIMARY KEY,
         config_id TEXT NOT NULL,
         repository_id TEXT,
