@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import ThemeScript from '@/components/theme/ThemeScript.astro';
 const { content } = Astro.props;
 ---
 
@@ -9,6 +10,7 @@ const { content } = Astro.props;
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<title>{content.title}</title>
+		<ThemeScript />
 	</head>
 	<body>
 		<slot />
