@@ -42,26 +42,27 @@ const handleMirrorNow = (repositoryId: string) => {
     <title>Repositories - Gitea Mirror</title>
   </head>
   <body>
-    <MainLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Repositories</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" client:load>
-            <GitFork className="mr-2 h-4 w-4" />
-            Add Repository
-          </Button>
-          <Button client:load>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Mirror All
-          </Button>
+    <MainLayout client:load>
+      <div class="flex flex-col gap-y-8">
+        <div class="flex items-center justify-end">
+          <!-- <h1 class="text-3xl font-bold">Repositories</h1> -->
+          <div class="flex gap-x-4">
+            <Button variant="outline">
+              <GitFork className="mr-2 h-4 w-4" />
+              Add Repository
+            </Button>
+            <Button>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Mirror All
+            </Button>
+          </div>
         </div>
+  
+        <RepositoryTable
+          repositories={repoData}
+          onMirrorNow={handleMirrorNow}
+        />
       </div>
-
-      <RepositoryTable
-        repositories={repoData}
-        onMirrorNow={handleMirrorNow}
-        client:load
-      />
     </MainLayout>
   </body>
 </html>

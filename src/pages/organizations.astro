@@ -59,33 +59,33 @@ const handleAddOrg = (name: string, type: string) => {
     <title>Organizations - Gitea Mirror</title>
   </head>
   <body>
-    <MainLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Organizations</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" client:load>
-            <Users className="mr-2 h-4 w-4" />
-            Add Organization
-          </Button>
-          <Button client:load>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh Organizations
-          </Button>
+    <MainLayout client:load>
+      <div class="flex flex-col gap-y-8">
+        <div class="flex items-center justify-end">
+          <!-- <h1 class="text-3xl font-bold">Organizations</h1> -->
+          <div class="flex gap-x-4">
+            <Button variant="outline" client:load>
+              <Users className="mr-2 h-4 w-4" />
+              Add Organization
+            </Button>
+            <Button>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
+  
+        <OrganizationList
+          organizations={orgData}
+          onToggleInclude={handleToggleInclude}
+          onAddOrganization={handleAddOrganization}
+        />
       </div>
-
-      <OrganizationList
-        organizations={orgData}
-        onToggleInclude={handleToggleInclude}
-        onAddOrganization={handleAddOrganization}
-        client:load
-      />
 
       <AddOrganizationDialog
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}
         onAdd={handleAddOrg}
-        client:load
       />
     </MainLayout>
   </body>

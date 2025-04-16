@@ -1,12 +1,11 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatDate } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDate } from "@/lib/utils";
 
 interface ActivityItem {
   id: string;
   message: string;
   timestamp: Date;
-  status: 'success' | 'error' | 'info' | 'warning';
+  status: "success" | "error" | "info" | "warning";
 }
 
 interface RecentActivityProps {
@@ -20,18 +19,26 @@ export function RecentActivity({ activities }: RecentActivityProps) {
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="flex flex-col divide-y divide-border">
           {activities.length === 0 ? (
             <p className="text-sm text-muted-foreground">No recent activity</p>
           ) : (
             activities.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-4">
+              <div key={activity.id} className="flex items-start gap-x-4 py-4">
                 <div className="relative mt-1">
-                  <div className={`h-2 w-2 rounded-full ${getStatusColor(activity.status)}`} />
+                  <div
+                    className={`h-2 w-2 rounded-full ${getStatusColor(
+                      activity.status
+                    )}`}
+                  />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium leading-none">{activity.message}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(activity.timestamp)}</p>
+                  <p className="text-sm font-medium leading-none">
+                    {activity.message}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(activity.timestamp)}
+                  </p>
                 </div>
               </div>
             ))
@@ -42,16 +49,16 @@ export function RecentActivity({ activities }: RecentActivityProps) {
   );
 }
 
-function getStatusColor(status: ActivityItem['status']): string {
+function getStatusColor(status: ActivityItem["status"]): string {
   switch (status) {
-    case 'success':
-      return 'bg-green-500';
-    case 'error':
-      return 'bg-red-500';
-    case 'warning':
-      return 'bg-yellow-500';
-    case 'info':
+    case "success":
+      return "bg-green-500";
+    case "error":
+      return "bg-red-500";
+    case "warning":
+      return "bg-yellow-500";
+    case "info":
     default:
-      return 'bg-blue-500';
+      return "bg-blue-500";
   }
 }

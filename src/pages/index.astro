@@ -49,18 +49,11 @@ if (ENV.USE_MOCK_DATA) {
     <title>Dashboard - Gitea Mirror</title>
   </head>
   <body>
-    <MainLayout>
-      <Dashboard client:load
+    <MainLayout client:load>
+      <Dashboard
         repositories={repoData}
         activities={activityData}
       />
     </MainLayout>
-
-    <script>
-      // This script will run on the client
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('Dashboard loaded');
-      });
-    </script>
   </body>
 </html>

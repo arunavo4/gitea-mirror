@@ -1,23 +1,26 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { GitFork, ExternalLink } from 'lucide-react';
-import type { Repository } from '@/lib/db/schema';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { GitFork, ExternalLink } from "lucide-react";
+import type { Repository } from "@/lib/db/schema";
 
 interface RepositoryListProps {
   repositories: Repository[];
   onMirrorNow: (repositoryId: string) => void;
 }
 
-export function RepositoryList({ repositories, onMirrorNow }: RepositoryListProps) {
+export function RepositoryList({
+  repositories,
+  onMirrorNow,
+}: RepositoryListProps) {
   return (
     <Card className="col-span-3">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Repositories</CardTitle>
-        <Button variant="outline" size="sm" asChild>
+        <Button variant="outline" asChild>
           <a href="/repositories">View All</a>
         </Button>
       </CardHeader>
+
       <CardContent>
         {repositories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -31,31 +34,56 @@ export function RepositoryList({ repositories, onMirrorNow }: RepositoryListProp
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex flex-col divide-y divide-border">
             {repositories.slice(0, 5).map((repo) => (
-              <div key={repo.id} className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0">
+              <div
+                key={repo.id}
+                className="flex items-center justify-between gap-x-4 py-4"
+              >
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h4 className="text-sm font-medium">{repo.name}</h4>
                     {repo.isPrivate && (
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs">Private</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
+                        Private
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">{repo.owner}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {repo.owner}
+                    </span>
                     {repo.organization && (
-                      <span className="text-xs text-muted-foreground">• {repo.organization}</span>
+                      <span className="text-xs text-muted-foreground">
+                        • {repo.organization}
+                      </span>
                     )}
                   </div>
                 </div>
+
                 <div className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${getStatusColor(repo.status)}`} />
-                  <span className="text-xs capitalize">{repo.status}</span>
-                  <Button variant="ghost" size="icon" onClick={() => onMirrorNow(repo.id || '')}>
+                  <div
+                    className={`h-2 w-2 rounded-full ${getStatusColor(
+                      repo.status
+                    )}`}
+                  />
+                  <span className="text-xs capitalize w-[3rem]">
+                    {/* setting the minimum width to 3rem corresponding to the largest status (mirrored) so that all are left alligned */}
+                    {repo.status}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onMirrorNow(repo.id || "")}
+                  >
                     <GitFork className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" asChild>
-                    <a href={repo.url} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={repo.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       <ExternalLink className="h-4 w-4" />
                     </a>
                   </Button>
@@ -71,12 +99,12 @@ export function RepositoryList({ repositories, onMirrorNow }: RepositoryListProp
 
 function getStatusColor(status: string): string {
   switch (status) {
-    case 'mirrored':
-      return 'bg-green-500';
-    case 'failed':
-      return 'bg-red-500';
-    case 'pending':
+    case "mirrored":
+      return "bg-green-500";
+    case "failed":
+      return "bg-red-500";
+    case "pending":
     default:
-      return 'bg-yellow-500';
+      return "bg-yellow-500";
   }
 }

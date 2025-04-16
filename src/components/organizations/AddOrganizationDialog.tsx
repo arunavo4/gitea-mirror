@@ -1,32 +1,43 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import * as React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface AddOrganizationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, type: 'member' | 'public') => void;
+  onAdd: (name: string, type: "member" | "public") => void;
 }
 
-export function AddOrganizationDialog({ isOpen, onClose, onAdd }: AddOrganizationDialogProps) {
-  const [name, setName] = useState('');
-  const [type, setType] = useState<'member' | 'public'>('public');
-  const [error, setError] = useState('');
+export function AddOrganizationDialog({
+  isOpen,
+  onClose,
+  onAdd,
+}: AddOrganizationDialogProps) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"member" | "public">("public");
+  const [error, setError] = useState("");
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
-      setError('Organization name is required');
+      setError("Organization name is required");
       return;
     }
-    
+
     onAdd(name, type);
-    setName('');
-    setType('public');
-    setError('');
+    setName("");
+    setType("public");
+    setError("");
     onClose();
   };
 
@@ -40,7 +51,10 @@ export function AddOrganizationDialog({ isOpen, onClose, onAdd }: AddOrganizatio
           <CardContent>
             <div className="space-y-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium mb-1"
+                >
                   Organization Name
                 </label>
                 <input
@@ -53,9 +67,11 @@ export function AddOrganizationDialog({ isOpen, onClose, onAdd }: AddOrganizatio
                 />
                 {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium mb-1">Organization Type</label>
+                <label className="block text-sm font-medium mb-1">
+                  Organization Type
+                </label>
                 <div className="space-y-2">
                   <div className="flex items-center">
                     <input
@@ -63,8 +79,8 @@ export function AddOrganizationDialog({ isOpen, onClose, onAdd }: AddOrganizatio
                       type="radio"
                       name="type"
                       value="member"
-                      checked={type === 'member'}
-                      onChange={() => setType('member')}
+                      checked={type === "member"}
+                      onChange={() => setType("member")}
                       className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
                     />
                     <label htmlFor="type-member" className="ml-2 block text-sm">
@@ -77,8 +93,8 @@ export function AddOrganizationDialog({ isOpen, onClose, onAdd }: AddOrganizatio
                       type="radio"
                       name="type"
                       value="public"
-                      checked={type === 'public'}
-                      onChange={() => setType('public')}
+                      checked={type === "public"}
+                      onChange={() => setType("public")}
                       className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
                     />
                     <label htmlFor="type-public" className="ml-2 block text-sm">
