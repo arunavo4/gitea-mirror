@@ -5,6 +5,7 @@ import { ConfigTabs } from '@/components/config/ConfigTabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ENV, MOCK_DATA } from '@/lib/config';
 import { db, configs } from '@/lib/db';
+import ThemeScript from '@/components/theme/ThemeScript.astro';
 
 // In production mode, fetch real data from the database
 // In development mode, use mock data
@@ -184,6 +185,7 @@ const handleSaveScheduleConfig = async (values: any) => {
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>Configuration - Gitea Mirror</title>
+    <ThemeScript />
   </head>
   <body>
     <MainLayout client:load>

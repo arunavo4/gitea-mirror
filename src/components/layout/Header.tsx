@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { GitMerge } from "lucide-react";
+import { ModeToggle } from "@/components/theme/ModeToggle";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -15,6 +16,7 @@ export function Header() {
         </a>
 
         <div className="flex items-center gap-4">
+          <ModeToggle />
           {user ? (
             <>
               <span className="text-sm text-muted-foreground">

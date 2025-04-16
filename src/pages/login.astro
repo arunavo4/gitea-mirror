@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { GitMerge } from 'lucide-react';
+import ThemeScript from '@/components/theme/ThemeScript.astro';
 
 const generator = Astro.generator;
 ---
@@ -14,6 +15,7 @@ const generator = Astro.generator;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={generator} />
     <title>Login - Gitea Mirror</title>
+    <ThemeScript />
   </head>
   <body>
     <div class="h-dvh flex items-center justify-center bg-muted/30 p-4">
