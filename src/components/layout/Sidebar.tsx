@@ -1,34 +1,42 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  GitFork,
-  Users,
-  Settings,
-  Activity,
-  ExternalLink
-} from 'lucide-react';
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import { ExternalLink } from "lucide-react";
+import { links } from "@/data/Sidebar";
 
 interface SidebarProps {
   className?: string;
 }
 
-export function Sidebar({ className }: SidebarProps) {
-  // Get the current path to highlight the active link
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+// type Paths = "/" | "/repositories" | "/organizations" | "/config" | "/activity";
 
-  const links = [
-    { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/repositories', label: 'Repositories', icon: GitFork },
-    { href: '/organizations', label: 'Organizations', icon: Users },
-    { href: '/config', label: 'Configuration', icon: Settings },
-    { href: '/activity', label: 'Activity Log', icon: Activity },
-  ];
+// interface SidebarItem {
+//   href: Paths;
+//   label: string;
+//   icon: React.ElementType;
+// }
+
+// const links: SidebarItem[] = [
+//   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+//   { href: "/repositories", label: "Repositories", icon: GitFork },
+//   { href: "/organizations", label: "Organizations", icon: Users },
+//   { href: "/config", label: "Configuration", icon: Settings },
+//   { href: "/activity", label: "Activity Log", icon: Activity },
+// ];
+
+export function Sidebar({ className }: SidebarProps) {
+  const [currentPath, setCurrentPath] = useState<string>("");
+
+  useEffect(() => {
+    // Hydration happens here
+    const path = window.location.pathname;
+    setCurrentPath(path);
+    console.log("Hydrated path:", path); // Should log now
+  }, []);
 
   return (
     <aside className={cn("w-64 border-r bg-background", className)}>
       <div className="flex flex-col h-full py-4">
-        <nav className="space-y-1 px-2">
+        <nav className="flex flex-col gap-y-1 pl-2 pr-3">
           {links.map((link) => {
             const isActive = currentPath === link.href;
             const Icon = link.icon;

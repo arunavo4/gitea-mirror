@@ -86,15 +86,14 @@ const handleRefresh = () => {
     <title>Activity Log - Gitea Mirror</title>
   </head>
   <body>
-    <MainLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Activity Log</h1>
-      </div>
+    <MainLayout client:load>
+      <!-- <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold">Activity Log</h1>
+      </div> -->
 
       <ActivityLog
         activities={activityData}
         onRefresh={handleRefresh}
-        client:load
       />
     </MainLayout>
   </body>

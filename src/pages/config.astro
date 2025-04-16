@@ -186,10 +186,10 @@ const handleSaveScheduleConfig = async (values: any) => {
     <title>Configuration - Gitea Mirror</title>
   </head>
   <body>
-    <MainLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Configuration</h1>
-      </div>
+    <MainLayout client:load>
+      <!-- <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold">Configuration</h1>
+      </div> -->
 
       <Card className="mb-6">
         <CardHeader>
@@ -200,7 +200,6 @@ const handleSaveScheduleConfig = async (values: any) => {
         </CardHeader>
         <CardContent>
           <ConfigTabs
-            client:load
             githubConfig={githubConfig}
             giteaConfig={giteaConfig}
             scheduleConfig={scheduleConfig}
@@ -219,7 +218,7 @@ const handleSaveScheduleConfig = async (values: any) => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
+          <pre class="bg-muted p-4 rounded-md overflow-auto text-sm">
 {`version: "3.3"
 services:
   gitea-mirror:
