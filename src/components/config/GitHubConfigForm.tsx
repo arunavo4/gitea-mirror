@@ -44,9 +44,20 @@ export function GitHubConfigForm({ initialValues, onSave }: GitHubConfigFormProp
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(values);
+    try {
+      await onSave(values);
+      setTestResult({
+        success: true,
+        message: 'Configuration saved successfully!',
+      });
+    } catch (error) {
+      setTestResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to save configuration.',
+      });
+    }
   };
 
   const testConnection = async () => {

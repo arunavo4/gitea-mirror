@@ -16,8 +16,8 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
-// Database path
-const dbPath = process.env.DATABASE_URL || 'file:./data/gitea-mirror.db';
+// Database path - ensure we use absolute path
+const dbPath = process.env.DATABASE_URL || `file:${path.join(dataDir, 'gitea-mirror.db')}`;
 
 async function main() {
   console.log(`Initializing database at ${dbPath}...`);
