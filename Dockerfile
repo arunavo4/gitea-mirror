@@ -58,6 +58,7 @@ RUN apk add --no-cache wget && \
 COPY --from=builder --chown=gitea-mirror:nodejs /app/dist ./dist
 COPY --from=pruner --chown=gitea-mirror:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=gitea-mirror:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=gitea-mirror:nodejs /app/scripts ./scripts
 
 USER gitea-mirror
 
@@ -67,4 +68,8 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1
 
-CMD ["node", "./dist/server/entry.mjs"]
+# Create a startup script that initializes the database before starting the application
+COPY --from=builder --chown=gitea-mirror:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
+CMD ["./docker-entrypoint.sh"]

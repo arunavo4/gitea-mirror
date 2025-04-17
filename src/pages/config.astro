@@ -13,36 +13,50 @@ let githubConfig = MOCK_DATA.githubConfig;
 let giteaConfig = MOCK_DATA.giteaConfig;
 let scheduleConfig = MOCK_DATA.scheduleConfig;
 
-if (!ENV.USE_MOCK_DATA) {
-  try {
-    // Fetch configuration from database
-    const dbConfigs = await db.select().from(configs).limit(1);
-    if (dbConfigs.length > 0) {
-      const config = dbConfigs[0];
+try {
+  // Fetch configuration from database
+  const dbConfigs = await db.select().from(configs).limit(1);
+  if (dbConfigs.length > 0) {
+    const config = dbConfigs[0];
 
-      // Check if the config fields are already objects or need to be parsed
+    try {
       if (typeof config.githubConfig === 'string') {
         githubConfig = JSON.parse(config.githubConfig);
-      } else {
-        githubConfig = config.githubConfig;
+      } else if (config.githubConfig && typeof config.githubConfig === 'object') {
+        githubConfig = config.githubConfig as typeof githubConfig;
       }
+    } catch (parseError) {
+      console.error('Error parsing GitHub config:', parseError);
+      // Keep using the mock GitHub config
+    }
 
+    try {
       if (typeof config.giteaConfig === 'string') {
         giteaConfig = JSON.parse(config.giteaConfig);
-      } else {
-        giteaConfig = config.giteaConfig;
+      } else if (config.giteaConfig && typeof config.giteaConfig === 'object') {
+        giteaConfig = config.giteaConfig as typeof giteaConfig;
       }
+    } catch (parseError) {
+      console.error('Error parsing Gitea config:', parseError);
+      // Keep using the mock Gitea config
+    }
 
+    try {
       if (typeof config.scheduleConfig === 'string') {
         scheduleConfig = JSON.parse(config.scheduleConfig);
-      } else {
-        scheduleConfig = config.scheduleConfig;
+      } else if (config.scheduleConfig && typeof config.scheduleConfig === 'object') {
+        scheduleConfig = config.scheduleConfig as typeof scheduleConfig;
       }
+    } catch (parseError) {
+      console.error('Error parsing Schedule config:', parseError);
+      // Keep using the mock Schedule config
     }
-  } catch (error) {
-    console.error('Error fetching configuration:', error);
-    // Fallback to mock data if database access fails
+  } else {
+    console.warn('No configuration found in database, using mock data');
   }
+} catch (error) {
+  console.error('Error fetching configuration from database:', error);
+  // Fallback to mock data if database access fails
 }
 
 // Client-side functions to handle form submissions
@@ -63,15 +77,13 @@ const handleSaveGitHubConfig = async (values: any) => {
 
     const result = await response.json();
     if (result.success) {
-      // Use toast instead of alert
       document.dispatchEvent(new CustomEvent('show-toast', {
         detail: {
           message: 'GitHub configuration saved successfully!',
           type: 'success'
         }
       }));
-      // Wait a moment before reloading to show the toast
-      setTimeout(() => window.location.reload(), 1500);
+      // Configuration saved; form state is preserved without reload
     } else {
       document.dispatchEvent(new CustomEvent('show-toast', {
         detail: {
@@ -114,7 +126,7 @@ const handleSaveGiteaConfig = async (values: any) => {
           type: 'success'
         }
       }));
-      setTimeout(() => window.location.reload(), 1500);
+      // Configuration saved; form state is preserved without reload
     } else {
       document.dispatchEvent(new CustomEvent('show-toast', {
         detail: {
@@ -157,7 +169,7 @@ const handleSaveScheduleConfig = async (values: any) => {
           type: 'success'
         }
       }));
-      setTimeout(() => window.location.reload(), 1500);
+      // Configuration saved; form state is preserved without reload
     } else {
       document.dispatchEvent(new CustomEvent('show-toast', {
         detail: {

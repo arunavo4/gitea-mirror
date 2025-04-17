@@ -22,6 +22,37 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // Preserve existing tokens if they're empty in the new config
+    // This prevents tokens from being lost when the form is submitted with empty token fields
+    try {
+      const existingConfig = await db.select().from(configs).limit(1);
+      if (existingConfig.length > 0) {
+        const existing = existingConfig[0];
+
+        // Parse existing configs
+        const existingGithubConfig = typeof existing.githubConfig === 'string'
+          ? JSON.parse(existing.githubConfig)
+          : existing.githubConfig;
+
+        const existingGiteaConfig = typeof existing.giteaConfig === 'string'
+          ? JSON.parse(existing.giteaConfig)
+          : existing.giteaConfig;
+
+        // If new GitHub token is empty but we have an existing one, use the existing one
+        if (!githubConfig.token && existingGithubConfig.token) {
+          githubConfig.token = existingGithubConfig.token;
+        }
+
+        // If new Gitea token is empty but we have an existing one, use the existing one
+        if (!giteaConfig.token && existingGiteaConfig.token) {
+          giteaConfig.token = existingGiteaConfig.token;
+        }
+      }
+    } catch (tokenError) {
+      console.error('Error preserving existing tokens:', tokenError);
+      // Continue with save operation even if token preservation fails
+    }
+
     // Get the first user (for now, we'll associate the config with the first user)
     const firstUser = await db.select().from(users).limit(1);
     if (firstUser.length === 0) {
@@ -102,7 +133,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
   } catch (error) {
     console.error('Error saving configuration:', error);
-    
+
     return new Response(
       JSON.stringify({
         success: false,

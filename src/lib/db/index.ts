@@ -1,9 +1,12 @@
 import { createClient } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql';
-import { sqliteTable, text, integer, blob } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+
+import path from 'path';
 
 // Define the database URL - for development we'll use a local SQLite file
-const dbUrl = process.env.DATABASE_URL || 'file:./data/gitea-mirror.db';
+const dataDir = path.join(process.cwd(), 'data');
+const dbUrl = process.env.DATABASE_URL || `file:${path.join(dataDir, 'gitea-mirror.db')}`;
 
 // Create a client connection to the database
 export const client = createClient({ url: dbUrl });
