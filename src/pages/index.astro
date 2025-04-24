@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { MainLayout } from '@/components/layout/MainLayout';
+import App from '@/components/layout/MainLayout';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { ENV, MOCK_DATA } from '@/lib/config';
 import { db, repositories, mirrorJobs } from '@/lib/db';
@@ -8,7 +8,7 @@ import ThemeScript from '@/components/theme/ThemeScript.astro';
 
 // In production mode, fetch real data from the database
 // In development mode, use mock data
-let repoData = [];
+let repoData:any[] = [];
 let activityData = [];
 
 if (ENV.USE_MOCK_DATA) {
@@ -51,11 +51,16 @@ if (ENV.USE_MOCK_DATA) {
     <ThemeScript />
   </head>
   <body>
-    <MainLayout client:load>
+    <!-- <MainLayout client:load>
       <Dashboard
         repositories={repoData}
         activities={activityData}
       />
-    </MainLayout>
+    </MainLayout> -->
+
+
+    <App page='dashboard' client:load>
+      
+     
   </body>
 </html>

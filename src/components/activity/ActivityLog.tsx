@@ -153,8 +153,8 @@ export function ActivityLog({ activities, onRefresh }: ActivityLogProps) {
           </div>
         ) : (
           <Card className="border rounded-md divide-y">
-            {filteredActivities.map((activity) => (
-              <div key={activity.id} className="p-4">
+            {filteredActivities.map((activity, index) => (
+              <div key={index} className="p-4">
                 <div className="flex items-start gap-4">
                   <div className="relative mt-1">
                     <div

@@ -1,6 +1,4 @@
-"use client";
-
-import { useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import Fuse from "fuse.js";
 import {
   GitFork,
@@ -11,8 +9,8 @@ import {
 } from "lucide-react";
 import type { Repository } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/utils";
-import type { Filter } from "@/types/Repository";
+import { formatDate, getStatusColor } from "@/lib/utils";
+import type { Filter, RepositoryApiResponse } from "@/types/Repository";
 import {
   Select,
   SelectContent,
@@ -20,15 +18,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { apiRequest } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/useAuth";
 
 interface RepositoryTableProps {
   repositories: Repository[];
-  onMirrorNow: (repositoryId: string) => void;
+  isLoading: boolean;
 }
 
 export function RepositoryTable({
   repositories,
-  onMirrorNow,
+  isLoading,
 }: RepositoryTableProps) {
   const [filter, setFilter] = useState<Filter>({
     searchTerm: "",
@@ -46,12 +47,10 @@ export function RepositoryTable({
   const filteredRepositories = useMemo(() => {
     let result = repositories;
 
-    // Apply status filter
     if (filter.status) {
       result = result.filter((repo) => repo.status === filter.status);
     }
 
-    // Apply Fuse.js fuzzy search
     if (filter.searchTerm) {
       const fuse = new Fuse(result, {
         keys: ["name", "fullName", "owner", "organization"],
@@ -67,7 +66,6 @@ export function RepositoryTable({
   return (
     <div className="flex flex-col gap-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        {/* Search Input */}
         <div className="relative w-full sm:w-md">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
@@ -81,15 +79,16 @@ export function RepositoryTable({
           />
         </div>
 
-        {/* Filter Controls */}
         <div className="flex gap-x-4">
           <Select
-            defaultValue="pending"
-            value={filter.status}
+            value={filter.status || "all"}
             onValueChange={(value) =>
               setFilter((prev) => ({
                 ...prev,
-                status: value as "" | "pending" | "mirrored" | "failed",
+                status:
+                  value === "all"
+                    ? ""
+                    : (value as "pending" | "mirrored" | "failed"),
               }))
             }
           >
@@ -97,7 +96,7 @@ export function RepositoryTable({
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="mirrored">Mirrored</SelectItem>
               <SelectItem value="failed">Failed</SelectItem>
@@ -116,8 +115,39 @@ export function RepositoryTable({
         </div>
       </div>
 
-      {/* No Repositories State */}
-      {filteredRepositories.length === 0 ? (
+      {isLoading ? (
+        <div className="border rounded-md">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left p-3 text-sm font-medium">
+                  Repository
+                </th>
+                <th className="text-left p-3 text-sm font-medium">Owner</th>
+                <th className="text-left p-3 text-sm font-medium">
+                  Organization
+                </th>
+                <th className="text-left p-3 text-sm font-medium">
+                  Last Mirrored
+                </th>
+                <th className="text-left p-3 text-sm font-medium">Status</th>
+                <th className="text-right p-3 text-sm font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-b">
+                  {Array.from({ length: 6 }).map((_, j) => (
+                    <td key={j} className="p-3">
+                      <Skeleton className="h-4 w-full" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : filteredRepositories.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <GitFork className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium">No repositories found</h3>
@@ -149,7 +179,6 @@ export function RepositoryTable({
           )}
         </div>
       ) : (
-        // Repository Table
         <div className="border rounded-md">
           <table className="w-full">
             <thead>
@@ -169,8 +198,8 @@ export function RepositoryTable({
               </tr>
             </thead>
             <tbody>
-              {filteredRepositories.map((repo) => (
-                <tr key={repo.id} className="border-b hover:bg-muted/50">
+              {filteredRepositories.map((repo, index) => (
+                <tr key={index} className="border-b hover:bg-muted/50">
                   <td className="p-3">
                     <div className="flex items-center gap-2">
                       <GitFork className="h-4 w-4 text-muted-foreground" />
@@ -208,7 +237,6 @@ export function RepositoryTable({
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="ghost"
-                        onClick={() => onMirrorNow(repo.id || "")}
                         disabled={repo.status === "pending"}
                       >
                         <RefreshCw className="h-4 w-4 mr-1" />
@@ -233,16 +261,4 @@ export function RepositoryTable({
       )}
     </div>
   );
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "mirrored":
-      return "bg-green-500";
-    case "failed":
-      return "bg-red-500";
-    case "pending":
-    default:
-      return "bg-yellow-500";
-  }
 }

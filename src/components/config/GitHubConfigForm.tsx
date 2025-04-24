@@ -1,70 +1,43 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { githubApi } from '@/lib/api';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { githubApi } from "@/lib/api";
+import type { GitHubConfig } from "@/types/config";
+import { Input } from "../ui/input";
+import { Checkbox } from "../ui/checkbox";
 
 interface GitHubConfigFormProps {
-  initialValues?: {
-    username: string;
-    token: string;
-    skipForks: boolean;
-    privateRepositories: boolean;
-    mirrorIssues: boolean;
-    mirrorStarred: boolean;
-    mirrorOrganizations: boolean;
-    onlyMirrorOrgs: boolean;
-    preserveOrgStructure: boolean;
-    skipStarredIssues: boolean;
-  };
-  onSave: (values: any) => void;
+  config: GitHubConfig;
+  setConfig: React.Dispatch<React.SetStateAction<GitHubConfig>>;
 }
 
-export function GitHubConfigForm({ initialValues, onSave }: GitHubConfigFormProps) {
-  const [values, setValues] = useState({
-    username: initialValues?.username || '',
-    token: initialValues?.token || '',
-    skipForks: initialValues?.skipForks || false,
-    privateRepositories: initialValues?.privateRepositories || false,
-    mirrorIssues: initialValues?.mirrorIssues || false,
-    mirrorStarred: initialValues?.mirrorStarred || false,
-    mirrorOrganizations: initialValues?.mirrorOrganizations || false,
-    onlyMirrorOrgs: initialValues?.onlyMirrorOrgs || false,
-    preserveOrgStructure: initialValues?.preserveOrgStructure || false,
-    skipStarredIssues: initialValues?.skipStarredIssues || false,
-  });
-
+export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setValues({
-      ...values,
-      [name]: type === 'checkbox' ? checked : value,
+
+    setConfig({
+      ...config,
+      [name]: type === "checkbox" ? checked : value,
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await onSave(values);
-      setTestResult({
-        success: true,
-        message: 'Configuration saved successfully!',
-      });
-    } catch (error) {
-      setTestResult({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to save configuration.',
-      });
-    }
-  };
-
   const testConnection = async () => {
-    if (!values.token) {
+    if (!config.token) {
       setTestResult({
         success: false,
-        message: 'GitHub token is required to test the connection',
+        message: "GitHub token is required to test the connection",
       });
       return;
     }
@@ -73,17 +46,18 @@ export function GitHubConfigForm({ initialValues, onSave }: GitHubConfigFormProp
     setTestResult(null);
 
     try {
-      const result = await githubApi.testConnection(values.token);
+      const result = await githubApi.testConnection(config.token);
       setTestResult({
         success: result.success,
         message: result.success
-          ? 'Successfully connected to GitHub!'
-          : 'Failed to connect to GitHub. Please check your token.',
+          ? "Successfully connected to GitHub!"
+          : "Failed to connect to GitHub. Please check your token.",
       });
     } catch (error) {
       setTestResult({
         success: false,
-        message: error instanceof Error ? error.message : 'An unknown error occurred',
+        message:
+          error instanceof Error ? error.message : "An unknown error occurred",
       });
     } finally {
       setIsLoading(false);
@@ -91,186 +65,272 @@ export function GitHubConfigForm({ initialValues, onSave }: GitHubConfigFormProp
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium mb-1">
-                GitHub Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                value={values.username}
-                onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="Your GitHub username"
-                required
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">
+          GitHub Configuration
+        </CardTitle>
+      </CardHeader>
+
+      <CardContent className="flex flex-col gap-y-6">
+        <div>
+          <label
+            htmlFor="username"
+            className="block text-sm font-medium mb-1.5"
+          >
+            GitHub Username
+          </label>
+          <Input
+            id="username"
+            name="username"
+            type="text"
+            value={config.username}
+            onChange={handleChange}
+            placeholder="Your GitHub username"
+            required
+            className="bg-background"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="token" className="block text-sm font-medium mb-1.5">
+            GitHub Token
+          </label>
+          <Input
+            id="token"
+            name="token"
+            type="password"
+            value={config.token}
+            onChange={handleChange}
+            className="bg-background"
+            placeholder="Your GitHub personal access token"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Required for private repositories, organizations, and starred
+            repositories.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <Checkbox
+                id="skipForks"
+                name="skipForks"
+                checked={config.skipForks}
+                onCheckedChange={(checked) =>
+                  handleChange({
+                    target: {
+                      name: "skipForks",
+                      type: "checkbox",
+                      checked: Boolean(checked),
+                      value: "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
               />
+              <label
+                htmlFor="skipForks"
+                className="ml-2 block text-sm select-none"
+              >
+                Skip Forks
+              </label>
             </div>
 
-            <div>
-              <label htmlFor="token" className="block text-sm font-medium mb-1">
-                GitHub Token
-              </label>
-              <input
-                id="token"
-                name="token"
-                type="password"
-                value={values.token}
-                onChange={handleChange}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="Your GitHub personal access token"
+            <div className="flex items-center">
+              <Checkbox
+                id="privateRepositories"
+                name="privateRepositories"
+                checked={config.privateRepositories}
+                onCheckedChange={(checked) =>
+                  handleChange({
+                    target: {
+                      name: "privateRepositories",
+                      type: "checkbox",
+                      checked: Boolean(checked),
+                      value: "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Required for private repositories, organizations, and starred repositories.
-              </p>
+              <label
+                htmlFor="privateRepositories"
+                className="ml-2 block text-sm select-none"
+              >
+                Mirror Private Repositories
+              </label>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <input
-                    id="skipForks"
-                    name="skipForks"
-                    type="checkbox"
-                    checked={values.skipForks}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="skipForks" className="ml-2 block text-sm">
-                    Skip Forks
-                  </label>
-                </div>
+            <div className="flex items-center">
+              <Checkbox
+                id="mirrorIssues"
+                name="mirrorIssues"
+                checked={config.mirrorIssues}
+                onCheckedChange={(checked) =>
+                  handleChange({
+                    target: {
+                      name: "mirrorIssues",
+                      type: "checkbox",
+                      checked: Boolean(checked),
+                      value: "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
+              />
+              <label
+                htmlFor="mirrorIssues"
+                className="ml-2 block text-sm select-none"
+              >
+                Mirror Issues
+              </label>
+            </div>
 
-                <div className="flex items-center">
-                  <input
-                    id="privateRepositories"
-                    name="privateRepositories"
-                    type="checkbox"
-                    checked={values.privateRepositories}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="privateRepositories" className="ml-2 block text-sm">
-                    Mirror Private Repositories
-                  </label>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    id="mirrorIssues"
-                    name="mirrorIssues"
-                    type="checkbox"
-                    checked={values.mirrorIssues}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="mirrorIssues" className="ml-2 block text-sm">
-                    Mirror Issues
-                  </label>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    id="mirrorStarred"
-                    name="mirrorStarred"
-                    type="checkbox"
-                    checked={values.mirrorStarred}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="mirrorStarred" className="ml-2 block text-sm">
-                    Mirror Starred Repositories
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center">
-                  <input
-                    id="mirrorOrganizations"
-                    name="mirrorOrganizations"
-                    type="checkbox"
-                    checked={values.mirrorOrganizations}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="mirrorOrganizations" className="ml-2 block text-sm">
-                    Mirror Organizations
-                  </label>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    id="onlyMirrorOrgs"
-                    name="onlyMirrorOrgs"
-                    type="checkbox"
-                    checked={values.onlyMirrorOrgs}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="onlyMirrorOrgs" className="ml-2 block text-sm">
-                    Only Mirror Organizations
-                  </label>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    id="preserveOrgStructure"
-                    name="preserveOrgStructure"
-                    type="checkbox"
-                    checked={values.preserveOrgStructure}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="preserveOrgStructure" className="ml-2 block text-sm">
-                    Preserve Organization Structure
-                  </label>
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    id="skipStarredIssues"
-                    name="skipStarredIssues"
-                    type="checkbox"
-                    checked={values.skipStarredIssues}
-                    onChange={handleChange}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  />
-                  <label htmlFor="skipStarredIssues" className="ml-2 block text-sm">
-                    Skip Issues for Starred Repositories
-                  </label>
-                </div>
-              </div>
+            <div className="flex items-center">
+              <Checkbox
+                id="mirrorStarred"
+                name="mirrorStarred"
+                checked={config.mirrorStarred}
+                onCheckedChange={(checked) =>
+                  handleChange({
+                    target: {
+                      name: "mirrorStarred",
+                      type: "checkbox",
+                      checked: Boolean(checked),
+                      value: "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
+              />
+              <label
+                htmlFor="mirrorStarred"
+                className="ml-2 block text-sm select-none"
+              >
+                Mirror Starred Repositories
+              </label>
             </div>
           </div>
 
-          {testResult && (
-            <div
-              className={`p-3 rounded-md ${
-                testResult.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-              }`}
-            >
-              {testResult.message}
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <Checkbox
+                id="mirrorOrganizations"
+                name="mirrorOrganizations"
+                checked={config.mirrorOrganizations}
+                onCheckedChange={(checked) =>
+                  handleChange({
+                    target: {
+                      name: "mirrorOrganizations",
+                      type: "checkbox",
+                      checked: Boolean(checked),
+                      value: "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
+              />
+              <label
+                htmlFor="mirrorOrganizations"
+                className="ml-2 block text-sm select-none"
+              >
+                Mirror Organizations
+              </label>
             </div>
-          )}
 
-          <div className="flex justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={testConnection}
-              disabled={isLoading || !values.token}
-            >
-              {isLoading ? 'Testing...' : 'Test Connection'}
-            </Button>
-            <Button type="submit">Save Configuration</Button>
+            <div className="flex items-center">
+              <Checkbox
+                id="onlyMirrorOrgs"
+                name="onlyMirrorOrgs"
+                checked={config.onlyMirrorOrgs}
+                onCheckedChange={(checked) =>
+                  handleChange({
+                    target: {
+                      name: "onlyMirrorOrgs",
+                      type: "checkbox",
+                      checked: Boolean(checked),
+                      value: "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
+              />
+              <label
+                htmlFor="onlyMirrorOrgs"
+                className="ml-2 block text-sm select-none"
+              >
+                Only Mirror Organizations
+              </label>
+            </div>
+
+            <div className="flex items-center">
+              <Checkbox
+                id="preserveOrgStructure"
+                name="preserveOrgStructure"
+                checked={config.preserveOrgStructure}
+                onCheckedChange={(checked) =>
+                  handleChange({
+                    target: {
+                      name: "preserveOrgStructure",
+                      type: "checkbox",
+                      checked: Boolean(checked),
+                      value: "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
+              />
+              <label
+                htmlFor="preserveOrgStructure"
+                className="ml-2 block text-sm select-none"
+              >
+                Preserve Organization Structure
+              </label>
+            </div>
+
+            <div className="flex items-center">
+              <Checkbox
+                id="skipStarredIssues"
+                name="skipStarredIssues"
+                checked={config.skipStarredIssues}
+                onCheckedChange={(checked) =>
+                  handleChange({
+                    target: {
+                      name: "skipStarredIssues",
+                      type: "checkbox",
+                      checked: Boolean(checked),
+                      value: "",
+                    },
+                  } as React.ChangeEvent<HTMLInputElement>)
+                }
+              />
+              <label
+                htmlFor="skipStarredIssues"
+                className="ml-2 block text-sm select-none"
+              >
+                Skip Issues for Starred Repositories
+              </label>
+            </div>
           </div>
-        </form>
+        </div>
       </CardContent>
+
+      <CardFooter>
+        {testResult && (
+          <div
+            className={`${
+              testResult.success ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {testResult.message}
+          </div>
+        )}
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={testConnection}
+          disabled={isLoading || !config.token}
+          className="ml-auto"
+        >
+          {isLoading ? "Testing..." : "Test Connection"}
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

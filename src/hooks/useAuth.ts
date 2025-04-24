@@ -32,17 +32,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem("auth_token");
-        if (token) {
-          const user = await authApi.getCurrentUser();
-          setUser(user);
-        }
+        const user = await authApi.getCurrentUser();
+        setUser(user);
       } catch (err) {
-        localStorage.removeItem("auth_token");
-        console.error("Authentication error:", err);
+        setUser(null);
+        console.error("Auth check failed", err);
       } finally {
         setIsLoading(false);
       }
@@ -55,8 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const { token, user } = await authApi.login(username, password);
-      localStorage.setItem("auth_token", token);
+      const user = await authApi.login(username, password);
       setUser(user);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -74,8 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const { token, user } = await authApi.register(username, email, password);
-      localStorage.setItem("auth_token", token);
+      const user = await authApi.register(username, email, password);
       setUser(user);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -89,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       await authApi.logout();
-      localStorage.removeItem("auth_token");
       setUser(null);
     } catch (err) {
       console.error("Logout error:", err);

@@ -7,15 +7,22 @@ import { GitFork, Users, GitMerge, Clock } from "lucide-react";
 interface DashboardProps {
   repositories: any[];
   activities: any[];
+  isLoading: boolean;
 }
 
-export function Dashboard({ repositories, activities }: DashboardProps) {
+export function Dashboard({
+  repositories,
+  activities,
+  isLoading,
+}: DashboardProps) {
   const handleMirrorNow = (repositoryId: string) => {
     console.log("Mirror now clicked for repository:", repositoryId);
     // In a real implementation, this would call the API to start mirroring
   };
 
-  return (
+  return isLoading ? (
+    <div>loading...</div>
+  ) : (
     <div className="flex flex-col gap-y-6">
       <div className="flex items-center justify-end">
         {/* <h1 className="text-3xl font-bold">Dashboard</h1> */}

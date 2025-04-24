@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { GitMerge } from "lucide-react";
 import { ModeToggle } from "@/components/theme/ModeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -19,9 +20,12 @@ export function Header() {
           <ModeToggle />
           {user ? (
             <>
-              <span className="text-sm text-muted-foreground">
-                Logged in as <strong>{user.username}</strong>
-              </span>
+              <Avatar>
+                <AvatarImage src="" alt="@shadcn" />
+                <AvatarFallback>
+                  {user.username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <Button variant="outline" size="lg" onClick={() => logout()}>
                 Logout
               </Button>

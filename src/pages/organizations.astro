@@ -11,7 +11,7 @@ import ThemeScript from '@/components/theme/ThemeScript.astro';
 
 // In production mode, fetch real data from the database
 // In development mode, use mock data
-let orgData = [];
+let orgData:any[] = [];
 
 if (ENV.USE_MOCK_DATA) {
   console.log('Using mock data for development');

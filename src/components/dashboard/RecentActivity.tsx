@@ -23,8 +23,8 @@ export function RecentActivity({ activities }: RecentActivityProps) {
           {activities.length === 0 ? (
             <p className="text-sm text-muted-foreground">No recent activity</p>
           ) : (
-            activities.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-x-4 py-4">
+            activities.map((activity, index) => (
+              <div key={index} className="flex items-start gap-x-4 py-4">
                 <div className="relative mt-1">
                   <div
                     className={`h-2 w-2 rounded-full ${getStatusColor(

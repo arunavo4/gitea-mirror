@@ -1,37 +1,7 @@
 ---
 import '../styles/global.css';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { RepositoryTable } from '@/components/repositories/RepositoryTable';
-import { Button } from '@/components/ui/button';
-import { GitFork, RefreshCw } from 'lucide-react';
-import { ENV, MOCK_DATA } from '@/lib/config';
-import { db, repositories } from '@/lib/db';
+import App from '@/components/layout/MainLayout';
 import ThemeScript from '@/components/theme/ThemeScript.astro';
-
-// In production mode, fetch real data from the database
-// In development mode, use mock data
-let repoData = [];
-
-if (ENV.USE_MOCK_DATA) {
-  console.log('Using mock data for development');
-  repoData = MOCK_DATA.repositories;
-} else {
-  try {
-    // Fetch repositories from database
-    const dbRepos = await db.select().from(repositories);
-    repoData = dbRepos;
-  } catch (error) {
-    console.error('Error fetching repositories:', error);
-    // Fallback to empty array if database access fails
-    repoData = [];
-  }
-}
-
-// Client-side function to handle mirror now button
-const handleMirrorNow = (repositoryId: string) => {
-  console.log('Mirror now clicked for repository:', repositoryId);
-  // In a real implementation, this would call the API to start mirroring
-};
 ---
 
 <html lang="en">
@@ -44,27 +14,8 @@ const handleMirrorNow = (repositoryId: string) => {
     <ThemeScript />
   </head>
   <body>
-    <MainLayout client:load>
-      <div class="flex flex-col gap-y-8">
-        <div class="flex items-center justify-end">
-          <!-- <h1 class="text-3xl font-bold">Repositories</h1> -->
-          <div class="flex gap-x-4">
-            <Button variant="outline">
-              <GitFork className="mr-2 h-4 w-4" />
-              Add Repository
-            </Button>
-            <Button>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Mirror All
-            </Button>
-          </div>
-        </div>
 
-        <RepositoryTable
-          repositories={repoData}
-          onMirrorNow={handleMirrorNow}
-        />
-      </div>
-    </MainLayout>
+    <App page='repositories' client:load>
+
   </body>
 </html>
