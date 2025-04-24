@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -63,6 +63,10 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    console.log("GitHub Config:", config);
+  }, [config]);
 
   return (
     <Card className="w-full">

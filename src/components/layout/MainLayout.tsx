@@ -68,14 +68,41 @@ function AppWithProviders({ page }: AppProps) {
   const { user } = useAuth();
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [config, setConfig] = useState<ConfigState | null>(null);
+  const [config, setConfig] = useState<ConfigState>({
+    githubConfig: {
+      username: "",
+      token: "",
+      skipForks: false,
+      privateRepositories: false,
+      mirrorIssues: false,
+      mirrorStarred: false,
+      mirrorOrganizations: false,
+      onlyMirrorOrgs: false,
+      preserveOrgStructure: false,
+      skipStarredIssues: false,
+    },
+
+    // Mock Gitea config
+    giteaConfig: {
+      url: "",
+      token: "",
+      organization: "github-mirrors",
+      visibility: "public",
+      starredReposOrg: "github",
+    },
+
+    // Mock schedule config
+    scheduleConfig: {
+      enabled: false,
+      interval: 3600,
+    },
+  });
   const [isConfigLoading, setIsConfigLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchRepositories = async () => {
       try {
         if (!user) {
-          console.error("User not found");
           return;
         }
 
@@ -89,9 +116,8 @@ function AppWithProviders({ page }: AppProps) {
         );
 
         if (response.repositories) {
+          console.log("Fetched repositories:", response.repositories);
           setRepositories(response.repositories);
-        } else {
-          console.error("No repositories found");
         }
 
         setIsLoading(false);
@@ -109,7 +135,6 @@ function AppWithProviders({ page }: AppProps) {
     const fetchConfig = async () => {
       try {
         if (!user) {
-          console.error("User not found");
           return;
         }
 
@@ -123,6 +148,7 @@ function AppWithProviders({ page }: AppProps) {
         );
 
         if (!response.error) {
+          console.log("Fetched configuration:", response);
           setConfig({
             githubConfig: response.githubConfig,
             giteaConfig: response.giteaConfig,

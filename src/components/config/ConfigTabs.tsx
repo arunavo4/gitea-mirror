@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import type {
   ScheduleConfig,
 } from "@/types/config";
 import { Button } from "../ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ConfigTabsProps {
   configPlaceholders: {
@@ -37,23 +38,30 @@ export function ConfigTabs({ configPlaceholders, isLoading }: ConfigTabsProps) {
     giteaConfig: configPlaceholders.giteaConfig,
     scheduleConfig: configPlaceholders.scheduleConfig,
   });
+  const { user } = useAuth();
 
   const handleSaveConfig = async () => {
     try {
+      if (!user || !user.id) {
+        return;
+      }
+
       const reqPyload: SaveConfigApiRequest = {
+        userId: user.id,
         githubConfig: config.githubConfig,
         giteaConfig: config.giteaConfig,
         scheduleConfig: config.scheduleConfig,
       };
       console.log("Saving config:", reqPyload);
       // Save the Schedule config to the database
-      const response = await fetch("/api/config/save", {
+      const response = await fetch("/api/config", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(reqPyload),
       });
+
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
         console.log("Config saved successfully:", result);
@@ -90,6 +98,15 @@ export function ConfigTabs({ configPlaceholders, isLoading }: ConfigTabsProps) {
       );
     }
   };
+
+  // we need to listen for changes when ever there is an api call in the mainlayout file. maybe we need to think of a better way to do this
+  useEffect(() => {
+    setConfig({
+      githubConfig: configPlaceholders.githubConfig,
+      giteaConfig: configPlaceholders.giteaConfig,
+      scheduleConfig: configPlaceholders.scheduleConfig,
+    });
+  }, [configPlaceholders]);
 
   return isLoading ? (
     <div>loading...</div>

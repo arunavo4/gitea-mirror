@@ -35,6 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const user = await authApi.getCurrentUser();
+
+        console.log("Current user: ", user);
+
         setUser(user);
       } catch (err) {
         setUser(null);
