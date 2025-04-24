@@ -154,3 +154,51 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 };
+
+export const GET: APIRoute = async ({ request }) => {
+  try {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId");
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "User ID is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch the configuration for the user
+    const config = await db
+      .select()
+      .from(configs)
+      .where(eq(configs.userId, userId))
+      .limit(1);
+
+    if (config.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Configuration not found" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    return new Response(JSON.stringify(config[0]), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Error fetching configuration:", error);
+
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Something went wrong",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+};

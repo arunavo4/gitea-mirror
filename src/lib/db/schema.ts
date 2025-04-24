@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // User schema
 export const userSchema = z.object({
@@ -40,10 +40,10 @@ export const configSchema = z.object({
     url: z.string().url(),
     token: z.string().min(1),
     organization: z.string().optional(),
-    visibility: z.enum(['public', 'private', 'limited']).default('public'),
-    starredReposOrg: z.string().default('github'),
+    visibility: z.enum(["public", "private", "limited"]).default("public"),
+    starredReposOrg: z.string().default("github"),
   }),
-  include: z.array(z.string()).default(['*']),
+  include: z.array(z.string()).default(["*"]),
   exclude: z.array(z.string()).default([]),
   schedule: z.object({
     enabled: z.boolean().default(false),
@@ -60,6 +60,7 @@ export type Config = z.infer<typeof configSchema>;
 // Repository schema
 export const repositorySchema = z.object({
   id: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
   configId: z.string().uuid(),
   name: z.string().min(1),
   fullName: z.string().min(1),
@@ -70,7 +71,9 @@ export const repositorySchema = z.object({
   organization: z.string().optional(),
   hasIssues: z.boolean().default(false),
   isStarred: z.boolean().default(false),
-  status: z.enum(['pending', 'mirrored', 'failed']).default('pending'),
+  status: z
+    .enum(["pending", "mirrored", "failed", "imported"])
+    .default("pending"),
   lastMirrored: z.date().optional(),
   errorMessage: z.string().optional(),
   createdAt: z.date().default(() => new Date()),
@@ -84,14 +87,20 @@ export const mirrorJobSchema = z.object({
   id: z.string().uuid().optional(),
   configId: z.string().uuid(),
   repositoryId: z.string().uuid().optional(),
-  status: z.enum(['pending', 'running', 'completed', 'failed']).default('pending'),
+  status: z
+    .enum(["pending", "running", "completed", "failed"])
+    .default("pending"),
   startedAt: z.date().optional(),
   completedAt: z.date().optional(),
-  log: z.array(z.object({
-    timestamp: z.date().default(() => new Date()),
-    message: z.string(),
-    level: z.enum(['info', 'warning', 'error']).default('info'),
-  })).default([]),
+  log: z
+    .array(
+      z.object({
+        timestamp: z.date().default(() => new Date()),
+        message: z.string(),
+        level: z.enum(["info", "warning", "error"]).default("info"),
+      })
+    )
+    .default([]),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });
@@ -103,7 +112,7 @@ export const organizationSchema = z.object({
   id: z.string().uuid().optional(),
   configId: z.string().uuid(),
   name: z.string().min(1),
-  type: z.enum(['member', 'public']).default('member'),
+  type: z.enum(["member", "public"]).default("member"),
   isIncluded: z.boolean().default(true),
   repositoryCount: z.number().default(0),
   createdAt: z.date().default(() => new Date()),

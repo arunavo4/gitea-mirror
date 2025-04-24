@@ -37,13 +37,13 @@ export function Sidebar({ className }: SidebarProps) {
     <aside className={cn("w-64 border-r bg-background", className)}>
       <div className="flex flex-col h-full py-4">
         <nav className="flex flex-col gap-y-1 pl-2 pr-3">
-          {links.map((link) => {
+          {links.map((link, index) => {
             const isActive = currentPath === link.href;
             const Icon = link.icon;
 
             return (
               <a
-                key={link.href}
+                key={index}
                 href={link.href}
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",

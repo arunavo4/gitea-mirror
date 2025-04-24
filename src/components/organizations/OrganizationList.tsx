@@ -102,8 +102,8 @@ export function OrganizationList({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredOrganizations.map((org) => (
-            <Card key={org.id} className="overflow-hidden">
+          {filteredOrganizations.map((org, index) => (
+            <Card key={index} className="overflow-hidden">
               <div className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">

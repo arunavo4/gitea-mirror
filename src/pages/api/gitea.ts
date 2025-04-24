@@ -1,30 +1,33 @@
-import type { APIRoute } from 'astro';
-import * as gitea from '@/lib/gitea';
+import type { APIRoute } from "astro";
+import * as gitea from "@/lib/gitea";
 
 export const POST: APIRoute = async ({ request }) => {
   const { pathname } = new URL(request.url);
-  const endpoint = pathname.split('/').pop();
+  const endpoint = pathname.split("/").pop();
 
   try {
-    if (endpoint === 'test-connection') {
+    if (endpoint === "test-connection") {
       return await testConnection(request);
-    } else if (endpoint === 'create-organization') {
+    } else if (endpoint === "create-organization") {
       return await createOrganization(request);
-    } else if (endpoint === 'create-repository') {
+    } else if (endpoint === "create-repository") {
       return await createRepository(request);
     } else {
-      return new Response(JSON.stringify({ error: 'Invalid endpoint' }), {
+      return new Response(JSON.stringify({ error: "Invalid endpoint" }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
   } catch (error) {
-    console.error('Gitea API error:', error);
+    console.error("Gitea API error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'An unknown error occurred' }),
+      JSON.stringify({
+        error:
+          error instanceof Error ? error.message : "An unknown error occurred",
+      }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
@@ -34,10 +37,13 @@ async function testConnection(request: Request) {
   const { url, token } = await request.json();
 
   if (!url || !token) {
-    return new Response(JSON.stringify({ error: 'Gitea URL and token are required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: "Gitea URL and token are required" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
@@ -51,18 +57,19 @@ async function testConnection(request: Request) {
       }),
       {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to connect to Gitea',
+        error:
+          error instanceof Error ? error.message : "Failed to connect to Gitea",
       }),
       {
         status: 200, // Still return 200 to allow the frontend to handle the error
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
@@ -72,10 +79,15 @@ async function createOrganization(request: Request) {
   const { url, token, name, description, visibility } = await request.json();
 
   if (!url || !token || !name) {
-    return new Response(JSON.stringify({ error: 'Gitea URL, token, and organization name are required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Gitea URL, token, and organization name are required",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
@@ -83,8 +95,8 @@ async function createOrganization(request: Request) {
       url,
       token,
       name,
-      description || '',
-      visibility || 'public'
+      description || "",
+      visibility || "public"
     );
 
     return new Response(
@@ -94,31 +106,40 @@ async function createOrganization(request: Request) {
       }),
       {
         status: 201,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create organization',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create organization",
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
 }
 
 async function createRepository(request: Request) {
-  const { url, token, name, description, isPrivate, organization } = await request.json();
+  const { url, token, name, description, isPrivate, organization } =
+    await request.json();
 
   if (!url || !token || !name) {
-    return new Response(JSON.stringify({ error: 'Gitea URL, token, and repository name are required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Gitea URL, token, and repository name are required",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
@@ -126,7 +147,7 @@ async function createRepository(request: Request) {
       url,
       token,
       name,
-      description || '',
+      description || "",
       isPrivate || false,
       organization
     );
@@ -138,18 +159,21 @@ async function createRepository(request: Request) {
       }),
       {
         status: 201,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   } catch (error) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to create repository',
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to create repository",
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }

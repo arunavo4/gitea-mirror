@@ -1,0 +1,132 @@
+import type { APIRoute } from "astro";
+import { db, repositories } from "@/lib/db";
+import { configs } from "@/lib/db";
+import { eq } from "drizzle-orm";
+import * as github from "@/lib/github";
+import type { GiteaConfig, GitHubConfig, ScheduleConfig } from "@/types/config";
+import { safeParse } from "@/lib/utils";
+import type { RepositoryApiResponse } from "@/types/Repository";
+import { v4 as uuidv4 } from "uuid";
+
+export const GET: APIRoute = async ({ request }) => {
+  const url = new URL(request.url);
+  const userId = url.searchParams.get("userId");
+
+  if (!userId) {
+    return new Response(JSON.stringify({ error: "Missing userId" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  try {
+    const userConfig = await db
+      .select()
+      .from(configs)
+      .where(eq(configs.userId, userId))
+      .limit(1);
+
+    if (userConfig.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No configuration found for this user" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const rawConfig = userConfig[0];
+
+    // Parsed config with all fields
+    const config = {
+      ...rawConfig,
+      githubConfig: safeParse<GitHubConfig>(rawConfig.githubConfig),
+      giteaConfig: safeParse<GiteaConfig>(rawConfig.giteaConfig),
+      include: safeParse<string[]>(rawConfig.include) ?? [],
+      exclude: safeParse<string[]>(rawConfig.exclude) ?? [],
+      scheduleConfig: safeParse<ScheduleConfig>(rawConfig.scheduleConfig),
+    };
+
+    if (!config.githubConfig || !config.githubConfig.token) {
+      return new Response(
+        JSON.stringify({ error: "GitHub token is missing in config" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const octokit = github.createGitHubClient(config.githubConfig.token);
+
+    // Fetch GitHub repositories based on the user's config
+    const githubRepos = await github.getUserRepositories(octokit, config);
+
+    // Fetch all the repositories of the user from the database
+    const existingRepos = await db
+      .select()
+      .from(repositories)
+      .where(eq(repositories.userId, userId));
+
+    // Sync to DB (Insert or Update)
+    for (const repo of githubRepos) {
+      const existing = existingRepos.find((r) => r.fullName === repo.fullName);
+
+      if (!existing) {
+        const repoId = uuidv4();
+        console.log("gen repo id:", repoId);
+
+        await db.insert(repositories).values({
+          id: repoId,
+          userId,
+          configId: rawConfig.id,
+          name: repo.name,
+          fullName: repo.fullName,
+          url: repo.url,
+          isPrivate: repo.isPrivate,
+          isFork: repo.isFork,
+          owner: repo.owner,
+          organization: repo.organization,
+          hasIssues: repo.hasIssues,
+          isStarred: repo.isStarred,
+        });
+      } else {
+        await db
+          .update(repositories)
+          .set({ ...repo, id: existing.id, updatedAt: new Date() })
+          .where(eq(repositories.id, existing.id));
+      }
+    }
+
+    // Return the latest data from DB
+    const latestRepositories = await db
+      .select()
+      .from(repositories)
+      .where(eq(repositories.userId, userId));
+
+    const response: RepositoryApiResponse = {
+      repositories: latestRepositories.map((repo) => ({
+        ...repo,
+        organization: repo.organization ?? undefined, // Convert null to undefined
+        lastMirrored: repo.lastMirrored ?? undefined, // Convert null to undefined
+        errorMessage: repo.errorMessage ?? undefined, // Convert null to undefined
+        status: "imported", // Default or derived status value
+      })),
+    };
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Error fetching configs:", error);
+
+    return new Response(
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Something went wrong",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
+};

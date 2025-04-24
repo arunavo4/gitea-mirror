@@ -1,14 +1,17 @@
-import superagent from 'superagent';
-import type { Config, Repository } from './db/schema';
+import superagent from "superagent";
+import type { Config, Repository } from "./db/schema";
 
 /**
  * Test connection to Gitea
  */
-export async function testGiteaConnection(url: string, token: string): Promise<any> {
+export async function testGiteaConnection(
+  url: string,
+  token: string
+): Promise<any> {
   try {
     const response = await superagent
       .get(`${url}/api/v1/user`)
-      .set('Authorization', `token ${token}`);
+      .set("Authorization", `token ${token}`);
 
     return {
       success: true,
@@ -16,6 +19,7 @@ export async function testGiteaConnection(url: string, token: string): Promise<a
       avatarUrl: response.body.avatar_url,
     };
   } catch (error) {
+    console.error("Error connecting to Gitea:", error);
     throw new Error(`Failed to connect to Gitea: ${error.message}`);
   }
 }
@@ -27,7 +31,7 @@ export async function createGiteaRepository(
   url: string,
   token: string,
   name: string,
-  description: string = '',
+  description: string = "",
   isPrivate: boolean = false,
   organization?: string
 ): Promise<any> {
@@ -38,7 +42,7 @@ export async function createGiteaRepository(
 
     const response = await superagent
       .post(apiUrl)
-      .set('Authorization', `token ${token}`)
+      .set("Authorization", `token ${token}`)
       .send({
         name,
         description,
@@ -64,7 +68,7 @@ export async function checkGiteaRepository(
   try {
     await superagent
       .get(`${url}/api/v1/repos/${owner}/${name}`)
-      .set('Authorization', `token ${token}`);
+      .set("Authorization", `token ${token}`);
 
     return true;
   } catch (error) {
@@ -82,16 +86,16 @@ export async function createGiteaOrganization(
   url: string,
   token: string,
   name: string,
-  description: string = '',
-  visibility: string = 'public'
+  description: string = "",
+  visibility: string = "public"
 ): Promise<any> {
   try {
     // Check if organization already exists
     try {
       const existingOrg = await superagent
         .get(`${url}/api/v1/orgs/${name}`)
-        .set('Authorization', `token ${token}`);
-      
+        .set("Authorization", `token ${token}`);
+
       return existingOrg.body;
     } catch (error) {
       if (error.status !== 404) {
@@ -102,7 +106,7 @@ export async function createGiteaOrganization(
 
     const response = await superagent
       .post(`${url}/api/v1/orgs`)
-      .set('Authorization', `token ${token}`)
+      .set("Authorization", `token ${token}`)
       .send({
         username: name,
         description,
@@ -130,7 +134,7 @@ export async function createGiteaIssue(
   try {
     const response = await superagent
       .post(`${url}/api/v1/repos/${owner}/${repo}/issues`)
-      .set('Authorization', `token ${token}`)
+      .set("Authorization", `token ${token}`)
       .send({
         title,
         body,
@@ -161,14 +165,14 @@ export async function mirrorRepository(
 
     const response = await superagent
       .post(apiUrl)
-      .set('Authorization', `token ${giteaToken}`)
+      .set("Authorization", `token ${giteaToken}`)
       .send({
         clone_addr: githubCloneUrl,
         repo_name: repoName,
         mirror: true,
         private: isPrivate,
         repo_owner: organization || undefined,
-        service: 'git',
+        service: "git",
       });
 
     return response.body;

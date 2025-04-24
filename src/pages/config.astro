@@ -1,11 +1,13 @@
 ---
 import '../styles/global.css';
-import { MainLayout } from '@/components/layout/MainLayout';
+import App, { MainLayout } from '@/components/layout/MainLayout';
 import { ConfigTabs } from '@/components/config/ConfigTabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ENV, MOCK_DATA } from '@/lib/config';
 import { db, configs } from '@/lib/db';
 import ThemeScript from '@/components/theme/ThemeScript.astro';
+import { Button } from '@/components/ui/button';
+import type { SaveConfigApiRequest,SaveConfigApiResponse } from '@/types/config';
 
 // In production mode, fetch real data from the database
 // In development mode, use mock data
@@ -13,181 +15,55 @@ let githubConfig = MOCK_DATA.githubConfig;
 let giteaConfig = MOCK_DATA.giteaConfig;
 let scheduleConfig = MOCK_DATA.scheduleConfig;
 
-try {
-  // Fetch configuration from database
-  const dbConfigs = await db.select().from(configs).limit(1);
-  if (dbConfigs.length > 0) {
-    const config = dbConfigs[0];
+// try {
+//   // Fetch configuration from database
+//   const dbConfigs = await db.select().from(configs).limit(1);
+//   if (dbConfigs.length > 0) {
+//     const config = dbConfigs[0];
 
-    try {
-      if (typeof config.githubConfig === 'string') {
-        githubConfig = JSON.parse(config.githubConfig);
-      } else if (config.githubConfig && typeof config.githubConfig === 'object') {
-        githubConfig = config.githubConfig as typeof githubConfig;
-      }
-    } catch (parseError) {
-      console.error('Error parsing GitHub config:', parseError);
-      // Keep using the mock GitHub config
-    }
+//     try {
+//       if (typeof config.githubConfig === 'string') {
+//         githubConfig = JSON.parse(config.githubConfig);
+//       } else if (config.githubConfig && typeof config.githubConfig === 'object') {
+//         githubConfig = config.githubConfig as typeof githubConfig;
+//       }
+//     } catch (parseError) {
+//       console.error('Error parsing GitHub config:', parseError);
+//       // Keep using the mock GitHub config
+//     }
 
-    try {
-      if (typeof config.giteaConfig === 'string') {
-        giteaConfig = JSON.parse(config.giteaConfig);
-      } else if (config.giteaConfig && typeof config.giteaConfig === 'object') {
-        giteaConfig = config.giteaConfig as typeof giteaConfig;
-      }
-    } catch (parseError) {
-      console.error('Error parsing Gitea config:', parseError);
-      // Keep using the mock Gitea config
-    }
+//     try {
+//       if (typeof config.giteaConfig === 'string') {
+//         giteaConfig = JSON.parse(config.giteaConfig);
+//       } else if (config.giteaConfig && typeof config.giteaConfig === 'object') {
+//         giteaConfig = config.giteaConfig as typeof giteaConfig;
+//       }
+//     } catch (parseError) {
+//       console.error('Error parsing Gitea config:', parseError);
+//       // Keep using the mock Gitea config
+//     }
 
-    try {
-      if (typeof config.scheduleConfig === 'string') {
-        scheduleConfig = JSON.parse(config.scheduleConfig);
-      } else if (config.scheduleConfig && typeof config.scheduleConfig === 'object') {
-        scheduleConfig = config.scheduleConfig as typeof scheduleConfig;
-      }
-    } catch (parseError) {
-      console.error('Error parsing Schedule config:', parseError);
-      // Keep using the mock Schedule config
-    }
-  } else {
-    console.warn('No configuration found in database, using mock data');
-  }
-} catch (error) {
-  console.error('Error fetching configuration from database:', error);
-  // Fallback to mock data if database access fails
-}
+//     try {
+//       if (typeof config.scheduleConfig === 'string') {
+//         scheduleConfig = JSON.parse(config.scheduleConfig);
+//       } else if (config.scheduleConfig && typeof config.scheduleConfig === 'object') {
+//         scheduleConfig = config.scheduleConfig as typeof scheduleConfig;
+//       }
+//     } catch (parseError) {
+//       console.error('Error parsing Schedule config:', parseError);
+//       // Keep using the mock Schedule config
+//     }
+//   } else {
+//     console.warn('No configuration found in database, using mock data');
+//   }
+// } catch (error) {
+//   console.error('Error fetching configuration from database:', error);
+//   // Fallback to mock data if database access fails
+// }
 
-// Client-side functions to handle form submissions
-const handleSaveGitHubConfig = async (values: any) => {
-  try {
-    // Save the GitHub config to the database
-    const response = await fetch('/api/config/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        githubConfig: values,
-        giteaConfig,
-        scheduleConfig,
-      }),
-    });
 
-    const result = await response.json();
-    if (result.success) {
-      document.dispatchEvent(new CustomEvent('show-toast', {
-        detail: {
-          message: 'GitHub configuration saved successfully!',
-          type: 'success'
-        }
-      }));
-      // Configuration saved; form state is preserved without reload
-    } else {
-      document.dispatchEvent(new CustomEvent('show-toast', {
-        detail: {
-          message: `Failed to save GitHub configuration: ${result.message}`,
-          type: 'error'
-        }
-      }));
-    }
-  } catch (error) {
-    console.error('Error saving GitHub config:', error);
-    document.dispatchEvent(new CustomEvent('show-toast', {
-      detail: {
-        message: 'An error occurred while saving the GitHub configuration.',
-        type: 'error'
-      }
-    }));
-  }
-};
 
-const handleSaveGiteaConfig = async (values: any) => {
-  try {
-    // Save the Gitea config to the database
-    const response = await fetch('/api/config/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        githubConfig,
-        giteaConfig: values,
-        scheduleConfig,
-      }),
-    });
 
-    const result = await response.json();
-    if (result.success) {
-      document.dispatchEvent(new CustomEvent('show-toast', {
-        detail: {
-          message: 'Gitea configuration saved successfully!',
-          type: 'success'
-        }
-      }));
-      // Configuration saved; form state is preserved without reload
-    } else {
-      document.dispatchEvent(new CustomEvent('show-toast', {
-        detail: {
-          message: `Failed to save Gitea configuration: ${result.message}`,
-          type: 'error'
-        }
-      }));
-    }
-  } catch (error) {
-    console.error('Error saving Gitea config:', error);
-    document.dispatchEvent(new CustomEvent('show-toast', {
-      detail: {
-        message: 'An error occurred while saving the Gitea configuration.',
-        type: 'error'
-      }
-    }));
-  }
-};
-
-const handleSaveScheduleConfig = async (values: any) => {
-  try {
-    // Save the Schedule config to the database
-    const response = await fetch('/api/config/save', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        githubConfig,
-        giteaConfig,
-        scheduleConfig: values,
-      }),
-    });
-
-    const result = await response.json();
-    if (result.success) {
-      document.dispatchEvent(new CustomEvent('show-toast', {
-        detail: {
-          message: 'Schedule configuration saved successfully!',
-          type: 'success'
-        }
-      }));
-      // Configuration saved; form state is preserved without reload
-    } else {
-      document.dispatchEvent(new CustomEvent('show-toast', {
-        detail: {
-          message: `Failed to save Schedule configuration: ${result.message}`,
-          type: 'error'
-        }
-      }));
-    }
-  } catch (error) {
-    console.error('Error saving Schedule config:', error);
-    document.dispatchEvent(new CustomEvent('show-toast', {
-      detail: {
-        message: 'An error occurred while saving the Schedule configuration.',
-        type: 'error'
-      }
-    }));
-  }
-};
 ---
 
 <html lang="en">
@@ -200,61 +76,6 @@ const handleSaveScheduleConfig = async (values: any) => {
     <ThemeScript />
   </head>
   <body>
-    <MainLayout client:load>
-      <!-- <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-bold">Configuration</h1>
-      </div> -->
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Configuration Settings</CardTitle>
-          <CardDescription>
-            Configure your GitHub and Gitea connections, and set up automatic mirroring.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ConfigTabs
-            githubConfig={githubConfig}
-            giteaConfig={giteaConfig}
-            scheduleConfig={scheduleConfig}
-            onSaveGitHub={handleSaveGitHubConfig}
-            onSaveGitea={handleSaveGiteaConfig}
-            onSaveSchedule={handleSaveScheduleConfig}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Docker Configuration</CardTitle>
-          <CardDescription>
-            Equivalent Docker configuration for your current settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <pre class="bg-muted p-4 rounded-md overflow-auto text-sm">
-{`version: "3.3"
-services:
-  gitea-mirror:
-    image: arunavo4/gitea-mirror:latest
-    restart: unless-stopped
-    container_name: gitea-mirror
-    environment:
-      - GITHUB_USERNAME=${githubConfig.username}
-      - GITEA_URL=${giteaConfig.url}
-      - GITEA_TOKEN=your-gitea-token
-      - GITHUB_TOKEN=your-github-token
-      - MIRROR_ISSUES=${githubConfig.mirrorIssues}
-      - MIRROR_STARRED=${githubConfig.mirrorStarred}
-      - MIRROR_ORGANIZATIONS=${githubConfig.mirrorOrganizations}
-      - PRESERVE_ORG_STRUCTURE=${githubConfig.preserveOrgStructure}
-      - ONLY_MIRROR_ORGS=${githubConfig.onlyMirrorOrgs}
-      - GITEA_ORGANIZATION=${giteaConfig.organization}
-      - GITEA_ORG_VISIBILITY=${giteaConfig.visibility}
-      - DELAY=${scheduleConfig.interval}`}
-          </pre>
-        </CardContent>
-      </Card>
-    </MainLayout>
+    <App page='configuration' client:load>
   </body>
 </html>

@@ -1,5 +1,7 @@
-import { Octokit } from '@octokit/rest';
-import type { Config, Repository } from './db/schema';
+import { Octokit } from "@octokit/rest";
+import type { Repository } from "./db/schema";
+import type { Config } from "@/types/config";
+import type { GitRepo } from "@/types/Repository";
 
 /**
  * Creates an authenticated Octokit instance
@@ -16,10 +18,10 @@ export function createGitHubClient(token: string): Octokit {
 export async function getUserRepositories(
   octokit: Octokit,
   config: Partial<Config>
-): Promise<Repository[]> {
+): Promise<GitRepo[]> {
   const { data: repos } = await octokit.repos.listForAuthenticatedUser({
     per_page: 100,
-    sort: 'updated',
+    sort: "updated",
   });
 
   return repos
@@ -37,19 +39,17 @@ export async function getUserRepositories(
       return true;
     })
     .map((repo) => ({
+      id: repo.id,
       name: repo.name,
       fullName: repo.full_name,
       url: repo.html_url,
       isPrivate: repo.private,
       isFork: repo.fork,
       owner: repo.owner.login,
-      organization: repo.owner.type === 'Organization' ? repo.owner.login : null,
-      hasIssues: repo.has_issues,
+      organization:
+        repo.owner.type === "Organization" ? repo.owner.login : undefined,
+      hasIssues: repo.has_issues !== undefined ? repo.has_issues : false,
       isStarred: false, // Will be set separately
-      status: 'pending',
-      configId: config.id || '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
     }));
 }
 
@@ -60,10 +60,11 @@ export async function getStarredRepositories(
   octokit: Octokit,
   config: Partial<Config>
 ): Promise<Repository[]> {
-  const { data: repos } = await octokit.activity.listReposStarredByAuthenticatedUser({
-    per_page: 100,
-    sort: 'updated',
-  });
+  const { data: repos } =
+    await octokit.activity.listReposStarredByAuthenticatedUser({
+      per_page: 100,
+      sort: "updated",
+    });
 
   return repos.map((repo) => ({
     name: repo.name,
@@ -72,11 +73,12 @@ export async function getStarredRepositories(
     isPrivate: repo.private,
     isFork: repo.fork,
     owner: repo.owner.login,
-    organization: repo.owner.type === 'Organization' ? repo.owner.login : null,
-    hasIssues: repo.has_issues,
+    organization:
+      repo.owner.type === "Organization" ? repo.owner.login : undefined,
+    hasIssues: repo.has_issues ?? false,
     isStarred: true,
-    status: 'pending',
-    configId: config.id || '',
+    status: "pending",
+    configId: config.id || "",
     createdAt: new Date(),
     updatedAt: new Date(),
   }));
@@ -93,7 +95,7 @@ export async function getOrganizationRepositories(
   const { data: repos } = await octokit.repos.listForOrg({
     org: orgName,
     per_page: 100,
-    sort: 'updated',
+    sort: "updated",
   });
 
   return repos
@@ -117,11 +119,12 @@ export async function getOrganizationRepositories(
       isPrivate: repo.private,
       isFork: repo.fork,
       owner: repo.owner.login,
-      organization: repo.owner.type === 'Organization' ? repo.owner.login : null,
-      hasIssues: repo.has_issues,
+      organization:
+        repo.owner.type === "Organization" ? repo.owner.login : undefined,
+      hasIssues: repo.has_issues ?? false,
       isStarred: false,
-      status: 'pending',
-      configId: config.id || '',
+      status: "pending",
+      configId: config.id || "",
       createdAt: new Date(),
       updatedAt: new Date(),
     }));
@@ -137,7 +140,7 @@ export async function getUserOrganizations(octokit: Octokit): Promise<any[]> {
 
   return orgs.map((org) => ({
     name: org.login,
-    type: 'member',
+    type: "member",
     avatarUrl: org.avatar_url,
     description: org.description,
   }));
@@ -155,7 +158,7 @@ export async function getRepositoryIssues(
     owner,
     repo,
     per_page: 100,
-    state: 'all',
+    state: "all",
   });
 
   return issues.map((issue) => ({
@@ -163,10 +166,10 @@ export async function getRepositoryIssues(
     title: issue.title,
     body: issue.body,
     state: issue.state,
-    user: issue.user.login,
-    labels: issue.labels.map((label) => 
-      typeof label === 'string' ? label : label.name
-    ).filter(Boolean),
+    user: issue.user?.login || "unknown",
+    labels: issue.labels
+      .map((label) => (typeof label === "string" ? label : label.name))
+      .filter(Boolean),
     createdAt: issue.created_at,
     updatedAt: issue.updated_at,
     closedAt: issue.closed_at,
@@ -180,7 +183,7 @@ export async function getRepositoryContents(
   octokit: Octokit,
   owner: string,
   repo: string,
-  path: string = ''
+  path: string = ""
 ): Promise<any> {
   const { data } = await octokit.repos.getContent({
     owner,

@@ -1,5 +1,5 @@
-import type { APIRoute } from 'astro';
-import { Octokit } from '@octokit/rest';
+import type { APIRoute } from "astro";
+import { Octokit } from "@octokit/rest";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -10,12 +10,12 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           success: false,
-          message: 'GitHub token is required',
+          message: "GitHub token is required",
         }),
         {
           status: 400,
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
         {
           status: 400,
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
@@ -59,24 +59,24 @@ export const POST: APIRoute = async ({ request }) => {
       {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
   } catch (error) {
-    console.error('GitHub connection test failed:', error);
-    
+    console.error("GitHub connection test failed:", error);
+
     // Handle specific error types
-    if (error.status === 401) {
+    if (error instanceof Error && (error as any).status === 401) {
       return new Response(
         JSON.stringify({
           success: false,
-          message: 'Invalid GitHub token',
+          message: "Invalid GitHub token",
         }),
         {
           status: 401,
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
@@ -86,12 +86,14 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({
         success: false,
-        message: `GitHub connection test failed: ${error.message || 'Unknown error'}`,
+        message: `GitHub connection test failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
       }),
       {
         status: 500,
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );

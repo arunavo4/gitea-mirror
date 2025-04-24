@@ -35,9 +35,9 @@ export function RepositoryList({
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-border">
-            {repositories.slice(0, 5).map((repo) => (
+            {repositories.slice(0, 5).map((repo, index) => (
               <div
-                key={repo.id}
+                key={index}
                 className="flex items-center justify-between gap-x-4 py-4"
               >
                 <div className="flex-1">
