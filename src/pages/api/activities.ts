@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { db, mirrorJobs, configs } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { MirrorJob } from "@/lib/db/schema";
 import { repoStatusEnum } from "@/types/Repository";
 
@@ -16,28 +16,12 @@ export const GET: APIRoute = async ({ url }) => {
       );
     }
 
-    // Fetch user's configs
-    const userConfigs = await db
-      .select()
-      .from(configs)
-      .where(eq(configs.userId, userId));
-
-    if (userConfigs.length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "No activity found for this user.",
-          activities: [],
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
     // Fetch mirror jobs associated with the user
     const jobs = await db
       .select()
       .from(mirrorJobs)
-      .where(eq(mirrorJobs.userId, userId));
+      .where(eq(mirrorJobs.userId, userId))
+      .orderBy(sql`${mirrorJobs.timestamp} DESC`);
 
     const activities: MirrorJob[] = jobs.map((job) => ({
       id: job.id,
