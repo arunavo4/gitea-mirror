@@ -102,6 +102,12 @@ export default function ActivityList({
                 </p>
               )}
 
+              {activity.organizationName && (
+                <p className="text-sm text-muted-foreground mb-2">
+                  Organization: {activity.organizationName}
+                </p>
+              )}
+
               {activity.details && (
                 <div className="mt-2">
                   <Button

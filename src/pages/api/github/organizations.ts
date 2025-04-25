@@ -1,11 +1,15 @@
 import type { APIRoute } from "astro";
 import { db } from "@/lib/db";
-import { configs } from "@/lib/db";
+import { configs, organizations } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import * as github from "@/lib/github";
-import type { GiteaConfig, GitHubConfig, ScheduleConfig } from "@/types/config";
-import { safeParse } from "@/lib/utils";
-import type { OrganizationsApiResponse } from "@/types/organizations";
+import type {
+  OrganizationsApiResponse,
+  OrgRelationType,
+} from "@/types/organizations";
+import { v4 as uuidv4 } from "uuid";
+import { createMirrorJob } from "@/lib/helpers";
+import type { Organization } from "@/lib/db/schema";
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -35,17 +39,7 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
-    const rawConfig = userConfig[0];
-
-    // Parsed config with all fields
-    const config = {
-      ...rawConfig,
-      githubConfig: safeParse<GitHubConfig>(rawConfig.githubConfig),
-      giteaConfig: safeParse<GiteaConfig>(rawConfig.giteaConfig),
-      include: safeParse<string[]>(rawConfig.include) ?? [],
-      exclude: safeParse<string[]>(rawConfig.exclude) ?? [],
-      scheduleConfig: safeParse<ScheduleConfig>(rawConfig.scheduleConfig),
-    };
+    const config = userConfig[0];
 
     if (!config.githubConfig || !config.githubConfig.token) {
       return new Response(
@@ -55,19 +49,57 @@ export const GET: APIRoute = async ({ request }) => {
     }
 
     const octokit = github.createGitHubClient(config.githubConfig.token);
-    const orgs = await github.getUserOrganizations(octokit);
 
-    console.log("Fetched organizations:", orgs);
+    // Fetch GitHub organizations
+    const gitOrgs = await github.getUserOrganizations({ octokit });
 
-    // Add IDs to organizations
-    const orgsWithIds = orgs.map((org) => ({
+    const existingOrgs = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.userId, userId));
+
+    // Sync to DB (Insert or Update)
+    for (const org of gitOrgs) {
+      const existing = existingOrgs.find((o) => o.name === org.name);
+
+      if (!existing) {
+        const orgId = uuidv4();
+
+        await db.insert(organizations).values({
+          id: orgId,
+          userId,
+          configId: config.id,
+          name: org.name,
+          type: org.type,
+          isIncluded: false,
+          repositoryCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        await createMirrorJob({
+          userId,
+          organizationName: org.name,
+          status: "imported",
+          message: `Organization ${org.name} fetched successfully`,
+          details: `Organization ${org.name} was fetched from GitHub`,
+        });
+      } else {
+        await db
+          .update(organizations)
+          .set({ ...org, updatedAt: new Date() })
+          .where(eq(organizations.id, existing.id));
+      }
+    }
+
+    const latestOrgs = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.userId, userId));
+
+    const orgsWithIds: Organization[] = latestOrgs.map((org) => ({
       ...org,
-      id: crypto.randomUUID(),
-      configId: "default",
-      isIncluded: true,
-      repositoryCount: 0, // We'll fetch this separately
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      type: org.type as OrgRelationType,
     }));
 
     const resPayload: OrganizationsApiResponse = { organizations: orgsWithIds };

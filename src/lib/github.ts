@@ -23,38 +23,46 @@ export async function getUserRepositories({
   octokit: Octokit;
   config: Partial<Config>;
 }): Promise<GitRepo[]> {
-  const { data: repos } = await octokit.repos.listForAuthenticatedUser({
-    per_page: 100,
-    sort: "updated",
-  });
+  try {
+    const { data: repos } = await octokit.repos.listForAuthenticatedUser({
+      per_page: 100,
+      sort: "updated",
+    });
 
-  return repos
-    .filter((repo) => {
-      // Skip forks if configured
-      if (config.githubConfig?.skipForks && repo.fork) {
-        return false;
-      }
+    return repos
+      .filter((repo) => {
+        // Skip forks if configured
+        if (config.githubConfig?.skipForks && repo.fork) {
+          return false;
+        }
 
-      // Skip private repos if not configured to include them
-      if (repo.private && !config.githubConfig?.privateRepositories) {
-        return false;
-      }
+        // Skip private repos if not configured to include them
+        if (repo.private && !config.githubConfig?.privateRepositories) {
+          return false;
+        }
 
-      return true;
-    })
-    .map((repo) => ({
-      id: repo.id,
-      name: repo.name,
-      fullName: repo.full_name,
-      url: repo.html_url,
-      isPrivate: repo.private,
-      isFork: repo.fork,
-      owner: repo.owner.login,
-      organization:
-        repo.owner.type === "Organization" ? repo.owner.login : undefined,
-      hasIssues: repo.has_issues !== undefined ? repo.has_issues : false,
-      isStarred: false, // Will be set separately
-    }));
+        return true;
+      })
+      .map((repo) => ({
+        id: repo.id,
+        name: repo.name,
+        fullName: repo.full_name,
+        url: repo.html_url,
+        isPrivate: repo.private,
+        isFork: repo.fork,
+        owner: repo.owner.login,
+        organization:
+          repo.owner.type === "Organization" ? repo.owner.login : undefined,
+        hasIssues: repo.has_issues !== undefined ? repo.has_issues : false,
+        isStarred: false, // Will be set separately
+      }));
+  } catch (error) {
+    throw new Error(
+      `Error fetching repositories: ${
+        error instanceof Error ? error.message : error
+      }`
+    );
+  }
 }
 
 /**
@@ -137,17 +145,29 @@ export async function getOrganizationRepositories(
 /**
  * Get user organizations from GitHub
  */
-export async function getUserOrganizations(octokit: Octokit): Promise<any[]> {
-  const { data: orgs } = await octokit.orgs.listForAuthenticatedUser({
-    per_page: 100,
-  });
+export async function getUserOrganizations({
+  octokit,
+}: {
+  octokit: Octokit;
+}): Promise<any[]> {
+  try {
+    const { data: orgs } = await octokit.orgs.listForAuthenticatedUser({
+      per_page: 100,
+    });
 
-  return orgs.map((org) => ({
-    name: org.login,
-    type: "member",
-    avatarUrl: org.avatar_url,
-    description: org.description,
-  }));
+    return orgs.map((org) => ({
+      name: org.login,
+      type: "member",
+      avatarUrl: org.avatar_url,
+      description: org.description,
+    }));
+  } catch (error) {
+    throw new Error(
+      `Error fetching organizations: ${
+        error instanceof Error ? error.message : error
+      }`
+    );
+  }
 }
 
 /**

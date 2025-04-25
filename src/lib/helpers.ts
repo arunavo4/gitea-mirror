@@ -4,15 +4,15 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function createMirrorJob({
   userId,
-  repositoryId,
+  organizationName,
   repositoryName,
   message,
   status,
   details,
 }: {
   userId: string;
-  repositoryId: string;
-  repositoryName: string;
+  organizationName?: string;
+  repositoryName?: string;
   details?: string;
   message: string;
   status: RepoStatus;
@@ -23,8 +23,8 @@ export async function createMirrorJob({
   const job = {
     id: jobId,
     userId,
-    repositoryId,
     repositoryName,
+    organizationName,
     configId: uuidv4(),
     details,
     message: message,

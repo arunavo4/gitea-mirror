@@ -80,11 +80,10 @@ export const GET: APIRoute = async ({ request }) => {
         // Create a mirror job for the newly added repository
         await createMirrorJob({
           userId,
-          repositoryId: repoId,
           repositoryName: repo.name,
-          message: `Repository ${repo.name} fetched.`,
-          status: repoStatusEnum.parse("imported"),
-          details: `Repository ${repo.name} was fetched from github.`,
+          message: `Repository ${repo.name} fetched successfully`,
+          status: "imported",
+          details: `Repository ${repo.name} was fetched from GitHub`,
         });
       } else {
         await db

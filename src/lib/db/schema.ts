@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { repoStatusEnum } from "@/types/Repository";
 import { activityLogLevelEnum } from "@/types/activities";
+import { orgRelationTypeEnum } from "@/types/organizations";
 
 // User schema
 export const userSchema = z.object({
@@ -86,8 +87,8 @@ export type Repository = z.infer<typeof repositorySchema>;
 export const mirrorJobSchema = z.object({
   id: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
-  repositoryId: z.string().uuid(),
-  repositoryName: z.string(),
+  repositoryName: z.string().optional(),
+  organizationName: z.string().optional(),
   details: z.string().optional(),
   status: repoStatusEnum.default("imported"),
   message: z.string(),
@@ -99,9 +100,10 @@ export type MirrorJob = z.infer<typeof mirrorJobSchema>;
 // Organization schema
 export const organizationSchema = z.object({
   id: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
   configId: z.string().uuid(),
   name: z.string().min(1),
-  type: z.enum(["member", "public"]).default("member"),
+  type: orgRelationTypeEnum.default("member"),
   isIncluded: z.boolean().default(true),
   repositoryCount: z.number().default(0),
   createdAt: z.date().default(() => new Date()),
