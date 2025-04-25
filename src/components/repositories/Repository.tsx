@@ -64,6 +64,34 @@ export default function Repository() {
     fetchRepositories();
   }, [user]);
 
+  const handleRefresh = async () => {
+    try {
+      if (!user) {
+        return;
+      }
+
+      setIsLoading(true);
+
+      const response = await apiRequest<RepositoryApiResponse>(
+        `/github/repositories?userId=${user.id}`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (response.repositories) {
+        console.log("Repositories:", response.repositories);
+        setRepositories(response.repositories);
+      }
+
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error refreshing repositories:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleMirror = async ({ repoId }: { repoId: string }) => {
     try {
       if (!user || !user.id) {
@@ -141,7 +169,7 @@ export default function Repository() {
             More Filters
           </Button>
 
-          <Button variant="default">
+          <Button variant="default" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
