@@ -1,8 +1,21 @@
 import type { Repository } from "@/lib/db/schema";
+import { z } from "zod";
+
+export const repoStatusEnum = z.enum([
+  "imported",
+  "mirroring",
+  "mirrored",
+  "failed",
+  "syncing",
+  "synced",
+  "",
+]);
+
+export type RepoStatus = z.infer<typeof repoStatusEnum>;
 
 export interface Filter {
   searchTerm: string;
-  status: "pending" | "mirrored" | "failed" | "imported" | "";
+  status: RepoStatus;
   name: string;
   organization: string;
   owner: string;

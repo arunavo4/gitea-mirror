@@ -10,6 +10,7 @@ import { GitHubConfigForm } from "./GitHubConfigForm";
 import { GiteaConfigForm } from "./GiteaConfigForm";
 import { ScheduleConfigForm } from "./ScheduleConfigForm";
 import type {
+  ConfigApiResponse,
   GiteaConfig,
   GitHubConfig,
   SaveConfigApiRequest,
@@ -18,27 +19,46 @@ import type {
 } from "@/types/config";
 import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/utils";
 
-interface ConfigTabsProps {
-  configPlaceholders: {
-    githubConfig: GitHubConfig;
-    giteaConfig: GiteaConfig;
-    scheduleConfig: ScheduleConfig;
-  };
-  isLoading: boolean;
-}
+type ConfigState = {
+  githubConfig: GitHubConfig;
+  giteaConfig: GiteaConfig;
+  scheduleConfig: ScheduleConfig;
+};
 
-export function ConfigTabs({ configPlaceholders, isLoading }: ConfigTabsProps) {
-  const [config, setConfig] = useState<{
-    githubConfig: GitHubConfig;
-    giteaConfig: GiteaConfig;
-    scheduleConfig: ScheduleConfig;
-  }>({
-    githubConfig: configPlaceholders.githubConfig,
-    giteaConfig: configPlaceholders.giteaConfig,
-    scheduleConfig: configPlaceholders.scheduleConfig,
+export function ConfigTabs() {
+  const [config, setConfig] = useState<ConfigState>({
+    githubConfig: {
+      username: "",
+      token: "",
+      skipForks: false,
+      privateRepositories: false,
+      mirrorIssues: false,
+      mirrorStarred: false,
+      mirrorOrganizations: false,
+      onlyMirrorOrgs: false,
+      preserveOrgStructure: false,
+      skipStarredIssues: false,
+    },
+
+    // Mock Gitea config
+    giteaConfig: {
+      url: "",
+      token: "",
+      organization: "github-mirrors",
+      visibility: "public",
+      starredReposOrg: "github",
+    },
+
+    // Mock schedule config
+    scheduleConfig: {
+      enabled: false,
+      interval: 3600,
+    },
   });
   const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleSaveConfig = async () => {
     try {
@@ -99,14 +119,41 @@ export function ConfigTabs({ configPlaceholders, isLoading }: ConfigTabsProps) {
     }
   };
 
-  // we need to listen for changes when ever there is an api call in the mainlayout file. maybe we need to think of a better way to do this
   useEffect(() => {
-    setConfig({
-      githubConfig: configPlaceholders.githubConfig,
-      giteaConfig: configPlaceholders.giteaConfig,
-      scheduleConfig: configPlaceholders.scheduleConfig,
-    });
-  }, [configPlaceholders]);
+    const fetchConfig = async () => {
+      try {
+        if (!user) {
+          return;
+        }
+
+        setIsLoading(true);
+
+        const response = await apiRequest<ConfigApiResponse>(
+          `/config?userId=${user.id}`,
+          {
+            method: "GET",
+          }
+        );
+
+        if (!response.error) {
+          console.log("Fetched configuration:", response);
+          setConfig({
+            githubConfig: response.githubConfig,
+            giteaConfig: response.giteaConfig,
+            scheduleConfig: response.scheduleConfig,
+          });
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching configuration:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, [user]);
 
   return isLoading ? (
     <div>loading...</div>

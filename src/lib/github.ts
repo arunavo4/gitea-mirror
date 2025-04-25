@@ -14,11 +14,15 @@ export function createGitHubClient(token: string): Octokit {
 
 /**
  * Get user repositories from GitHub
+ * todo: need to handle pagination and apply more filters based on user config
  */
-export async function getUserRepositories(
-  octokit: Octokit,
-  config: Partial<Config>
-): Promise<GitRepo[]> {
+export async function getUserRepositories({
+  octokit,
+  config,
+}: {
+  octokit: Octokit;
+  config: Partial<Config>;
+}): Promise<GitRepo[]> {
   const { data: repos } = await octokit.repos.listForAuthenticatedUser({
     per_page: 100,
     sort: "updated",
@@ -27,12 +31,12 @@ export async function getUserRepositories(
   return repos
     .filter((repo) => {
       // Skip forks if configured
-      if (config.github?.skipForks && repo.fork) {
+      if (config.githubConfig?.skipForks && repo.fork) {
         return false;
       }
 
       // Skip private repos if not configured to include them
-      if (repo.private && !config.github?.privateRepositories) {
+      if (repo.private && !config.githubConfig?.privateRepositories) {
         return false;
       }
 
@@ -101,12 +105,12 @@ export async function getOrganizationRepositories(
   return repos
     .filter((repo) => {
       // Skip forks if configured
-      if (config.github?.skipForks && repo.fork) {
+      if (config.githubConfig?.skipForks && repo.fork) {
         return false;
       }
 
       // Skip private repos if not configured to include them
-      if (repo.private && !config.github?.privateRepositories) {
+      if (repo.private && !config.githubConfig?.privateRepositories) {
         return false;
       }
 

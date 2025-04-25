@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import axios, { AxiosError } from "axios";
 import type { AxiosRequestConfig } from "axios";
+import type { RepoStatus } from "@/types/Repository";
 
 export const API_BASE = "/api";
 
@@ -9,14 +10,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: Date): string {
+export function formatDate(date?: Date | string | null): string {
+  if (!date) return "Never";
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(date);
+  }).format(new Date(date));
 }
 
 export function truncate(str: string, length: number): string {
@@ -63,15 +65,21 @@ export async function apiRequest<T>(
   }
 }
 
-export const getStatusColor = (status: string): string => {
+export const getStatusColor = (status: RepoStatus): string => {
   switch (status) {
+    case "imported":
+      return "bg-blue-500"; // Info/primary-like
+    case "mirroring":
+      return "bg-yellow-400"; // In progress
     case "mirrored":
-      return "bg-green-500";
+      return "bg-emerald-500"; // Success
     case "failed":
-      return "bg-red-500";
-    case "pending":
-      return "bg-yellow-500";
+      return "bg-rose-500"; // Error
+    case "syncing":
+      return "bg-indigo-500"; // Sync in progress
+    case "synced":
+      return "bg-teal-500"; // Sync complete
     default:
-      return "bg-gray-500";
+      return "bg-gray-400"; // Unknown/neutral
   }
 };

@@ -177,6 +177,9 @@ export async function mirrorRepository(
 
     return response.body;
   } catch (error) {
-    throw new Error(`Failed to mirror repository: ${error.message}`);
+    if (error instanceof Error) {
+      throw new Error(`Failed to mirror repository: ${error.message}`);
+    }
+    throw new Error("Failed to mirror repository: An unknown error occurred.");
   }
 }

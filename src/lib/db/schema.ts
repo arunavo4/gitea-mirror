@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { repoStatusEnum } from "@/types/Repository";
 
 // User schema
 export const userSchema = z.object({
@@ -18,7 +19,7 @@ export const configSchema = z.object({
   userId: z.string().uuid(),
   name: z.string().min(1),
   isActive: z.boolean().default(true),
-  github: z.object({
+  githubConfig: z.object({
     username: z.string().min(1),
     token: z.string().optional(),
     skipForks: z.boolean().default(false),
@@ -36,7 +37,7 @@ export const configSchema = z.object({
     preserveOrgStructure: z.boolean().default(false),
     skipStarredIssues: z.boolean().default(false),
   }),
-  gitea: z.object({
+  giteaConfig: z.object({
     url: z.string().url(),
     token: z.string().min(1),
     organization: z.string().optional(),
@@ -45,7 +46,7 @@ export const configSchema = z.object({
   }),
   include: z.array(z.string()).default(["*"]),
   exclude: z.array(z.string()).default([]),
-  schedule: z.object({
+  scheduleConfig: z.object({
     enabled: z.boolean().default(false),
     interval: z.number().min(1).default(3600), // in seconds
     lastRun: z.date().optional(),
@@ -71,9 +72,7 @@ export const repositorySchema = z.object({
   organization: z.string().optional(),
   hasIssues: z.boolean().default(false),
   isStarred: z.boolean().default(false),
-  status: z
-    .enum(["pending", "mirrored", "failed", "imported"])
-    .default("pending"),
+  status: repoStatusEnum.default("imported"),
   lastMirrored: z.date().optional(),
   errorMessage: z.string().optional(),
   createdAt: z.date().default(() => new Date()),

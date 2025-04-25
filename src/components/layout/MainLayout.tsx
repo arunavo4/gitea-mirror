@@ -5,9 +5,8 @@ import { Sidebar } from "./Sidebar";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ToastProvider } from "./ToastProvider";
 import { Dashboard } from "@/components/dashboard/Dashboard";
-import { RepositoryTable } from "../repositories/RepositoryTable";
+import Repository from "../repositories/Repository";
 import Providers from "./Providers";
-import type { Repository } from "@/lib/db/schema";
 import type { RepositoryApiResponse } from "@/types/Repository";
 import { apiRequest } from "@/lib/utils";
 import { ConfigTabs } from "../config/ConfigTabs";
@@ -21,12 +20,6 @@ import type {
 interface MainLayoutProps {
   children: React.ReactNode;
 }
-
-type ConfigState = {
-  githubConfig: GitHubConfig;
-  giteaConfig: GiteaConfig;
-  scheduleConfig: ScheduleConfig;
-};
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
@@ -65,108 +58,6 @@ export default function App({ page }: AppProps) {
 }
 
 function AppWithProviders({ page }: AppProps) {
-  const { user } = useAuth();
-  const [repositories, setRepositories] = useState<Repository[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [config, setConfig] = useState<ConfigState>({
-    githubConfig: {
-      username: "",
-      token: "",
-      skipForks: false,
-      privateRepositories: false,
-      mirrorIssues: false,
-      mirrorStarred: false,
-      mirrorOrganizations: false,
-      onlyMirrorOrgs: false,
-      preserveOrgStructure: false,
-      skipStarredIssues: false,
-    },
-
-    // Mock Gitea config
-    giteaConfig: {
-      url: "",
-      token: "",
-      organization: "github-mirrors",
-      visibility: "public",
-      starredReposOrg: "github",
-    },
-
-    // Mock schedule config
-    scheduleConfig: {
-      enabled: false,
-      interval: 3600,
-    },
-  });
-  const [isConfigLoading, setIsConfigLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    const fetchRepositories = async () => {
-      try {
-        if (!user) {
-          return;
-        }
-
-        setIsLoading(true);
-
-        const response = await apiRequest<RepositoryApiResponse>(
-          `/github/repositories?userId=${user.id}`,
-          {
-            method: "GET",
-          }
-        );
-
-        if (response.repositories) {
-          console.log("Fetched repositories:", response.repositories);
-          setRepositories(response.repositories);
-        }
-
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error fetching repositories:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRepositories();
-  }, [user]);
-
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        if (!user) {
-          return;
-        }
-
-        setIsConfigLoading(true);
-
-        const response = await apiRequest<ConfigApiResponse>(
-          `/config?userId=${user.id}`,
-          {
-            method: "GET",
-          }
-        );
-
-        if (!response.error) {
-          console.log("Fetched configuration:", response);
-          setConfig({
-            githubConfig: response.githubConfig,
-            giteaConfig: response.giteaConfig,
-            scheduleConfig: response.scheduleConfig,
-          });
-        }
-
-        setIsConfigLoading(false);
-      } catch (error) {
-        console.error("Error fetching configuration:", error);
-      } finally {
-        setIsConfigLoading(false);
-      }
-    };
-
-    fetchConfig();
-  }, [user]);
-
   return (
     <main className="flex min-h-screen flex-col">
       <Header />
@@ -175,24 +66,14 @@ function AppWithProviders({ page }: AppProps) {
         <section className="flex-1 p-6 overflow-y-auto h-[calc(100dvh-4.55rem)]">
           {page === "dashboard" && (
             <Dashboard
-              repositories={repositories}
+              repositories={[]}
               activities={[]}
-              isLoading={isLoading} // Assuming you have activities data. will be replaced with actual data
+              isLoading={false} // Assuming you have activities data. will be replaced with actual data
             />
           )}
-          {page === "repositories" && (
-            <RepositoryTable
-              repositories={repositories}
-              isLoading={isLoading}
-            />
-          )}
+          {page === "repositories" && <Repository />}
           {page === "organizations" && <div>Organizations Content</div>}
-          {page === "configuration" && config && (
-            <ConfigTabs
-              configPlaceholders={config}
-              isLoading={isConfigLoading}
-            />
-          )}
+          {page === "configuration" && <ConfigTabs />}
           {page === "activity-log" && <div>Activity Log Content</div>}
         </section>
       </div>

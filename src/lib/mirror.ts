@@ -1,9 +1,10 @@
-import { Octokit } from '@octokit/rest';
-import type { Config, Repository, MirrorJob } from './db/schema';
-import * as github from './github';
-import * as gitea from './gitea';
-import { db, repositories, mirrorJobs } from './db';
-import { eq } from 'drizzle-orm';
+import { Octokit } from "@octokit/rest";
+import type { Config, Repository, MirrorJob } from "./db/schema";
+import * as github from "./github";
+import * as gitea from "./gitea";
+import { db, repositories, mirrorJobs } from "./db";
+import { eq } from "drizzle-orm";
+import superagent from "superagent";
 
 /**
  * Mirror a single repository from GitHub to Gitea
@@ -15,37 +16,46 @@ export async function mirrorSingleRepository(
 ): Promise<{ success: boolean; message: string }> {
   try {
     // Create GitHub client
-    const githubClient = github.createGitHubClient(config.github.token || '');
+    const githubClient = github.createGitHubClient(
+      config.githubConfig.token || ""
+    );
 
     // Get repository details
-    const [owner, repo] = repository.fullName.split('/');
-    const { cloneUrl } = await github.cloneRepository(githubClient, owner, repo);
+    const [owner, repo] = repository.fullName.split("/");
+    const { cloneUrl } = await github.cloneRepository(
+      githubClient,
+      owner,
+      repo
+    );
 
     // Determine target organization
     let targetOrg = undefined;
-    if (repository.isStarred && config.gitea.starredReposOrg) {
-      targetOrg = config.gitea.starredReposOrg;
-    } else if (repository.organization && config.github.preserveOrgStructure) {
+    if (repository.isStarred && config.giteaConfig.starredReposOrg) {
+      targetOrg = config.giteaConfig.starredReposOrg;
+    } else if (
+      repository.organization &&
+      config.githubConfig.preserveOrgStructure
+    ) {
       targetOrg = repository.organization;
-    } else if (config.gitea.organization) {
-      targetOrg = config.gitea.organization;
+    } else if (config.giteaConfig.organization) {
+      targetOrg = config.giteaConfig.organization;
     }
 
     // Create organization if needed
     if (targetOrg) {
       await gitea.createGiteaOrganization(
-        config.gitea.url,
-        config.gitea.token,
+        config.giteaConfig.url,
+        config.giteaConfig.token,
         targetOrg,
         `GitHub organization: ${targetOrg}`,
-        config.gitea.visibility
+        config.giteaConfig.visibility
       );
     }
 
     // Mirror the repository
     await gitea.mirrorRepository(
-      config.gitea.url,
-      config.gitea.token,
+      config.giteaConfig.url,
+      config.giteaConfig.token,
       cloneUrl,
       repository.name,
       repository.isPrivate,
@@ -53,20 +63,26 @@ export async function mirrorSingleRepository(
     );
 
     // Mirror issues if configured
-    if (config.github.mirrorIssues && repository.hasIssues) {
+    if (config.githubConfig.mirrorIssues && repository.hasIssues) {
       // Skip issues for starred repos if configured
-      if (!(repository.isStarred && config.github.skipStarredIssues)) {
-        const issues = await github.getRepositoryIssues(githubClient, owner, repo);
-        
+      if (!(repository.isStarred && config.githubConfig.skipStarredIssues)) {
+        const issues = await github.getRepositoryIssues(
+          githubClient,
+          owner,
+          repo
+        );
+
         // Create issues in Gitea
         for (const issue of issues) {
           await gitea.createGiteaIssue(
-            config.gitea.url,
-            config.gitea.token,
+            config.giteaConfig.url,
+            config.giteaConfig.token,
             targetOrg || owner,
             repository.name,
             issue.title,
-            `*Mirrored from GitHub*\n\nOriginal issue by @${issue.user}\n\n${issue.body || ''}`,
+            `*Mirrored from GitHub*\n\nOriginal issue by @${issue.user}\n\n${
+              issue.body || ""
+            }`,
             issue.labels
           );
         }
@@ -74,25 +90,31 @@ export async function mirrorSingleRepository(
     }
 
     // Update repository status
-    await db.update(repositories)
+    await db
+      .update(repositories)
       .set({
-        status: 'mirrored',
+        status: "mirrored",
         lastMirrored: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(repositories.id, repository.id || ''));
+      .where(eq(repositories.id, repository.id || ""));
 
     // Add log entry
-    const job = await db.select().from(mirrorJobs).where(eq(mirrorJobs.id, jobId)).limit(1);
+    const job = await db
+      .select()
+      .from(mirrorJobs)
+      .where(eq(mirrorJobs.id, jobId))
+      .limit(1);
     if (job.length) {
       const log = JSON.parse(job[0].log);
       log.push({
         timestamp: new Date(),
         message: `Successfully mirrored repository: ${repository.fullName}`,
-        level: 'success',
+        level: "success",
       });
 
-      await db.update(mirrorJobs)
+      await db
+        .update(mirrorJobs)
         .set({
           log: JSON.stringify(log),
           updatedAt: new Date(),
@@ -100,29 +122,38 @@ export async function mirrorSingleRepository(
         .where(eq(mirrorJobs.id, jobId));
     }
 
-    return { success: true, message: `Successfully mirrored repository: ${repository.fullName}` };
+    return {
+      success: true,
+      message: `Successfully mirrored repository: ${repository.fullName}`,
+    };
   } catch (error) {
     // Update repository status
-    await db.update(repositories)
+    await db
+      .update(repositories)
       .set({
-        status: 'failed',
+        status: "failed",
         errorMessage: error.message,
         updatedAt: new Date(),
       })
-      .where(eq(repositories.id, repository.id || ''));
+      .where(eq(repositories.id, repository.id || ""));
 
     // Add log entry
-    const job = await db.select().from(mirrorJobs).where(eq(mirrorJobs.id, jobId)).limit(1);
+    const job = await db
+      .select()
+      .from(mirrorJobs)
+      .where(eq(mirrorJobs.id, jobId))
+      .limit(1);
     if (job.length) {
       const log = JSON.parse(job[0].log);
       log.push({
         timestamp: new Date(),
         message: `Failed to mirror repository: ${repository.fullName}`,
-        level: 'error',
+        level: "error",
         details: error.message,
       });
 
-      await db.update(mirrorJobs)
+      await db
+        .update(mirrorJobs)
         .set({
           log: JSON.stringify(log),
           updatedAt: new Date(),
@@ -130,7 +161,10 @@ export async function mirrorSingleRepository(
         .where(eq(mirrorJobs.id, jobId));
     }
 
-    return { success: false, message: `Failed to mirror repository: ${error.message}` };
+    return {
+      success: false,
+      message: `Failed to mirror repository: ${error.message}`,
+    };
   }
 }
 
@@ -140,30 +174,41 @@ export async function mirrorSingleRepository(
 export async function mirrorAllRepositories(
   config: Config,
   jobId: string
-): Promise<{ success: boolean; message: string; mirrored: number; failed: number }> {
+): Promise<{
+  success: boolean;
+  message: string;
+  mirrored: number;
+  failed: number;
+}> {
   try {
     // Get repositories to mirror
-    const reposToMirror = await db.select()
+    const reposToMirror = await db
+      .select()
       .from(repositories)
-      .where(eq(repositories.configId, config.id || ''));
+      .where(eq(repositories.configId, config.id || ""));
 
     let mirrored = 0;
     let failed = 0;
 
     // Add log entry
-    const job = await db.select().from(mirrorJobs).where(eq(mirrorJobs.id, jobId)).limit(1);
+    const job = await db
+      .select()
+      .from(mirrorJobs)
+      .where(eq(mirrorJobs.id, jobId))
+      .limit(1);
     if (job.length) {
       const log = JSON.parse(job[0].log);
       log.push({
         timestamp: new Date(),
         message: `Starting mirroring process for ${reposToMirror.length} repositories`,
-        level: 'info',
+        level: "info",
       });
 
-      await db.update(mirrorJobs)
+      await db
+        .update(mirrorJobs)
         .set({
           log: JSON.stringify(log),
-          status: 'running',
+          status: "running",
           startedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -181,18 +226,19 @@ export async function mirrorAllRepositories(
         }
       } catch (error) {
         failed++;
-        
+
         // Add log entry
         if (job.length) {
           const log = JSON.parse(job[0].log);
           log.push({
             timestamp: new Date(),
             message: `Failed to mirror repository: ${repo.fullName}`,
-            level: 'error',
+            level: "error",
             details: error.message,
           });
 
-          await db.update(mirrorJobs)
+          await db
+            .update(mirrorJobs)
             .set({
               log: JSON.stringify(log),
               updatedAt: new Date(),
@@ -208,13 +254,14 @@ export async function mirrorAllRepositories(
       log.push({
         timestamp: new Date(),
         message: `Mirroring process completed. ${mirrored} repositories mirrored, ${failed} failed.`,
-        level: 'info',
+        level: "info",
       });
 
-      await db.update(mirrorJobs)
+      await db
+        .update(mirrorJobs)
         .set({
           log: JSON.stringify(log),
-          status: 'completed',
+          status: "completed",
           completedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -229,20 +276,25 @@ export async function mirrorAllRepositories(
     };
   } catch (error) {
     // Update job status
-    const job = await db.select().from(mirrorJobs).where(eq(mirrorJobs.id, jobId)).limit(1);
+    const job = await db
+      .select()
+      .from(mirrorJobs)
+      .where(eq(mirrorJobs.id, jobId))
+      .limit(1);
     if (job.length) {
       const log = JSON.parse(job[0].log);
       log.push({
         timestamp: new Date(),
         message: `Mirroring process failed: ${error.message}`,
-        level: 'error',
+        level: "error",
         details: error.stack,
       });
 
-      await db.update(mirrorJobs)
+      await db
+        .update(mirrorJobs)
         .set({
           log: JSON.stringify(log),
-          status: 'failed',
+          status: "failed",
           completedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -266,49 +318,59 @@ export async function syncRepositories(
 ): Promise<{ added: number; updated: number; message: string }> {
   try {
     // Create GitHub client
-    const githubClient = github.createGitHubClient(config.github.token || '');
-    
+    const githubClient = github.createGitHubClient(config.github.token || "");
+
     let allRepos: Repository[] = [];
-    
+
     // Get user repositories
-    if (!config.github.onlyMirrorOrgs) {
+    if (!config.githubConfig.onlyMirrorOrgs) {
       const userRepos = await github.getUserRepositories(githubClient, config);
       allRepos = [...allRepos, ...userRepos];
     }
-    
+
     // Get starred repositories
-    if (config.github.mirrorStarred) {
-      const starredRepos = await github.getStarredRepositories(githubClient, config);
+    if (config.githubConfig.mirrorStarred) {
+      const starredRepos = await github.getStarredRepositories(
+        githubClient,
+        config
+      );
       allRepos = [...allRepos, ...starredRepos];
     }
-    
+
     // Get organization repositories
-    if (config.github.mirrorOrganizations) {
+    if (config.githubConfig.mirrorOrganizations) {
       const orgs = await github.getUserOrganizations(githubClient);
-      
+
       for (const org of orgs) {
         // Skip if org is in exclude list
-        if (config.github.excludeOrgs && config.github.excludeOrgs.includes(org.name)) {
-          continue;
-        }
-        
-        // Only include if in include list (when not using wildcard)
         if (
-          config.github.includeOrgs &&
-          config.github.includeOrgs.length > 0 &&
-          !config.github.includeOrgs.includes('*') &&
-          !config.github.includeOrgs.includes(org.name)
+          config.githubConfig.excludeOrgs &&
+          config.githubConfig.excludeOrgs.includes(org.name)
         ) {
           continue;
         }
-        
-        const orgRepos = await github.getOrganizationRepositories(githubClient, org.name, config);
+
+        // Only include if in include list (when not using wildcard)
+        if (
+          config.githubConfig.includeOrgs &&
+          config.githubConfig.includeOrgs.length > 0 &&
+          !config.githubConfig.includeOrgs.includes("*") &&
+          !config.githubConfig.includeOrgs.includes(org.name)
+        ) {
+          continue;
+        }
+
+        const orgRepos = await github.getOrganizationRepositories(
+          githubClient,
+          org.name,
+          config
+        );
         allRepos = [...allRepos, ...orgRepos];
       }
     }
-    
+
     // Filter repositories based on include/exclude patterns
-    const filteredRepos = allRepos.filter(repo => {
+    const filteredRepos = allRepos.filter((repo) => {
       // Check exclude patterns
       if (config.exclude && config.exclude.length > 0) {
         for (const pattern of config.exclude) {
@@ -317,9 +379,13 @@ export async function syncRepositories(
           }
         }
       }
-      
+
       // Check include patterns
-      if (config.include && config.include.length > 0 && !config.include.includes('*')) {
+      if (
+        config.include &&
+        config.include.length > 0 &&
+        !config.include.includes("*")
+      ) {
         for (const pattern of config.include) {
           if (matchPattern(repo.fullName, pattern)) {
             return true;
@@ -327,33 +393,35 @@ export async function syncRepositories(
         }
         return false;
       }
-      
+
       return true;
     });
-    
+
     // Update database
     let added = 0;
     let updated = 0;
-    
+
     for (const repo of filteredRepos) {
       // Check if repository already exists
-      const existingRepo = await db.select()
+      const existingRepo = await db
+        .select()
         .from(repositories)
         .where(eq(repositories.fullName, repo.fullName))
-        .where(eq(repositories.configId, config.id || ''))
+        .where(eq(repositories.configId, config.id || ""))
         .limit(1);
-      
+
       if (existingRepo.length === 0) {
         // Add new repository
         await db.insert(repositories).values({
           ...repo,
           id: crypto.randomUUID(),
-          configId: config.id || '',
+          configId: config.id || "",
         });
         added++;
       } else {
         // Update existing repository
-        await db.update(repositories)
+        await db
+          .update(repositories)
           .set({
             name: repo.name,
             url: repo.url,
@@ -365,11 +433,11 @@ export async function syncRepositories(
             isStarred: repo.isStarred,
             updatedAt: new Date(),
           })
-          .where(eq(repositories.id, existingRepo[0].id || ''));
+          .where(eq(repositories.id, existingRepo[0].id || ""));
         updated++;
       }
     }
-    
+
     return {
       added,
       updated,
@@ -385,10 +453,57 @@ export async function syncRepositories(
  */
 function matchPattern(str: string, pattern: string): boolean {
   // Convert pattern to regex
-  const regexPattern = pattern
-    .replace(/\./g, '\\.')
-    .replace(/\*/g, '.*');
-  
+  const regexPattern = pattern.replace(/\./g, "\\.").replace(/\*/g, ".*");
+
   const regex = new RegExp(`^${regexPattern}$`);
   return regex.test(str);
 }
+
+//latest apis
+
+export const mirrorRepoToGitea = async ({
+  repository,
+  config,
+}: {
+  repository: Repository;
+  config: Partial<Config>;
+}): Promise<any> => {
+  try {
+    if (!config.githubConfig || !config.giteaConfig) {
+      throw new Error("github config and gitea config are required.");
+    }
+
+    const githubClient = github.createGitHubClient(
+      config.githubConfig.token || ""
+    );
+
+    // Get repository details
+    const [owner, repo] = repository.fullName.split("/");
+    const { cloneUrl } = await github.cloneRepository(
+      githubClient,
+      owner,
+      repo
+    );
+
+    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/migrate`;
+
+    const response = await superagent
+      .post(apiUrl)
+      .set("Authorization", `token ${config.giteaConfig.token}`)
+      .send({
+        clone_addr: cloneUrl,
+        repo_name: repository.name,
+        mirror: true,
+        private: repository.isPrivate,
+        repo_owner: repository.organization || owner,
+        service: "git",
+      });
+
+    return response.body;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to mirror repository: ${error.message}`);
+    }
+    throw new Error("Failed to mirror repository: An unknown error occurred.");
+  }
+};

@@ -3,9 +3,7 @@ import { db, repositories } from "@/lib/db";
 import { configs } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import * as github from "@/lib/github";
-import type { GiteaConfig, GitHubConfig, ScheduleConfig } from "@/types/config";
-import { safeParse } from "@/lib/utils";
-import type { RepositoryApiResponse } from "@/types/Repository";
+import { repoStatusEnum, type RepositoryApiResponse } from "@/types/Repository";
 import { v4 as uuidv4 } from "uuid";
 
 export const GET: APIRoute = async ({ request }) => {
@@ -36,17 +34,7 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
-    const rawConfig = userConfig[0];
-
-    // Parsed config with all fields
-    const config = {
-      ...rawConfig,
-      githubConfig: safeParse<GitHubConfig>(rawConfig.githubConfig),
-      giteaConfig: safeParse<GiteaConfig>(rawConfig.giteaConfig),
-      include: safeParse<string[]>(rawConfig.include) ?? [],
-      exclude: safeParse<string[]>(rawConfig.exclude) ?? [],
-      scheduleConfig: safeParse<ScheduleConfig>(rawConfig.scheduleConfig),
-    };
+    const config = userConfig[0];
 
     if (!config.githubConfig || !config.githubConfig.token) {
       return new Response(
@@ -58,7 +46,7 @@ export const GET: APIRoute = async ({ request }) => {
     const octokit = github.createGitHubClient(config.githubConfig.token);
 
     // Fetch GitHub repositories based on the user's config
-    const githubRepos = await github.getUserRepositories(octokit, config);
+    const githubRepos = await github.getUserRepositories({ octokit, config });
 
     // Fetch all the repositories of the user from the database
     const existingRepos = await db
@@ -77,7 +65,7 @@ export const GET: APIRoute = async ({ request }) => {
         await db.insert(repositories).values({
           id: repoId,
           userId,
-          configId: rawConfig.id,
+          configId: config.id,
           name: repo.name,
           fullName: repo.fullName,
           url: repo.url,
@@ -105,10 +93,10 @@ export const GET: APIRoute = async ({ request }) => {
     const response: RepositoryApiResponse = {
       repositories: latestRepositories.map((repo) => ({
         ...repo,
-        organization: repo.organization ?? undefined, // Convert null to undefined
-        lastMirrored: repo.lastMirrored ?? undefined, // Convert null to undefined
-        errorMessage: repo.errorMessage ?? undefined, // Convert null to undefined
-        status: "imported", // Default or derived status value
+        organization: repo.organization ?? undefined,
+        lastMirrored: repo.lastMirrored ?? undefined,
+        errorMessage: repo.errorMessage ?? undefined,
+        status: repoStatusEnum.parse(repo.status),
       })),
     };
 
