@@ -3,7 +3,7 @@ import { RepositoryTable } from "./RepositoryTable";
 import type { Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
 import type {
-  Filter,
+  RepoFilter,
   RepositoryApiResponse,
   RepoStatus,
 } from "@/types/Repository";
@@ -16,20 +16,16 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter as FilterIcon, RefreshCw } from "lucide-react";
+import { Search, Filter, RefreshCw } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const [filter, setFilter] = useState<Filter>({
+  const [filter, setFilter] = useState<RepoFilter>({
     searchTerm: "",
     status: "",
-    name: "",
-    organization: "",
-    owner: "",
-    lastMirrored: "",
   });
 
   useEffect(() => {
@@ -165,7 +161,7 @@ export default function Repository() {
           </Select>
 
           <Button variant="outline">
-            <FilterIcon className="h-4 w-4 mr-2" />
+            <Filter className="h-4 w-4 mr-2" />
             More Filters
           </Button>
 

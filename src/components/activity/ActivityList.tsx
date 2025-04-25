@@ -1,0 +1,140 @@
+import { useMemo, useState } from "react";
+import type { MirrorJob } from "@/lib/db/schema";
+import type { ActivityFilter } from "@/types/activities";
+import Fuse from "fuse.js";
+import { Button } from "../ui/button";
+import { RefreshCw } from "lucide-react";
+import { Card } from "../ui/card";
+import { formatDate, getStatusColor } from "@/lib/utils";
+import { Skeleton } from "../ui/skeleton";
+
+interface ActivityListProps {
+  activities: MirrorJob[];
+  isLoading: boolean;
+  filter: ActivityFilter;
+  setFilter: (filter: ActivityFilter) => void;
+}
+
+export default function ActivityList({
+  activities,
+  isLoading,
+  filter,
+  setFilter,
+}: ActivityListProps) {
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  const filteredActivities = useMemo(() => {
+    let result = activities;
+
+    if (filter.status) {
+      result = result.filter((activity) => activity.status === filter.status);
+    }
+
+    if (filter.searchTerm) {
+      const fuse = new Fuse(result, {
+        keys: ["message", "repositoryName"],
+        threshold: 0.3,
+      });
+
+      result = fuse.search(filter.searchTerm).map((res) => res.item);
+    }
+
+    return result;
+  }, [activities, filter]);
+
+  return isLoading ? (
+    <div className="flex flex-col gap-y-4">
+      {Array.from({ length: 5 }, (_, index) => (
+        <Skeleton key={index} className="h-28 w-full rounded-md" />
+      ))}
+    </div>
+  ) : filteredActivities.length === 0 ? (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <RefreshCw className="h-12 w-12 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-medium">No activities found</h3>
+      <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-md">
+        {filter.searchTerm || filter.status
+          ? "Try adjusting your search or filter criteria."
+          : "No mirroring activities have been recorded yet."}
+      </p>
+      {filter.searchTerm || filter.status ? (
+        <Button
+          variant="outline"
+          onClick={() => {
+            setFilter({
+              searchTerm: "",
+              status: "",
+            });
+          }}
+        >
+          Clear Filters
+        </Button>
+      ) : (
+        <Button>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      )}
+    </div>
+  ) : (
+    <Card className="border rounded-md divide-y">
+      {filteredActivities.map((activity, index) => (
+        <div key={index} className="p-4">
+          <div className="flex items-start gap-4">
+            <div className="relative mt-2">
+              <div
+                className={`h-2 w-2 rounded-full ${getStatusColor(
+                  activity.status
+                )}`}
+              />
+            </div>
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
+                <p className="font-medium">{activity.message}</p>
+                <p className="text-sm text-muted-foreground">
+                  {formatDate(activity.timestamp)}
+                </p>
+              </div>
+
+              {activity.repositoryName && (
+                <p className="text-sm text-muted-foreground mb-2">
+                  Repository: {activity.repositoryName}
+                </p>
+              )}
+
+              {activity.details && (
+                <div className="mt-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setExpandedItems((prev) => {
+                        const newExpandedItems = new Set(prev);
+                        if (newExpandedItems.has(activity.id || "")) {
+                          newExpandedItems.delete(activity.id || "");
+                        } else {
+                          newExpandedItems.add(activity.id || "");
+                        }
+                        return newExpandedItems;
+                      });
+                    }}
+                    className="text-xs h-7 px-2"
+                  >
+                    {expandedItems.has(activity.id || "")
+                      ? "Hide Details"
+                      : "Show Details"}
+                  </Button>
+
+                  {expandedItems.has(activity.id || "") && (
+                    <pre className="mt-2 p-3 bg-muted rounded-md text-xs overflow-auto">
+                      {activity.details}
+                    </pre>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </Card>
+  );
+}

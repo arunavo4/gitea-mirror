@@ -13,13 +13,9 @@ export const repoStatusEnum = z.enum([
 
 export type RepoStatus = z.infer<typeof repoStatusEnum>;
 
-export interface Filter {
+export interface RepoFilter {
   searchTerm: string;
   status: RepoStatus;
-  name: string;
-  organization: string;
-  owner: string;
-  lastMirrored: string;
 }
 
 export interface RepositoryApiResponse {

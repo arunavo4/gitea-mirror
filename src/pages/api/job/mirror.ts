@@ -4,6 +4,7 @@ import { db, configs, repositories } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
 import { mirrorRepoToGitea } from "@/lib/mirror";
 import { repoStatusEnum } from "@/types/Repository";
+import { createMirrorJob } from "@/lib/helpers";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -59,9 +60,19 @@ export const POST: APIRoute = async ({ request }) => {
           updatedAt: timestamp,
         })
         .where(eq(repositories.id, repo.id));
+
+      // 2. Append log for "mirroring" status
+      await createMirrorJob({
+        userId,
+        repositoryId: repo.id,
+        repositoryName: repo.name,
+        message: `Started mirroring repository: ${repo.name}`,
+        details: `Repository ${repo.name} is now in the mirroring state.`,
+        status: repoStatusEnum.parse("mirroring"),
+      });
     }
 
-    // 2. Refetch updated repos
+    // 2. Refetch updated repos (with the new 'mirroring' status)
     const updatedRepos = await db
       .select()
       .from(repositories)
@@ -70,6 +81,8 @@ export const POST: APIRoute = async ({ request }) => {
     // 3. Start async mirroring in background
     setTimeout(async () => {
       for (const repo of updatedRepos) {
+        const jobId = repo.id; // Assuming the jobId is tied to the repository
+
         try {
           await mirrorRepoToGitea({
             repository: {
@@ -92,8 +105,20 @@ export const POST: APIRoute = async ({ request }) => {
               errorMessage: null,
             })
             .where(eq(repositories.id, repo.id));
+
+          // Append log for successful mirroring
+          await createMirrorJob({
+            userId,
+            repositoryId: repo.id,
+            repositoryName: repo.name,
+            message: `Successfully mirrored repository: ${repo.name}`,
+            details: `Repository ${repo.name} has been successfully mirrored.`,
+            status: repoStatusEnum.parse("mirrored"),
+          });
         } catch (error) {
           console.error(`Mirror failed for repo ${repo.name}:`, error);
+
+          // Update status to "failed"
           await db
             .update(repositories)
             .set({
@@ -103,6 +128,18 @@ export const POST: APIRoute = async ({ request }) => {
                 error instanceof Error ? error.message : "Unknown error",
             })
             .where(eq(repositories.id, repo.id));
+
+          // Append log for failure
+          await createMirrorJob({
+            userId,
+            repositoryId: repo.id,
+            repositoryName: repo.name,
+            message: `Failed to mirror repository: ${repo.name}`,
+            details: `Repository ${repo.name} failed to mirror. Error: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+            status: repoStatusEnum.parse("failed"),
+          });
         }
       }
     }, 0);

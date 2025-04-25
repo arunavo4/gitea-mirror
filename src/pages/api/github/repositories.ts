@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import * as github from "@/lib/github";
 import { repoStatusEnum, type RepositoryApiResponse } from "@/types/Repository";
 import { v4 as uuidv4 } from "uuid";
+import { createMirrorJob } from "@/lib/helpers";
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -60,7 +61,6 @@ export const GET: APIRoute = async ({ request }) => {
 
       if (!existing) {
         const repoId = uuidv4();
-        console.log("gen repo id:", repoId);
 
         await db.insert(repositories).values({
           id: repoId,
@@ -75,6 +75,16 @@ export const GET: APIRoute = async ({ request }) => {
           organization: repo.organization,
           hasIssues: repo.hasIssues,
           isStarred: repo.isStarred,
+        });
+
+        // Create a mirror job for the newly added repository
+        await createMirrorJob({
+          userId,
+          repositoryId: repoId,
+          repositoryName: repo.name,
+          message: `Repository ${repo.name} fetched.`,
+          status: repoStatusEnum.parse("imported"),
+          details: `Repository ${repo.name} was fetched from github.`,
         });
       } else {
         await db

@@ -31,9 +31,9 @@ export const users = sqliteTable("users", {
     .default(new Date()),
 });
 
-const githubSchema = configSchema.shape.github;
-const giteaSchema = configSchema.shape.gitea;
-const scheduleSchema = configSchema.shape.schedule;
+const githubSchema = configSchema.shape.githubConfig;
+const giteaSchema = configSchema.shape.giteaConfig;
+const scheduleSchema = configSchema.shape.scheduleConfig;
 
 export const configs = sqliteTable("configs", {
   id: text("id").primaryKey(),
@@ -110,18 +110,17 @@ export const repositories = sqliteTable("repositories", {
 
 export const mirrorJobs = sqliteTable("mirror_jobs", {
   id: text("id").primaryKey(),
-  configId: text("config_id")
+  userId: text("user_id")
     .notNull()
-    .references(() => configs.id),
-  repositoryId: text("repository_id").references(() => repositories.id),
-  status: text("status").notNull().default("pending"),
-  startedAt: integer("started_at", { mode: "timestamp" }),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
-  log: text("log", { mode: "json" }).notNull().default("[]"),
-  createdAt: integer("created_at", { mode: "timestamp" })
+    .references(() => users.id),
+  repositoryId: text("repository_id")
     .notNull()
-    .default(new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .references(() => repositories.id),
+  repositoryName: text("repository_name").notNull(),
+  details: text("details"),
+  status: text("status").notNull().default("imported"),
+  message: text("message").notNull(),
+  timestamp: integer("timestamp", { mode: "timestamp" })
     .notNull()
     .default(new Date()),
 });

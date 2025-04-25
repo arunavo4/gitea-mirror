@@ -1,20 +1,17 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Fuse from "fuse.js";
 import { GitFork, ExternalLink, RefreshCw } from "lucide-react";
 import type { Repository } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { formatDate, getStatusColor } from "@/lib/utils";
-import type { Filter, RepositoryApiResponse } from "@/types/Repository";
-import { apiRequest } from "@/lib/utils";
+import type { RepoFilter } from "@/types/Repository";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/hooks/useAuth";
-import type { MirrorRepoRequest } from "@/types/mirror";
 
 interface RepositoryTableProps {
   repositories: Repository[];
   isLoading: boolean;
-  filter: Filter;
-  setFilter: (filter: Filter) => void;
+  filter: RepoFilter;
+  setFilter: (filter: RepoFilter) => void;
   onMirror: ({ repoId }: { repoId: string }) => Promise<void>;
 }
 
@@ -25,8 +22,6 @@ export function RepositoryTable({
   setFilter,
   onMirror,
 }: RepositoryTableProps) {
-  const { user } = useAuth();
-
   const hasAnyFilter = Object.values(filter).some(
     (val) => val?.toString().trim() !== ""
   );
@@ -68,7 +63,7 @@ export function RepositoryTable({
             <tr key={i} className="border-b">
               {Array.from({ length: 6 }).map((_, j) => (
                 <td key={j} className="p-3">
-                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-10 w-full" />
                 </td>
               ))}
             </tr>
@@ -92,10 +87,6 @@ export function RepositoryTable({
             setFilter({
               searchTerm: "",
               status: "",
-              name: "",
-              organization: "",
-              owner: "",
-              lastMirrored: "",
             })
           }
         >

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { repoStatusEnum } from "@/types/Repository";
+import { activityLogLevelEnum } from "@/types/activities";
 
 // User schema
 export const userSchema = z.object({
@@ -84,24 +85,13 @@ export type Repository = z.infer<typeof repositorySchema>;
 // Mirror job schema
 export const mirrorJobSchema = z.object({
   id: z.string().uuid().optional(),
-  configId: z.string().uuid(),
-  repositoryId: z.string().uuid().optional(),
-  status: z
-    .enum(["pending", "running", "completed", "failed"])
-    .default("pending"),
-  startedAt: z.date().optional(),
-  completedAt: z.date().optional(),
-  log: z
-    .array(
-      z.object({
-        timestamp: z.date().default(() => new Date()),
-        message: z.string(),
-        level: z.enum(["info", "warning", "error"]).default("info"),
-      })
-    )
-    .default([]),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
+  userId: z.string().uuid().optional(),
+  repositoryId: z.string().uuid(),
+  repositoryName: z.string(),
+  details: z.string().optional(),
+  status: repoStatusEnum.default("imported"),
+  message: z.string(),
+  timestamp: z.date().default(() => new Date()),
 });
 
 export type MirrorJob = z.infer<typeof mirrorJobSchema>;

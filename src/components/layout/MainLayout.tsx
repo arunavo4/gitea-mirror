@@ -16,6 +16,7 @@ import type {
   GitHubConfig,
   ScheduleConfig,
 } from "@/types/config";
+import { ActivityLog } from "../activity/ActivityLog";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -74,7 +75,7 @@ function AppWithProviders({ page }: AppProps) {
           {page === "repositories" && <Repository />}
           {page === "organizations" && <div>Organizations Content</div>}
           {page === "configuration" && <ConfigTabs />}
-          {page === "activity-log" && <div>Activity Log Content</div>}
+          {page === "activity-log" && <ActivityLog />}
         </section>
       </div>
     </main>
