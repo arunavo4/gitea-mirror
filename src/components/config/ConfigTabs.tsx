@@ -20,6 +20,7 @@ import type {
 import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
+import { Copy, CopyCheck, CopyCheckIcon } from "lucide-react";
 
 type ConfigState = {
   githubConfig: GitHubConfig;
@@ -59,6 +60,8 @@ export function ConfigTabs() {
   });
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [dockerCode, setDockerCode] = useState<string>("");
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const handleSaveConfig = async () => {
     try {
@@ -155,6 +158,45 @@ export function ConfigTabs() {
     fetchConfig();
   }, [user]);
 
+  useEffect(() => {
+    const generateDockerCode = () => {
+      return `version: "3.3"
+services:
+  gitea-mirror:
+    image: arunavo4/gitea-mirror:latest
+    restart: unless-stopped
+    container_name: gitea-mirror
+    environment:
+      - GITHUB_USERNAME=${config.githubConfig.username}
+      - GITEA_URL=${config.giteaConfig.url}
+      - GITEA_TOKEN=${config.giteaConfig.token}
+      - GITHUB_TOKEN=${config.githubConfig.token}
+      - MIRROR_ISSUES=${config.githubConfig.mirrorIssues}
+      - MIRROR_STARRED=${config.githubConfig.mirrorStarred}
+      - MIRROR_ORGANIZATIONS=${config.githubConfig.mirrorOrganizations}
+      - PRESERVE_ORG_STRUCTURE=${config.githubConfig.preserveOrgStructure}
+      - ONLY_MIRROR_ORGS=${config.githubConfig.onlyMirrorOrgs}
+      - GITEA_ORGANIZATION=${config.giteaConfig.organization}
+      - GITEA_ORG_VISIBILITY=${config.giteaConfig.visibility}
+      - DELAY=${config.scheduleConfig.interval}`;
+    };
+
+    const code = generateDockerCode();
+    setDockerCode(code);
+  }, [config]);
+
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      },
+      (err) => {
+        console.error("Could not copy text: ", err);
+      }
+    );
+  };
+
   return isLoading ? (
     <div>loading...</div>
   ) : (
@@ -222,37 +264,33 @@ export function ConfigTabs() {
         </CardContent>
       </Card>
 
-      {/* <Card>
+      <Card>
         <CardHeader>
           <CardTitle>Docker Configuration</CardTitle>
           <CardDescription>
             Equivalent Docker configuration for your current settings.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="relative">
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute top-4 right-10"
+            onClick={() => handleCopyToClipboard(dockerCode)}
+          >
+            {isCopied ? (
+              <CopyCheck className="text-green-500" />
+            ) : (
+              <Copy className="text-muted-foreground" />
+            )}
+          </Button>
+
           <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
-            {`version: "3.3"
-services:
-  gitea-mirror:
-    image: arunavo4/gitea-mirror:latest
-    restart: unless-stopped
-    container_name: gitea-mirror
-    environment:
-      - GITHUB_USERNAME=${githubConfig.username}
-      - GITEA_URL=${giteaConfig.url}
-      - GITEA_TOKEN=your-gitea-token
-      - GITHUB_TOKEN=your-github-token
-      - MIRROR_ISSUES=${githubConfig.mirrorIssues}
-      - MIRROR_STARRED=${githubConfig.mirrorStarred}
-      - MIRROR_ORGANIZATIONS=${githubConfig.mirrorOrganizations}
-      - PRESERVE_ORG_STRUCTURE=${githubConfig.preserveOrgStructure}
-      - ONLY_MIRROR_ORGS=${githubConfig.onlyMirrorOrgs}
-      - GITEA_ORGANIZATION=${giteaConfig.organization}
-      - GITEA_ORG_VISIBILITY=${giteaConfig.visibility}
-      - DELAY=${scheduleConfig.interval}`}
+            {dockerCode}
           </pre>
         </CardContent>
-      </Card> */}
+      </Card>
     </div>
   );
 }
