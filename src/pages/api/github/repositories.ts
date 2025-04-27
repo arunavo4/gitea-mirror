@@ -9,7 +9,11 @@ import {
 } from "@/types/Repository";
 import { v4 as uuidv4 } from "uuid";
 import { createMirrorJob } from "@/lib/helpers";
-import { createGitHubClient, getGithubRepositories } from "@/lib/github";
+import {
+  createGitHubClient,
+  getGithubRepositories,
+  getGithubStarredRepositories,
+} from "@/lib/github";
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -52,7 +56,17 @@ export const GET: APIRoute = async ({ request }) => {
     const octokit = createGitHubClient(config.githubConfig.token);
 
     // Fetch GitHub repositories based on the user's config
-    const githubRepos = await getGithubRepositories({ octokit, config });
+    const basicAndForkedRepos = await getGithubRepositories({
+      octokit,
+      config,
+    });
+
+    const starredRepos = await getGithubStarredRepositories({
+      octokit,
+      config,
+    });
+
+    const allGithubRepos = [...basicAndForkedRepos, ...starredRepos];
 
     // Fetch all the repositories of the user from the database
     const existingRepos = await db
@@ -61,7 +75,7 @@ export const GET: APIRoute = async ({ request }) => {
       .where(eq(repositories.userId, userId));
 
     // Sync to DB (Insert or Update)
-    for (const repo of githubRepos) {
+    for (const repo of allGithubRepos) {
       const existing = existingRepos.find((r) => r.fullName === repo.fullName);
 
       if (!existing) {

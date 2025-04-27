@@ -3,7 +3,6 @@ import type { GitRepo, RepoStatus } from "@/types/Repository";
 import { Octokit } from "@octokit/rest";
 import type { Config } from "@/types/config";
 import type { Repository } from "./db/schema";
-import superagent from "superagent";
 
 /**
  * Creates an authenticated Octokit instance
@@ -51,65 +50,42 @@ export async function getGithubRepositories({
   try {
     const repos = await octokit.paginate(
       octokit.repos.listForAuthenticatedUser,
-      {
-        per_page: 100,
-      }
+      { per_page: 100 }
     );
 
-    return repos
-      .filter((repo) => {
-        // Skip forks if configured
-        if (config.githubConfig?.skipForks && repo.fork) {
-          return false;
-        }
+    return repos.map((repo) => ({
+      name: repo.name,
+      fullName: repo.full_name,
+      url: repo.html_url,
+      cloneUrl: repo.clone_url,
 
-        // Skip private repos if not configured to include them
-        if (repo.private && !config.githubConfig?.privateRepositories) {
-          return false;
-        }
+      owner: repo.owner.login,
+      organization:
+        repo.owner.type === "Organization" ? repo.owner.login : undefined,
 
-        return true;
-      })
-      .map((repo) => {
-        const repoWithParent = repo as typeof repo & {
-          parent?: { full_name: string };
-        };
+      isPrivate: repo.private,
+      isForked: repo.fork,
+      forkedFrom: (repo as typeof repo & { parent?: { full_name: string } })
+        .parent?.full_name,
 
-        return {
-          name: repo.name,
-          fullName: repo.full_name,
-          url: repo.html_url,
-          cloneUrl: repo.clone_url,
+      hasIssues: repo.has_issues,
+      isStarred: false, // if you need starred separately, it has to come from another API
+      isArchived: repo.archived,
 
-          owner: repo.owner.login,
-          organization:
-            repo.owner.type === "Organization" ? repo.owner.login : undefined,
+      size: repo.size,
+      hasLFS: false,
+      hasSubmodules: false,
 
-          isPrivate: repo.private,
-          isForked: repo.fork,
-          forkedFrom: repoWithParent.fork
-            ? repoWithParent.parent?.full_name
-            : undefined,
+      defaultBranch: repo.default_branch,
+      visibility: (repo.visibility ?? "public") as GitRepo["visibility"],
 
-          hasIssues: repo.has_issues,
-          isStarred: false, // we need separate API to fetch stars
-          isArchived: repo.archived,
+      status: "imported",
+      lastMirrored: undefined,
+      errorMessage: undefined,
 
-          size: repo.size,
-          hasLFS: false, // placeholder for now
-          hasSubmodules: false, // placeholder for now
-
-          defaultBranch: repo.default_branch,
-          visibility: (repo.visibility ?? "public") as Repository["visibility"],
-
-          status: "imported",
-          lastMirrored: undefined,
-          errorMessage: undefined,
-
-          createdAt: repo.created_at ? new Date(repo.created_at) : new Date(),
-          updatedAt: repo.updated_at ? new Date(repo.updated_at) : new Date(),
-        };
-      });
+      createdAt: repo.created_at ? new Date(repo.created_at) : new Date(),
+      updatedAt: repo.updated_at ? new Date(repo.updated_at) : new Date(),
+    }));
   } catch (error) {
     throw new Error(
       `Error fetching repositories: ${
@@ -161,6 +137,62 @@ export async function getGithubOrganizations({
   } catch (error) {
     throw new Error(
       `Error fetching organizations: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+export async function getGithubStarredRepositories({
+  octokit,
+  config,
+}: {
+  octokit: Octokit;
+  config: Partial<Config>;
+}) {
+  try {
+    const starredRepos = await octokit.paginate(
+      octokit.activity.listReposStarredByAuthenticatedUser,
+      {
+        per_page: 100,
+      }
+    );
+
+    return starredRepos.map((repo) => ({
+      name: repo.name,
+      fullName: repo.full_name,
+      url: repo.html_url,
+      cloneUrl: repo.clone_url,
+
+      owner: repo.owner.login,
+      organization:
+        repo.owner.type === "Organization" ? repo.owner.login : undefined,
+
+      isPrivate: repo.private,
+      isForked: repo.fork,
+      forkedFrom: undefined,
+
+      hasIssues: repo.has_issues,
+      isStarred: true,
+      isArchived: repo.archived,
+
+      size: repo.size,
+      hasLFS: false, // Placeholder
+      hasSubmodules: false, // Placeholder
+
+      defaultBranch: repo.default_branch,
+      visibility: (repo.visibility ?? "public") as GitRepo["visibility"],
+
+      status: "imported",
+      lastMirrored: undefined,
+      errorMessage: undefined,
+
+      createdAt: repo.created_at ? new Date(repo.created_at) : new Date(),
+      updatedAt: repo.updated_at ? new Date(repo.updated_at) : new Date(),
+    }));
+  } catch (error) {
+    throw new Error(
+      `Error fetching starred repositories: ${
         error instanceof Error ? error.message : String(error)
       }`
     );
