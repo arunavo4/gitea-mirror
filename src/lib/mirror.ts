@@ -459,7 +459,7 @@ function matchPattern(str: string, pattern: string): boolean {
   return regex.test(str);
 }
 
-//latest apis
+//latest apis that are actually in use
 
 export const mirrorRepoToGitea = async ({
   repository,

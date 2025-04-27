@@ -1,0 +1,142 @@
+import { useMemo, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus, Users, ExternalLink } from "lucide-react";
+import type { Organization } from "@/lib/db/schema";
+import type { OrgFilter } from "@/types/organizations";
+import Fuse from "fuse.js";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+
+interface OrganizationListProps {
+  organizations: Organization[];
+  isLoading: boolean;
+  filter: OrgFilter;
+  setFilter: (filter: OrgFilter) => void;
+  onMirror: ({ orgId }: { orgId: string }) => Promise<void>;
+  isComputing: boolean;
+}
+
+export function OrganizationList({
+  organizations,
+  isLoading,
+  filter,
+  setFilter,
+  isComputing,
+}: OrganizationListProps) {
+  const hasAnyFilter = Object.values(filter).some(
+    (val) => val?.toString().trim() !== ""
+  );
+
+  const filteredOrganizations = useMemo(() => {
+    let result = organizations;
+
+    if (filter.type) {
+      result = result.filter((org) => org.type === filter.type);
+    }
+
+    if (filter.searchTerm) {
+      const fuse = new Fuse(result, {
+        keys: ["name", "type"],
+        threshold: 0.3,
+      });
+
+      result = fuse.search(filter.searchTerm).map((res) => res.item);
+    }
+
+    return result;
+  }, [organizations, filter]);
+
+  return isLoading ? (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Skeleton className="h-[136px] w-full" />
+      ))}
+    </div>
+  ) : filteredOrganizations.length === 0 ? (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <Users className="h-12 w-12 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-medium">No organizations found</h3>
+      <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-md">
+        {hasAnyFilter
+          ? "Try adjusting your search or filter criteria."
+          : "Add GitHub organizations to mirror their repositories."}
+      </p>
+      {hasAnyFilter ? (
+        <Button
+          variant="outline"
+          onClick={() => {
+            setFilter({
+              searchTerm: "",
+              type: "",
+            });
+          }}
+        >
+          Clear Filters
+        </Button>
+      ) : (
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Organization
+        </Button>
+      )}
+    </div>
+  ) : (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {filteredOrganizations.map((org, index) => (
+        <Card key={index} className="overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <h3 className="font-medium">{org.name}</h3>
+              </div>
+              <span
+                className={`text-xs px-2 py-1 rounded-full capitalize ${
+                  org.type === "member"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-purple-100 text-purple-800"
+                }`}
+              >
+                {org.type}
+                {/* needs to be updated  */}
+              </span>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-4">
+              {org.repositoryCount}{" "}
+              {org.repositoryCount === 1 ? "repository" : "repositories"}
+            </p>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Checkbox
+                  id={`include-${org.id}`}
+                  name={`include-${org.id}`}
+                  checked={org.isIncluded}
+                  disabled={isComputing}
+                />
+                <label
+                  htmlFor="terms"
+                  className="ml-2 text-sm select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Include in mirroring
+                </label>
+              </div>
+
+              <Button variant="ghost" size="icon" asChild>
+                <a
+                  href={`https://github.com/${org.name}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}

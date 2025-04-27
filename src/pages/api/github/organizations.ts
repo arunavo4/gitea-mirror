@@ -70,9 +70,9 @@ export const GET: APIRoute = async ({ request }) => {
           userId,
           configId: config.id,
           name: org.name,
-          type: org.type,
+          type: org.userViewType,
           isIncluded: false,
-          repositoryCount: 0,
+          repositoryCount: org.totalRepos,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -102,7 +102,11 @@ export const GET: APIRoute = async ({ request }) => {
       type: org.type as OrgRelationType,
     }));
 
-    const resPayload: OrganizationsApiResponse = { organizations: orgsWithIds };
+    const resPayload: OrganizationsApiResponse = {
+      success: true,
+      message: "Organizations fetched successfully",
+      organizations: orgsWithIds,
+    };
 
     return new Response(JSON.stringify(resPayload), {
       status: 200,

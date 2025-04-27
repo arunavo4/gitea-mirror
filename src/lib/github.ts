@@ -2,6 +2,7 @@ import { Octokit } from "@octokit/rest";
 import type { Repository } from "./db/schema";
 import type { Config } from "@/types/config";
 import type { GitRepo } from "@/types/Repository";
+import type { GitOrg } from "@/types/organizations";
 
 /**
  * Creates an authenticated Octokit instance
@@ -149,22 +150,39 @@ export async function getUserOrganizations({
   octokit,
 }: {
   octokit: Octokit;
-}): Promise<any[]> {
+}): Promise<GitOrg[]> {
   try {
     const { data: orgs } = await octokit.orgs.listForAuthenticatedUser({
       per_page: 100,
     });
 
-    return orgs.map((org) => ({
-      name: org.login,
-      type: "member",
-      avatarUrl: org.avatar_url,
-      description: org.description,
-    }));
+    const organizations = await Promise.all(
+      orgs.map(async (org) => {
+        const [{ data: orgDetails }, { data: membership }] = await Promise.all([
+          octokit.orgs.get({ org: org.login }),
+          octokit.orgs.getMembershipForAuthenticatedUser({ org: org.login }),
+        ]);
+
+        const totalRepos =
+          orgDetails.public_repos + (orgDetails.total_private_repos ?? 0);
+
+        console.log("membership", membership.organization);
+
+        return {
+          name: org.login,
+          avatarUrl: org.avatar_url,
+          description: org.description || null,
+          totalRepos,
+          userViewType: membership.role,
+        };
+      })
+    );
+
+    return organizations;
   } catch (error) {
     throw new Error(
       `Error fetching organizations: ${
-        error instanceof Error ? error.message : error
+        error instanceof Error ? error.message : String(error)
       }`
     );
   }
@@ -235,4 +253,76 @@ export async function cloneRepository(
     url: data.html_url,
     cloneUrl: data.clone_url,
   };
+}
+
+//latest apis that are in use
+export async function getAllOrgRepoContents({
+  octokit,
+  org,
+}: {
+  octokit: Octokit;
+  org: string;
+}) {
+  // Step 1: List all repos
+  const repos = await octokit.paginate(octokit.repos.listForOrg, {
+    org,
+    type: "all", // includes public and private if token allows
+    per_page: 100,
+  });
+
+  const allContents: Record<string, any[]> = {};
+
+  // Step 2: For each repo, get all contents
+  for (const repo of repos) {
+    console.log(`Fetching contents for repo: ${repo.name}`);
+    allContents[repo.name] = await getAllContentsOfRepo({
+      octokit,
+      owner: org,
+      repo: repo.name,
+    });
+  }
+
+  return allContents;
+}
+
+export async function getAllContentsOfRepo({
+  octokit,
+  owner,
+  repo,
+  path = "",
+}: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+  path?: string;
+}): Promise<any[]> {
+  const contents: any[] = [];
+
+  try {
+    const { data } = await octokit.repos.getContent({ owner, repo, path });
+
+    if (Array.isArray(data)) {
+      for (const item of data) {
+        contents.push(item);
+        if (item.type === "dir") {
+          const subContents = await getAllContentsOfRepo({
+            octokit,
+            owner,
+            repo,
+            path: item.path,
+          });
+          contents.push(...subContents);
+        }
+      }
+    } else {
+      contents.push(data);
+    }
+  } catch (error) {
+    console.error(
+      `Error fetching contents for ${owner}/${repo}/${path}`,
+      error
+    );
+  }
+
+  return contents;
 }

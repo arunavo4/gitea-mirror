@@ -11,3 +11,8 @@ export interface MirrorRepoResponse {
   error?: string;
   repositories: Repository[];
 }
+
+export interface MirrorOrgRequest {
+  userId: string;
+  organizationIds: string[];
+}

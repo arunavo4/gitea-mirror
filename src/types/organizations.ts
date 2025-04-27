@@ -1,16 +1,25 @@
 import type { Organization } from "@/lib/db/schema";
 import { z } from "zod";
 
-export const orgRelationTypeEnum = z.enum(["member", "public"]);
+export const orgRelationTypeEnum = z.enum(["member", "admin"]);
 
 export type OrgRelationType = z.infer<typeof orgRelationTypeEnum>;
 
 export interface OrganizationsApiResponse {
-  organizations: any[];
-}
-
-export interface OrganizationResponse {
   success: boolean;
   message: string;
   organizations: Organization[];
+}
+
+export interface GitOrg {
+  name: string;
+  avatarUrl: string;
+  description: string | null;
+  totalRepos: number;
+  userViewType: string; // "member" | "public"
+}
+
+export interface OrgFilter {
+  searchTerm: string;
+  type: OrgRelationType | null | "";
 }

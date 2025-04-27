@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import type { MirrorRepoRequest } from "@/types/mirror";
 import { db, configs, repositories } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
-import { mirrorRepoToGitea } from "@/lib/mirror";
+import { createGitHubClient, mirrorRepoToGitea } from "@/lib/wip";
 import { repoStatusEnum } from "@/types/Repository";
 import { createMirrorJob } from "@/lib/helpers";
 
@@ -21,17 +21,28 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    if (repositoryIds.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "No repository IDs provided.",
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     // Fetch config
     const configResult = await db
       .select()
       .from(configs)
       .where(eq(configs.userId, userId))
       .limit(1);
+
     const config = configResult[0];
 
-    if (!config) {
+    if (!config || !config.githubConfig.token) {
       return new Response(
-        JSON.stringify({ error: "Config missing for the user." }),
+        JSON.stringify({ error: "Config missing for the user or token." }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -64,7 +75,6 @@ export const POST: APIRoute = async ({ request }) => {
       // 2. Append log for "mirroring" status
       await createMirrorJob({
         userId,
-        repositoryId: repo.id,
         repositoryName: repo.name,
         message: `Started mirroring repository: ${repo.name}`,
         details: `Repository ${repo.name} is now in the mirroring state.`,
@@ -81,10 +91,15 @@ export const POST: APIRoute = async ({ request }) => {
     // 3. Start async mirroring in background
     setTimeout(async () => {
       for (const repo of updatedRepos) {
-        const jobId = repo.id; // Assuming the jobId is tied to the repository
+        if (!config.githubConfig.token) {
+          throw new Error("GitHub token is missing.");
+        }
+
+        const octokit = createGitHubClient(config.githubConfig.token);
 
         try {
           await mirrorRepoToGitea({
+            octokit,
             repository: {
               ...repo,
               status: repoStatusEnum.parse("mirroring"),
@@ -109,7 +124,6 @@ export const POST: APIRoute = async ({ request }) => {
           // Append log for successful mirroring
           await createMirrorJob({
             userId,
-            repositoryId: repo.id,
             repositoryName: repo.name,
             message: `Successfully mirrored repository: ${repo.name}`,
             details: `Repository ${repo.name} has been successfully mirrored.`,
@@ -132,7 +146,6 @@ export const POST: APIRoute = async ({ request }) => {
           // Append log for failure
           await createMirrorJob({
             userId,
-            repositoryId: repo.id,
             repositoryName: repo.name,
             message: `Failed to mirror repository: ${repo.name}`,
             details: `Repository ${repo.name} failed to mirror. Error: ${

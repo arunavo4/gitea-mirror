@@ -2,21 +2,14 @@ import * as React from "react";
 import { useEffect, useState } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { AuthProvider } from "@/hooks/useAuth";
 import { ToastProvider } from "./ToastProvider";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import Repository from "../repositories/Repository";
 import Providers from "./Providers";
-import type { RepositoryApiResponse } from "@/types/Repository";
-import { apiRequest } from "@/lib/utils";
 import { ConfigTabs } from "../config/ConfigTabs";
-import type {
-  ConfigApiResponse,
-  GiteaConfig,
-  GitHubConfig,
-  ScheduleConfig,
-} from "@/types/config";
 import { ActivityLog } from "../activity/ActivityLog";
+import { Organization } from "../organizations/Organization";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -73,7 +66,7 @@ function AppWithProviders({ page }: AppProps) {
             />
           )}
           {page === "repositories" && <Repository />}
-          {page === "organizations" && <div>Organizations Content</div>}
+          {page === "organizations" && <Organization />}
           {page === "configuration" && <ConfigTabs />}
           {page === "activity-log" && <ActivityLog />}
         </section>

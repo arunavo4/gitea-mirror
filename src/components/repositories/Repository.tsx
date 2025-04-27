@@ -88,7 +88,7 @@ export default function Repository() {
     }
   };
 
-  const handleMirror = async ({ repoId }: { repoId: string }) => {
+  const handleMirrorRepo = async ({ repoId }: { repoId: string }) => {
     try {
       if (!user || !user.id) {
         return;
@@ -99,10 +99,13 @@ export default function Repository() {
         repositoryIds: [repoId],
       };
 
-      const response = await apiRequest<MirrorRepoResponse>("/job/mirror", {
-        method: "POST",
-        data: reqPayload,
-      });
+      const response = await apiRequest<MirrorRepoResponse>(
+        "/job/mirror-repo",
+        {
+          method: "POST",
+          data: reqPayload,
+        }
+      );
 
       if (response.success) {
         console.log("Mirror job started successfully:", response);
@@ -177,7 +180,7 @@ export default function Repository() {
         isLoading={isLoading}
         filter={filter}
         setFilter={setFilter}
-        onMirror={handleMirror}
+        onMirror={handleMirrorRepo}
       />
     </div>
   );

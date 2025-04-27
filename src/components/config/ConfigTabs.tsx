@@ -20,7 +20,7 @@ import type {
 import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
-import { Copy, CopyCheck, CopyCheckIcon } from "lucide-react";
+import { Copy, CopyCheck } from "lucide-react";
 
 type ConfigState = {
   githubConfig: GitHubConfig;
