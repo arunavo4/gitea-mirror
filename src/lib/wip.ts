@@ -154,13 +154,29 @@ export const mirrorRepoToGitea = async ({
     const [owner, repo] = repository.fullName.split("/");
     const { cloneUrl } = await cloneRepository({ octokit, owner, repo });
 
+    let cloneAddress = cloneUrl;
+
+    // If the repo is private, inject the GitHub token into the clone URL
+    if (repository.isPrivate) {
+      if (!config.githubConfig.token) {
+        throw new Error(
+          "GitHub token is required to mirror private repositories."
+        );
+      }
+
+      cloneAddress = cloneUrl.replace(
+        "https://",
+        `https://${config.githubConfig.token}@`
+      );
+    }
+
     const apiUrl = `${config.giteaConfig.url}/api/v1/repos/migrate`;
 
     const response = await superagent
       .post(apiUrl)
       .set("Authorization", `token ${config.giteaConfig.token}`)
       .send({
-        clone_addr: cloneUrl,
+        clone_addr: cloneAddress,
         repo_name: repository.name,
         mirror: true,
         private: repository.isPrivate,
