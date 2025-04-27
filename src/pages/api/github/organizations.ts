@@ -2,7 +2,6 @@ import type { APIRoute } from "astro";
 import { db } from "@/lib/db";
 import { configs, organizations } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import * as github from "@/lib/github";
 import type {
   OrganizationsApiResponse,
   OrgRelationType,
@@ -10,6 +9,7 @@ import type {
 import { v4 as uuidv4 } from "uuid";
 import { createMirrorJob } from "@/lib/helpers";
 import type { Organization } from "@/lib/db/schema";
+import { createGitHubClient, getGithubOrganizations } from "@/lib/github";
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -48,10 +48,10 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
-    const octokit = github.createGitHubClient(config.githubConfig.token);
+    const octokit = createGitHubClient(config.githubConfig.token);
 
     // Fetch GitHub organizations
-    const gitOrgs = await github.getUserOrganizations({ octokit });
+    const gitOrgs = await getGithubOrganizations({ config, octokit });
 
     const existingOrgs = await db
       .select()

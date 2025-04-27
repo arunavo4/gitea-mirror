@@ -1,9 +1,9 @@
 import type { APIRoute } from "astro";
 import type { MirrorOrgRequest } from "@/types/mirror";
-import { db, configs, organizations } from "@/lib/db";
+import { db, configs } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import * as github from "@/lib/github";
-import { mirrorOrgReposToGitea } from "@/lib/wip";
+import { createGitHubClient } from "@/lib/github";
+import { mirrorGithubOrgToGitea } from "@/lib/gitea";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -47,12 +47,12 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Fetch repos
-    const octokit = github.createGitHubClient(config.githubConfig.token);
+    const octokit = createGitHubClient(config.githubConfig.token);
 
-    const response = await mirrorOrgReposToGitea({
+    const response = await mirrorGithubOrgToGitea({
       octokit,
       config,
-      orgName: "Neucruit",
+      orgName: "initify",
     });
 
     // 4. Return the updated repo list to the user

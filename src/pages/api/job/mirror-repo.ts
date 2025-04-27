@@ -2,9 +2,10 @@ import type { APIRoute } from "astro";
 import type { MirrorRepoRequest } from "@/types/mirror";
 import { db, configs, repositories } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
-import { createGitHubClient, mirrorRepoToGitea } from "@/lib/wip";
 import { repoStatusEnum } from "@/types/Repository";
 import { createMirrorJob } from "@/lib/helpers";
+import { mirrorGithubRepoToGitea } from "@/lib/gitea";
+import { createGitHubClient } from "@/lib/github";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -98,7 +99,7 @@ export const POST: APIRoute = async ({ request }) => {
         const octokit = createGitHubClient(config.githubConfig.token);
 
         try {
-          await mirrorRepoToGitea({
+          await mirrorGithubRepoToGitea({
             octokit,
             repository: {
               ...repo,

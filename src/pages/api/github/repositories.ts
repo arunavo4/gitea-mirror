@@ -2,10 +2,10 @@ import type { APIRoute } from "astro";
 import { db, repositories } from "@/lib/db";
 import { configs } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import * as github from "@/lib/github";
 import { repoStatusEnum, type RepositoryApiResponse } from "@/types/Repository";
 import { v4 as uuidv4 } from "uuid";
 import { createMirrorJob } from "@/lib/helpers";
+import { createGitHubClient, getGithubRepositories } from "@/lib/github";
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -44,10 +44,11 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
-    const octokit = github.createGitHubClient(config.githubConfig.token);
+    // Create GitHub client
+    const octokit = createGitHubClient(config.githubConfig.token);
 
     // Fetch GitHub repositories based on the user's config
-    const githubRepos = await github.getUserRepositories({ octokit, config });
+    const githubRepos = await getGithubRepositories({ octokit, config });
 
     // Fetch all the repositories of the user from the database
     const existingRepos = await db

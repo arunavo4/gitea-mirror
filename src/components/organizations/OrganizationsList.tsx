@@ -50,7 +50,7 @@ export function OrganizationList({
   return isLoading ? (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton className="h-[136px] w-full" />
+        <Skeleton key={i} className="h-[136px] w-full" />
       ))}
     </div>
   ) : filteredOrganizations.length === 0 ? (

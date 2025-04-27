@@ -1,11 +1,3 @@
-import type {
-  Config,
-  Repository,
-  Organization,
-  MirrorJob,
-  User,
-} from "./db/schema";
-
 // Base API URL
 const API_BASE = "/api";
 
@@ -38,7 +30,7 @@ async function apiRequest<T>(
 // Auth API
 export const authApi = {
   login: async (username: string, password: string) => {
-    const res = await fetch("/api/auth?endpoint=login", {
+    const res = await fetch(`${API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include", // Send cookies
@@ -50,7 +42,7 @@ export const authApi = {
   },
 
   register: async (username: string, email: string, password: string) => {
-    const res = await fetch("/api/auth?endpoint=register", {
+    const res = await fetch(`${API_BASE}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -62,7 +54,7 @@ export const authApi = {
   },
 
   getCurrentUser: async () => {
-    const res = await fetch("/api/auth", {
+    const res = await fetch(`${API_BASE}/auth`, {
       method: "GET",
       credentials: "include", // Send cookies
     });
@@ -72,7 +64,7 @@ export const authApi = {
   },
 
   logout: async () => {
-    await fetch("/api/auth?endpoint=logout", {
+    await fetch(`${API_BASE}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });
@@ -86,18 +78,6 @@ export const githubApi = {
       method: "POST",
       body: JSON.stringify({ token }),
     }),
-
-  getRepositories: (config: Partial<Config>) =>
-    apiRequest<Repository[]>("/github/repositories", {
-      method: "POST",
-      body: JSON.stringify(config),
-    }),
-
-  getOrganizations: (token: string) =>
-    apiRequest<Organization[]>("/github/organizations", {
-      method: "POST",
-      body: JSON.stringify({ token }),
-    }),
 };
 
 // Gitea API
@@ -106,60 +86,5 @@ export const giteaApi = {
     apiRequest<{ success: boolean }>("/gitea/test-connection", {
       method: "POST",
       body: JSON.stringify({ url, token }),
-    }),
-
-  createOrganization: (
-    url: string,
-    token: string,
-    name: string,
-    visibility: string
-  ) =>
-    apiRequest<{ success: boolean }>("/gitea/create-organization", {
-      method: "POST",
-      body: JSON.stringify({ url, token, name, visibility }),
-    }),
-};
-
-// Mirror API
-export const mirrorApi = {
-  startMirror: (configId: string, repositoryIds?: string[]) =>
-    apiRequest<MirrorJob>("/mirror/start", {
-      method: "POST",
-      body: JSON.stringify({ configId, repositoryIds }),
-    }),
-
-  getMirrorJobs: (configId: string) =>
-    apiRequest<MirrorJob[]>(`/mirror/jobs/${configId}`),
-
-  getMirrorJob: (jobId: string) =>
-    apiRequest<MirrorJob>(`/mirror/job/${jobId}`),
-
-  cancelMirrorJob: (jobId: string) =>
-    apiRequest<{ success: boolean }>(`/mirror/job/${jobId}/cancel`, {
-      method: "POST",
-    }),
-};
-
-// Repository API
-export const repositoryApi = {
-  getRepositories: (configId: string) =>
-    apiRequest<Repository[]>(`/repository/${configId}`),
-
-  updateRepository: (id: string, data: Partial<Repository>) =>
-    apiRequest<Repository>(`/repository/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    }),
-};
-
-// Organization API
-export const organizationApi = {
-  getOrganizations: (configId: string) =>
-    apiRequest<Organization[]>(`/organization/${configId}`),
-
-  updateOrganization: (id: string, data: Partial<Organization>) =>
-    apiRequest<Organization>(`/organization/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
     }),
 };

@@ -147,6 +147,8 @@ export function ConfigTabs() {
           });
         }
 
+        console.log("Fetched configuration:", response);
+
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching configuration:", error);
