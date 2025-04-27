@@ -2,7 +2,11 @@ import type { APIRoute } from "astro";
 import { db, repositories } from "@/lib/db";
 import { configs } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { repoStatusEnum, type RepositoryApiResponse } from "@/types/Repository";
+import {
+  repositoryVisibilityEnum,
+  repoStatusEnum,
+  type RepositoryApiResponse,
+} from "@/types/Repository";
 import { v4 as uuidv4 } from "uuid";
 import { createMirrorJob } from "@/lib/helpers";
 import { createGitHubClient, getGithubRepositories } from "@/lib/github";
@@ -67,15 +71,36 @@ export const GET: APIRoute = async ({ request }) => {
           id: repoId,
           userId,
           configId: config.id,
+
           name: repo.name,
           fullName: repo.fullName,
           url: repo.url,
-          isPrivate: repo.isPrivate,
-          isFork: repo.isFork,
+          cloneUrl: repo.cloneUrl,
+
           owner: repo.owner,
           organization: repo.organization,
+
+          isPrivate: repo.isPrivate,
+          isForked: repo.isForked,
+          forkedFrom: repo.forkedFrom,
+
           hasIssues: repo.hasIssues,
           isStarred: repo.isStarred,
+          isArchived: repo.isArchived,
+
+          size: repo.size,
+          hasLFS: repo.hasLFS,
+          hasSubmodules: repo.hasSubmodules,
+
+          defaultBranch: repo.defaultBranch,
+          visibility: repo.visibility,
+
+          status: repo.status,
+          lastMirrored: repo.lastMirrored,
+          errorMessage: repo.errorMessage,
+
+          createdAt: repo.createdAt,
+          updatedAt: repo.updatedAt,
         });
 
         // Create a mirror job for the newly added repository
@@ -106,7 +131,11 @@ export const GET: APIRoute = async ({ request }) => {
         organization: repo.organization ?? undefined,
         lastMirrored: repo.lastMirrored ?? undefined,
         errorMessage: repo.errorMessage ?? undefined,
+        forkedFrom: repo.forkedFrom ?? undefined,
+        size: repo.size ?? 0,
+        defaultBranch: repo.defaultBranch ?? undefined,
         status: repoStatusEnum.parse(repo.status),
+        visibility: repositoryVisibilityEnum.parse(repo.visibility),
       })),
     };
 

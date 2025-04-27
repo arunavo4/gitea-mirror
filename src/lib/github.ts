@@ -49,10 +49,12 @@ export async function getGithubRepositories({
   config: Partial<Config>;
 }): Promise<GitRepo[]> {
   try {
-    const { data: repos } = await octokit.repos.listForAuthenticatedUser({
-      per_page: 100,
-      sort: "updated",
-    });
+    const repos = await octokit.paginate(
+      octokit.repos.listForAuthenticatedUser,
+      {
+        per_page: 100,
+      }
+    );
 
     return repos
       .filter((repo) => {
@@ -68,23 +70,50 @@ export async function getGithubRepositories({
 
         return true;
       })
-      .map((repo) => ({
-        id: repo.id,
-        name: repo.name,
-        fullName: repo.full_name,
-        url: repo.html_url,
-        isPrivate: repo.private,
-        isFork: repo.fork,
-        owner: repo.owner.login,
-        organization:
-          repo.owner.type === "Organization" ? repo.owner.login : undefined,
-        hasIssues: repo.has_issues !== undefined ? repo.has_issues : false,
-        isStarred: false, // Will be set separately
-      }));
+      .map((repo) => {
+        const repoWithParent = repo as typeof repo & {
+          parent?: { full_name: string };
+        };
+
+        return {
+          name: repo.name,
+          fullName: repo.full_name,
+          url: repo.html_url,
+          cloneUrl: repo.clone_url,
+
+          owner: repo.owner.login,
+          organization:
+            repo.owner.type === "Organization" ? repo.owner.login : undefined,
+
+          isPrivate: repo.private,
+          isForked: repo.fork,
+          forkedFrom: repoWithParent.fork
+            ? repoWithParent.parent?.full_name
+            : undefined,
+
+          hasIssues: repo.has_issues,
+          isStarred: false, // we need separate API to fetch stars
+          isArchived: repo.archived,
+
+          size: repo.size,
+          hasLFS: false, // placeholder for now
+          hasSubmodules: false, // placeholder for now
+
+          defaultBranch: repo.default_branch,
+          visibility: (repo.visibility ?? "public") as Repository["visibility"],
+
+          status: "imported",
+          lastMirrored: undefined,
+          errorMessage: undefined,
+
+          createdAt: repo.created_at ? new Date(repo.created_at) : new Date(),
+          updatedAt: repo.updated_at ? new Date(repo.updated_at) : new Date(),
+        };
+      });
   } catch (error) {
     throw new Error(
       `Error fetching repositories: ${
-        error instanceof Error ? error.message : error
+        error instanceof Error ? error.message : String(error)
       }`
     );
   }

@@ -1,7 +1,7 @@
 import type { Organization } from "@/lib/db/schema";
 import { z } from "zod";
 
-export const orgRelationTypeEnum = z.enum(["member", "admin"]);
+export const orgRelationTypeEnum = z.enum(["member", "owner"]);
 
 export type OrgRelationType = z.infer<typeof orgRelationTypeEnum>;
 

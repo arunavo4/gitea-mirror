@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { repoStatusEnum } from "@/types/Repository";
+import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
 import { activityLogLevelEnum } from "@/types/activities";
 import { orgRelationTypeEnum } from "@/types/organizations";
 
@@ -65,18 +65,34 @@ export const repositorySchema = z.object({
   id: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
   configId: z.string().uuid(),
+
   name: z.string().min(1),
   fullName: z.string().min(1),
   url: z.string().url(),
-  isPrivate: z.boolean().default(false),
-  isFork: z.boolean().default(false),
+  cloneUrl: z.string().url(),
+
   owner: z.string().min(1),
   organization: z.string().optional(),
+
+  isPrivate: z.boolean().default(false),
+  isForked: z.boolean().default(false),
+  forkedFrom: z.string().optional(),
+
   hasIssues: z.boolean().default(false),
   isStarred: z.boolean().default(false),
+  isArchived: z.boolean().default(false),
+
+  size: z.number(),
+  hasLFS: z.boolean().default(false),
+  hasSubmodules: z.boolean().default(false),
+
+  defaultBranch: z.string(),
+  visibility: repositoryVisibilityEnum.default("public"),
+
   status: repoStatusEnum.default("imported"),
   lastMirrored: z.date().optional(),
   errorMessage: z.string().optional(),
+
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });
@@ -102,10 +118,15 @@ export const organizationSchema = z.object({
   id: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
   configId: z.string().uuid(),
+
   name: z.string().min(1),
-  type: orgRelationTypeEnum.default("member"),
+
+  membershipRole: orgRelationTypeEnum.default("member"),
+
   isIncluded: z.boolean().default(true),
+  status: repoStatusEnum.default("imported"),
   repositoryCount: z.number().default(0),
+
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });

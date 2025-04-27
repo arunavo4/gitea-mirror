@@ -42,6 +42,21 @@ export const mirrorGithubRepoToGitea = async ({
 
     const apiUrl = `${config.giteaConfig.url}/api/v1/repos/migrate`;
 
+    // Always use the configured Gitea username as the owner for the mirrored repo
+    const targetOwner = "ani1609";
+
+    if (!targetOwner) {
+      throw new Error("Gitea username or owner must be specified in config.");
+    }
+
+    console.log("Sending migration request with params:", {
+      clone_addr: cloneAddress.replace(/https:\/\/([^@]+)@/, "https://***@"), // Hide token in logs
+      repo_name: repository.name,
+      mirror: true,
+      private: repository.isPrivate,
+      repo_owner: targetOwner, // Always use your Gitea username
+    });
+
     const response = await superagent
       .post(apiUrl)
       .set("Authorization", `token ${config.giteaConfig.token}`)
@@ -50,12 +65,21 @@ export const mirrorGithubRepoToGitea = async ({
         repo_name: repository.name,
         mirror: true,
         private: repository.isPrivate,
-        repo_owner: repository.organization || owner,
+        repo_owner: targetOwner, // Always use your Gitea username
+        description: "",
         service: "git",
       });
 
     return response.body;
   } catch (error) {
+    if (error.response && error.response.body) {
+      console.error("Gitea API Error Details:", error.response.body);
+      throw new Error(
+        `Failed to mirror repository: ${
+          error.response.status
+        } - ${JSON.stringify(error.response.body)}`
+      );
+    }
     if (error instanceof Error) {
       throw new Error(`Failed to mirror repository: ${error.message}`);
     }
