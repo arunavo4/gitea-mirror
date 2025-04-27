@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import type { MirrorRepoRequest } from "@/types/mirror";
 import { db, configs, repositories } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
-import { repoStatusEnum } from "@/types/Repository";
+import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
 import { createMirrorJob } from "@/lib/helpers";
 import { mirrorGithubRepoToGitea } from "@/lib/gitea";
 import { createGitHubClient } from "@/lib/github";
@@ -107,6 +107,8 @@ export const POST: APIRoute = async ({ request }) => {
               organization: repo.organization ?? undefined,
               lastMirrored: repo.lastMirrored ?? undefined,
               errorMessage: repo.errorMessage ?? undefined,
+              forkedFrom: repo.forkedFrom ?? undefined,
+              visibility: repositoryVisibilityEnum.parse(repo.visibility),
             },
             config,
           });

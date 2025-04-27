@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import type {
   OrgFilter,
-  OrgRelationType,
+  MembershipRole,
   OrganizationsApiResponse,
 } from "@/types/organizations";
 import {
@@ -24,7 +24,7 @@ export function Organization() {
   const { user } = useAuth();
   const [filter, setFilter] = useState<OrgFilter>({
     searchTerm: "",
-    type: "",
+    membershipRole: "",
   });
   const [isComputing, setIsComputing] = useState<boolean>(false);
 
@@ -106,11 +106,12 @@ export function Organization() {
 
         <div className="flex gap-x-4">
           <Select
-            value={filter.type || "all"}
+            value={filter.membershipRole || "all"}
             onValueChange={(value) =>
               setFilter((prev) => ({
                 ...prev,
-                type: value === "all" ? "" : (value as OrgRelationType),
+                membershipRole:
+                  value === "all" ? "" : (value as MembershipRole),
               }))
             }
           >
@@ -121,6 +122,7 @@ export function Organization() {
               <SelectItem value="all">All Type</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="member">Member</SelectItem>
+              <SelectItem value="billing_manager">Billing Manager</SelectItem>
             </SelectContent>
           </Select>
 

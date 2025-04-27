@@ -20,11 +20,7 @@ export const mirrorGithubRepoToGitea = async ({
       throw new Error("github config and gitea config are required.");
     }
 
-    // Get repository details
-    const [owner, repo] = repository.fullName.split("/");
-    const { cloneUrl } = await getGithubRepoCloneUrl({ octokit, owner, repo });
-
-    let cloneAddress = cloneUrl;
+    let cloneAddress = repository.cloneUrl;
 
     // If the repo is private, inject the GitHub token into the clone URL
     if (repository.isPrivate) {
@@ -34,28 +30,13 @@ export const mirrorGithubRepoToGitea = async ({
         );
       }
 
-      cloneAddress = cloneUrl.replace(
+      cloneAddress = repository.cloneUrl.replace(
         "https://",
         `https://${config.githubConfig.token}@`
       );
     }
 
     const apiUrl = `${config.giteaConfig.url}/api/v1/repos/migrate`;
-
-    // Always use the configured Gitea username as the owner for the mirrored repo
-    const targetOwner = "ani1609";
-
-    if (!targetOwner) {
-      throw new Error("Gitea username or owner must be specified in config.");
-    }
-
-    console.log("Sending migration request with params:", {
-      clone_addr: cloneAddress.replace(/https:\/\/([^@]+)@/, "https://***@"), // Hide token in logs
-      repo_name: repository.name,
-      mirror: true,
-      private: repository.isPrivate,
-      repo_owner: targetOwner, // Always use your Gitea username
-    });
 
     const response = await superagent
       .post(apiUrl)
@@ -65,21 +46,13 @@ export const mirrorGithubRepoToGitea = async ({
         repo_name: repository.name,
         mirror: true,
         private: repository.isPrivate,
-        repo_owner: targetOwner, // Always use your Gitea username
+        repo_owner: "ani1609", // replace with your Gitea username or maybe some other dynamic value
         description: "",
         service: "git",
       });
 
     return response.body;
   } catch (error) {
-    if (error.response && error.response.body) {
-      console.error("Gitea API Error Details:", error.response.body);
-      throw new Error(
-        `Failed to mirror repository: ${
-          error.response.status
-        } - ${JSON.stringify(error.response.body)}`
-      );
-    }
     if (error instanceof Error) {
       throw new Error(`Failed to mirror repository: ${error.message}`);
     }

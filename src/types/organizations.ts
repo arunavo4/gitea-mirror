@@ -1,9 +1,14 @@
 import type { Organization } from "@/lib/db/schema";
 import { z } from "zod";
+import type { RepoStatus } from "./Repository";
 
-export const orgRelationTypeEnum = z.enum(["member", "owner"]);
+export const membershipRoleEnum = z.enum([
+  "member",
+  "admin",
+  "billing_manager",
+]);
 
-export type OrgRelationType = z.infer<typeof orgRelationTypeEnum>;
+export type MembershipRole = z.infer<typeof membershipRoleEnum>;
 
 export interface OrganizationsApiResponse {
   success: boolean;
@@ -14,12 +19,15 @@ export interface OrganizationsApiResponse {
 export interface GitOrg {
   name: string;
   avatarUrl: string;
-  description: string | null;
-  totalRepos: number;
-  userViewType: string; // "member" | "public"
+  membershipRole: MembershipRole;
+  isIncluded: boolean;
+  status: RepoStatus;
+  repositoryCount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface OrgFilter {
   searchTerm: string;
-  type: OrgRelationType | null | "";
+  membershipRole: MembershipRole | "";
 }

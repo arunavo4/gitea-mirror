@@ -151,6 +151,8 @@ export const organizations = sqliteTable("organizations", {
     .references(() => configs.id),
   name: text("name").notNull(),
 
+  avatarUrl: text("avatar_url").notNull(),
+
   membershipRole: text("membership_role").notNull().default("member"),
 
   isIncluded: integer("is_included", { mode: "boolean" })

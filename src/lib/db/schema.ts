@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
-import { activityLogLevelEnum } from "@/types/activities";
-import { orgRelationTypeEnum } from "@/types/organizations";
+import { membershipRoleEnum } from "@/types/organizations";
 
 // User schema
 export const userSchema = z.object({
@@ -119,11 +118,13 @@ export const organizationSchema = z.object({
   userId: z.string().uuid().optional(),
   configId: z.string().uuid(),
 
+  avatarUrl: z.string().url(),
+
   name: z.string().min(1),
 
-  membershipRole: orgRelationTypeEnum.default("member"),
+  membershipRole: membershipRoleEnum.default("member"),
 
-  isIncluded: z.boolean().default(true),
+  isIncluded: z.boolean().default(false),
   status: repoStatusEnum.default("imported"),
   repositoryCount: z.number().default(0),
 

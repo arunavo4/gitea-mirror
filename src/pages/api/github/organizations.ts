@@ -2,14 +2,15 @@ import type { APIRoute } from "astro";
 import { db } from "@/lib/db";
 import { configs, organizations } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import type {
-  OrganizationsApiResponse,
-  OrgRelationType,
+import {
+  membershipRoleEnum,
+  type OrganizationsApiResponse,
 } from "@/types/organizations";
 import { v4 as uuidv4 } from "uuid";
 import { createMirrorJob } from "@/lib/helpers";
 import type { Organization } from "@/lib/db/schema";
 import { createGitHubClient, getGithubOrganizations } from "@/lib/github";
+import { repoStatusEnum } from "@/types/Repository";
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -69,10 +70,17 @@ export const GET: APIRoute = async ({ request }) => {
           id: orgId,
           userId,
           configId: config.id,
+
+          avatarUrl: org.avatarUrl,
+
           name: org.name,
-          type: org.userViewType,
+
+          membershipRole: org.membershipRole,
+
           isIncluded: false,
-          repositoryCount: org.totalRepos,
+          status: org.status,
+          repositoryCount: org.repositoryCount,
+
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -99,7 +107,8 @@ export const GET: APIRoute = async ({ request }) => {
 
     const orgsWithIds: Organization[] = latestOrgs.map((org) => ({
       ...org,
-      type: org.type as OrgRelationType,
+      status: repoStatusEnum.parse(org.status),
+      membershipRole: membershipRoleEnum.parse(org.membershipRole),
     }));
 
     const resPayload: OrganizationsApiResponse = {

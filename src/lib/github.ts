@@ -1,5 +1,5 @@
-import type { GitOrg } from "@/types/organizations";
-import type { GitRepo } from "@/types/Repository";
+import type { GitOrg, MembershipRole } from "@/types/organizations";
+import type { GitRepo, RepoStatus } from "@/types/Repository";
 import { Octokit } from "@octokit/rest";
 import type { Config } from "@/types/config";
 import type { Repository } from "./db/schema";
@@ -144,14 +144,15 @@ export async function getGithubOrganizations({
         const totalRepos =
           orgDetails.public_repos + (orgDetails.total_private_repos ?? 0);
 
-        console.log("membership", membership.organization);
-
         return {
           name: org.login,
           avatarUrl: org.avatar_url,
-          description: org.description || null,
-          totalRepos,
-          userViewType: membership.role,
+          membershipRole: membership.role as MembershipRole,
+          isIncluded: false,
+          status: "imported" as RepoStatus,
+          repositoryCount: totalRepos,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         };
       })
     );

@@ -31,8 +31,10 @@ export function OrganizationList({
   const filteredOrganizations = useMemo(() => {
     let result = organizations;
 
-    if (filter.type) {
-      result = result.filter((org) => org.type === filter.type);
+    if (filter.membershipRole) {
+      result = result.filter(
+        (org) => org.membershipRole === filter.membershipRole
+      );
     }
 
     if (filter.searchTerm) {
@@ -68,7 +70,7 @@ export function OrganizationList({
           onClick={() => {
             setFilter({
               searchTerm: "",
-              type: "",
+              membershipRole: "",
             });
           }}
         >
@@ -93,12 +95,12 @@ export function OrganizationList({
               </div>
               <span
                 className={`text-xs px-2 py-1 rounded-full capitalize ${
-                  org.type === "member"
+                  org.membershipRole === "member"
                     ? "bg-blue-100 text-blue-800"
                     : "bg-purple-100 text-purple-800"
                 }`}
               >
-                {org.type}
+                {org.membershipRole}
                 {/* needs to be updated  */}
               </span>
             </div>

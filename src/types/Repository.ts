@@ -8,7 +8,6 @@ export const repoStatusEnum = z.enum([
   "failed",
   "syncing",
   "synced",
-  "",
 ]);
 
 export type RepoStatus = z.infer<typeof repoStatusEnum>;
@@ -23,7 +22,7 @@ export type RepositoryVisibility = z.infer<typeof repositoryVisibilityEnum>;
 
 export interface RepoFilter {
   searchTerm: string;
-  status: RepoStatus;
+  status: RepoStatus | "";
 }
 
 export interface RepositoryApiResponse {

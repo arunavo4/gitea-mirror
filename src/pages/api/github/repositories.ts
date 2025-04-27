@@ -132,8 +132,6 @@ export const GET: APIRoute = async ({ request }) => {
         lastMirrored: repo.lastMirrored ?? undefined,
         errorMessage: repo.errorMessage ?? undefined,
         forkedFrom: repo.forkedFrom ?? undefined,
-        size: repo.size ?? 0,
-        defaultBranch: repo.defaultBranch ?? undefined,
         status: repoStatusEnum.parse(repo.status),
         visibility: repositoryVisibilityEnum.parse(repo.visibility),
       })),
