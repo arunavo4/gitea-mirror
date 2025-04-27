@@ -114,7 +114,7 @@ export const GET: APIRoute = async ({ request }) => {
       } else {
         await db
           .update(repositories)
-          .set({ ...repo, id: existing.id, updatedAt: new Date() })
+          .set({ updatedAt: new Date() })
           .where(eq(repositories.id, existing.id));
       }
     }
