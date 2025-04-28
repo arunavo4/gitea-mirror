@@ -13,6 +13,7 @@ interface RepositoryTableProps {
   filter: RepoFilter;
   setFilter: (filter: RepoFilter) => void;
   onMirror: ({ repoId }: { repoId: string }) => Promise<void>;
+  loadingRepoIds: Set<string>;
 }
 
 export function RepositoryTable({
@@ -21,6 +22,7 @@ export function RepositoryTable({
   filter,
   setFilter,
   onMirror,
+  loadingRepoIds,
 }: RepositoryTableProps) {
   const hasAnyFilter = Object.values(filter).some(
     (val) => val?.toString().trim() !== ""
@@ -112,76 +114,98 @@ export function RepositoryTable({
           </tr>
         </thead>
         <tbody>
-          {filteredRepositories.map((repo, index) => (
-            <tr key={index} className="border-b hover:bg-muted/50">
-              <td className="p-3">
-                <div className="flex items-center gap-2">
-                  <GitFork className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <div className="font-medium">{repo.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {repo.fullName}
+          {filteredRepositories.map((repo, index) => {
+            const isLoading = loadingRepoIds.has(repo.id ?? "");
+
+            return (
+              <tr key={index} className="border-b hover:bg-muted/50">
+                <td className="p-3">
+                  <div className="flex items-center gap-2">
+                    <GitFork className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="font-medium">{repo.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {repo.fullName}
+                      </div>
                     </div>
+                    {repo.isPrivate && (
+                      <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
+                        Private
+                      </span>
+                    )}
                   </div>
-                  {repo.isPrivate && (
-                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
-                      Private
-                    </span>
-                  )}
-                </div>
-              </td>
-              <td className="p-3 text-sm">{repo.owner}</td>
-              <td className="p-3 text-sm">{repo.organization || "-"}</td>
-              <td className="p-3 text-sm">
-                {repo.lastMirrored
-                  ? formatDate(new Date(repo.lastMirrored))
-                  : "Never"}
-              </td>
-              <td className="p-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`h-2 w-2 rounded-full ${getStatusColor(
-                      repo.status
-                    )}`}
-                  />
-                  <span className="text-sm capitalize">{repo.status}</span>
-                </div>
-              </td>
-              <td className="p-3 text-right">
-                <div className="flex items-center justify-end gap-2">
-                  {repo.status === "mirrored" ||
-                  repo.status === "syncing" ||
-                  repo.status === "synced" ? (
-                    <Button
-                      variant="ghost"
-                      disabled={repo.status === "syncing"}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-1" />
-                      Sync
+                </td>
+                <td className="p-3 text-sm">{repo.owner}</td>
+                <td className="p-3 text-sm">{repo.organization || "-"}</td>
+                <td className="p-3 text-sm">
+                  {repo.lastMirrored
+                    ? formatDate(new Date(repo.lastMirrored))
+                    : "Never"}
+                </td>
+                <td className="p-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`h-2 w-2 rounded-full ${getStatusColor(
+                        repo.status
+                      )}`}
+                    />
+                    <span className="text-sm capitalize">{repo.status}</span>
+                  </div>
+                </td>
+                <td className="p-3 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    {repo.status === "mirrored" ||
+                    repo.status === "syncing" ||
+                    repo.status === "synced" ? (
+                      <Button
+                        variant="ghost"
+                        disabled={repo.status === "syncing" || isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+                            Sync
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-1" />
+                            Sync
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        disabled={repo.status === "mirroring" || isLoading}
+                        onClick={() => onMirror({ repoId: repo.id ?? "" })}
+                      >
+                        {isLoading ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+                            Mirror
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-4 w-4 mr-1" />
+                            Mirror
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon" asChild>
+                      <a
+                        href={repo.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
                     </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      disabled={repo.status === "mirroring"}
-                      onClick={() => onMirror({ repoId: repo.id ?? "" })}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-1" />
-                      Mirror
-                    </Button>
-                  )}
-                  <Button variant="ghost" size="icon" asChild>
-                    <a
-                      href={repo.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

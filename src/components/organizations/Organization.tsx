@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import type { MirrorOrgRequest, MirrorOrgResponse } from "@/types/mirror";
 
 export function Organization() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -26,7 +27,7 @@ export function Organization() {
     searchTerm: "",
     membershipRole: "",
   });
-  const [isComputing, setIsComputing] = useState<boolean>(false);
+  const [loadingOrgIds, setLoadingOrgIds] = useState<Set<string>>(new Set()); // this is used when the api actions are performed
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -60,31 +61,44 @@ export function Organization() {
     fetchOrganizations();
   }, [user]);
 
-  const handleMirrorOrganizations = async ({ orgId }: { orgId: string }) => {
-    if (!user || !user.id) {
-      return;
-    }
-
+  const handleMirrorOrg = async ({ orgId }: { orgId: string }) => {
     try {
-      setIsComputing(true);
-
-      const response = await apiRequest<OrganizationsApiResponse>(
-        `/github/organizations/mirror?userId=${user.id}`,
-        {
-          method: "POST",
-        }
-      );
-
-      if (response.success) {
-        console.log("Organizations mirrored successfully");
-        setOrganizations(response.organizations);
+      if (!user || !user.id) {
+        return;
       }
 
-      setIsComputing(false);
+      setLoadingOrgIds((prev) => new Set(prev).add(orgId));
+
+      const reqPayload: MirrorOrgRequest = {
+        userId: user.id,
+        organizationIds: [orgId],
+      };
+
+      const response = await apiRequest<MirrorOrgResponse>("/job/mirror-org", {
+        method: "POST",
+        data: reqPayload,
+      });
+
+      if (response.success) {
+        console.log("Mirror job started successfully:", response);
+
+        setOrganizations((prevOrgs) =>
+          prevOrgs.map((org) => {
+            const updated = response.organizations.find((o) => o.id === org.id);
+            return updated ? updated : org;
+          })
+        );
+      } else {
+        console.error("Error mirroring repository:", response.error);
+      }
     } catch (error) {
-      console.error("Error mirroring organizations:", error);
+      console.error("Error mirroring repository:", error);
     } finally {
-      setIsComputing(false);
+      setLoadingOrgIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(orgId);
+        return newSet;
+      });
     }
   };
 
@@ -143,8 +157,8 @@ export function Organization() {
         isLoading={isLoading}
         filter={filter}
         setFilter={setFilter}
-        isComputing={isComputing}
-        onMirror={handleMirrorOrganizations}
+        loadingOrgIds={loadingOrgIds}
+        onMirror={handleMirrorOrg}
       />
     </div>
   );

@@ -95,54 +95,6 @@ export async function getGithubRepositories({
   }
 }
 
-/**
- * Get user github organizations
- */
-export async function getGithubOrganizations({
-  octokit,
-  config,
-}: {
-  octokit: Octokit;
-  config: Partial<Config>;
-}): Promise<GitOrg[]> {
-  try {
-    const { data: orgs } = await octokit.orgs.listForAuthenticatedUser({
-      per_page: 100,
-    });
-
-    const organizations = await Promise.all(
-      orgs.map(async (org) => {
-        const [{ data: orgDetails }, { data: membership }] = await Promise.all([
-          octokit.orgs.get({ org: org.login }),
-          octokit.orgs.getMembershipForAuthenticatedUser({ org: org.login }),
-        ]);
-
-        const totalRepos =
-          orgDetails.public_repos + (orgDetails.total_private_repos ?? 0);
-
-        return {
-          name: org.login,
-          avatarUrl: org.avatar_url,
-          membershipRole: membership.role as MembershipRole,
-          isIncluded: false,
-          status: "imported" as RepoStatus,
-          repositoryCount: totalRepos,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-      })
-    );
-
-    return organizations;
-  } catch (error) {
-    throw new Error(
-      `Error fetching organizations: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
-  }
-}
-
 export async function getGithubStarredRepositories({
   octokit,
   config,
@@ -193,6 +145,111 @@ export async function getGithubStarredRepositories({
   } catch (error) {
     throw new Error(
       `Error fetching starred repositories: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+/**
+ * Get user github organizations
+ */
+export async function getGithubOrganizations({
+  octokit,
+  config,
+}: {
+  octokit: Octokit;
+  config: Partial<Config>;
+}): Promise<GitOrg[]> {
+  try {
+    const { data: orgs } = await octokit.orgs.listForAuthenticatedUser({
+      per_page: 100,
+    });
+
+    const organizations = await Promise.all(
+      orgs.map(async (org) => {
+        const [{ data: orgDetails }, { data: membership }] = await Promise.all([
+          octokit.orgs.get({ org: org.login }),
+          octokit.orgs.getMembershipForAuthenticatedUser({ org: org.login }),
+        ]);
+
+        const totalRepos =
+          orgDetails.public_repos + (orgDetails.total_private_repos ?? 0);
+
+        return {
+          name: org.login,
+          avatarUrl: org.avatar_url,
+          membershipRole: membership.role as MembershipRole,
+          isIncluded: false,
+          status: "imported" as RepoStatus,
+          repositoryCount: totalRepos,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      })
+    );
+
+    return organizations;
+  } catch (error) {
+    throw new Error(
+      `Error fetching organizations: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+/**
+ * Get repositories for a specific organization
+ */
+export async function getGithubOrganizationRepositories({
+  octokit,
+  organizationName,
+}: {
+  octokit: Octokit;
+  organizationName: string;
+}): Promise<GitRepo[]> {
+  try {
+    const repos = await octokit.paginate(octokit.repos.listForOrg, {
+      org: organizationName,
+      per_page: 100,
+    });
+
+    return repos.map((repo) => ({
+      name: repo.name,
+      fullName: repo.full_name,
+      url: repo.html_url,
+      cloneUrl: repo.clone_url ?? "",
+
+      owner: repo.owner.login,
+      organization: repo.owner.login,
+
+      isPrivate: repo.private,
+      isForked: repo.fork,
+      forkedFrom: (repo as typeof repo & { parent?: { full_name: string } })
+        .parent?.full_name,
+
+      hasIssues: repo.has_issues ?? false,
+      isStarred: false, // Organization starred repos are separate API
+      isArchived: repo.archived ?? false,
+
+      size: repo.size ?? 0,
+      hasLFS: false,
+      hasSubmodules: false,
+
+      defaultBranch: repo.default_branch ?? "main",
+      visibility: (repo.visibility ?? "public") as GitRepo["visibility"],
+
+      status: "imported",
+      lastMirrored: undefined,
+      errorMessage: undefined,
+
+      createdAt: repo.created_at ? new Date(repo.created_at) : new Date(),
+      updatedAt: repo.updated_at ? new Date(repo.updated_at) : new Date(),
+    }));
+  } catch (error) {
+    throw new Error(
+      `Error fetching organization repositories: ${
         error instanceof Error ? error.message : String(error)
       }`
     );

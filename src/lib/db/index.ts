@@ -158,7 +158,10 @@ export const organizations = sqliteTable("organizations", {
   isIncluded: integer("is_included", { mode: "boolean" })
     .notNull()
     .default(true),
+
   status: text("status").notNull().default("imported"),
+  lastMirrored: integer("last_mirrored", { mode: "timestamp" }),
+  errorMessage: text("error_message"),
 
   repositoryCount: integer("repository_count").notNull().default(0),
 

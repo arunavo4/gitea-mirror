@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, ExternalLink } from "lucide-react";
+import { Plus, Users, ExternalLink, RefreshCw } from "lucide-react";
 import type { Organization } from "@/lib/db/schema";
 import type { OrgFilter } from "@/types/organizations";
 import Fuse from "fuse.js";
@@ -14,7 +14,7 @@ interface OrganizationListProps {
   filter: OrgFilter;
   setFilter: (filter: OrgFilter) => void;
   onMirror: ({ orgId }: { orgId: string }) => Promise<void>;
-  isComputing: boolean;
+  loadingOrgIds: Set<string>;
 }
 
 export function OrganizationList({
@@ -22,7 +22,8 @@ export function OrganizationList({
   isLoading,
   filter,
   setFilter,
-  isComputing,
+  onMirror,
+  loadingOrgIds,
 }: OrganizationListProps) {
   const hasAnyFilter = Object.values(filter).some(
     (val) => val?.toString().trim() !== ""
@@ -85,60 +86,73 @@ export function OrganizationList({
     </div>
   ) : (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {filteredOrganizations.map((org, index) => (
-        <Card key={index} className="overflow-hidden">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <h3 className="font-medium">{org.name}</h3>
-              </div>
-              <span
-                className={`text-xs px-2 py-1 rounded-full capitalize ${
-                  org.membershipRole === "member"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-purple-100 text-purple-800"
-                }`}
-              >
-                {org.membershipRole}
-                {/* needs to be updated  */}
-              </span>
-            </div>
+      {filteredOrganizations.map((org, index) => {
+        const isLoading = loadingOrgIds.has(org.id ?? "");
 
-            <p className="text-sm text-muted-foreground mb-4">
-              {org.repositoryCount}{" "}
-              {org.repositoryCount === 1 ? "repository" : "repositories"}
-            </p>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <Checkbox
-                  id={`include-${org.id}`}
-                  name={`include-${org.id}`}
-                  checked={org.isIncluded}
-                  disabled={isComputing}
-                />
-                <label
-                  htmlFor="terms"
-                  className="ml-2 text-sm select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        return (
+          <Card key={index} className="overflow-hidden">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="font-medium">{org.name}</h3>
+                </div>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full capitalize ${
+                    org.membershipRole === "member"
+                      ? "bg-blue-100 text-blue-800"
+                      : "bg-purple-100 text-purple-800"
+                  }`}
                 >
-                  Include in mirroring
-                </label>
+                  {org.membershipRole}
+                  {/* needs to be updated  */}
+                </span>
               </div>
 
-              <Button variant="ghost" size="icon" asChild>
-                <a
-                  href={`https://github.com/${org.name}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              </Button>
+              <p className="text-sm text-muted-foreground mb-4">
+                {org.repositoryCount}{" "}
+                {org.repositoryCount === 1 ? "repository" : "repositories"}
+              </p>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Checkbox
+                    id={`include-${org.id}`}
+                    name={`include-${org.id}`}
+                    checked={org.isIncluded}
+                    disabled={loadingOrgIds.has(org.id ?? "")}
+                    onCheckedChange={async (checked) => {
+                      if (checked && !org.isIncluded && org.id) {
+                        onMirror({ orgId: org.id });
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="terms"
+                    className="ml-2 text-sm select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Include in mirroring
+                  </label>
+
+                  {isLoading && (
+                    <RefreshCw className="opacity-50 h-4 w-4 animate-spin ml-4" />
+                  )}
+                </div>
+
+                <Button variant="ghost" size="icon" asChild>
+                  <a
+                    href={`https://github.com/${org.name}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+              </div>
             </div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        );
+      })}
     </div>
   );
 }

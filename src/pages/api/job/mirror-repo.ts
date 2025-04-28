@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import type { MirrorRepoRequest } from "@/types/mirror";
+import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 import { db, configs, repositories } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
 import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
@@ -63,8 +63,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     const timestamp = new Date();
 
-    // 1. Immediately mark repos as "mirroring" in DB
     for (const repo of repos) {
+      // Immediately mark repos as "mirroring" in DB
       await db
         .update(repositories)
         .set({
@@ -73,23 +73,23 @@ export const POST: APIRoute = async ({ request }) => {
         })
         .where(eq(repositories.id, repo.id));
 
-      // 2. Append log for "mirroring" status
+      // Append log for "mirroring" status
       await createMirrorJob({
         userId,
         repositoryName: repo.name,
         message: `Started mirroring repository: ${repo.name}`,
         details: `Repository ${repo.name} is now in the mirroring state.`,
-        status: repoStatusEnum.parse("mirroring"),
+        status: "mirroring",
       });
     }
 
-    // 2. Refetch updated repos (with the new 'mirroring' status)
+    // Refetch updated repos (with the new 'mirroring' status)
     const updatedRepos = await db
       .select()
       .from(repositories)
       .where(inArray(repositories.id, repositoryIds));
 
-    // 3. Start async mirroring in background
+    // Start async mirroring in background
     setTimeout(async () => {
       for (const repo of updatedRepos) {
         if (!config.githubConfig.token) {
@@ -160,15 +160,25 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }, 0);
 
-    // 4. Return the updated repo list to the user
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Mirror job started",
-        repositories: updatedRepos,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    const responsePayload: MirrorRepoResponse = {
+      success: true,
+      message: "Mirror job started.",
+      repositories: updatedRepos.map((repo) => ({
+        ...repo,
+        status: repoStatusEnum.parse(repo.status),
+        organization: repo.organization ?? undefined,
+        lastMirrored: repo.lastMirrored ?? undefined,
+        errorMessage: repo.errorMessage ?? undefined,
+        forkedFrom: repo.forkedFrom ?? undefined,
+        visibility: repositoryVisibilityEnum.parse(repo.visibility),
+      })),
+    };
+
+    // Return the updated repo list to the user
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Error in /api/job/mirror:", error);
     return new Response(

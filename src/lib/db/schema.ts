@@ -125,7 +125,11 @@ export const organizationSchema = z.object({
   membershipRole: membershipRoleEnum.default("member"),
 
   isIncluded: z.boolean().default(false),
+
   status: repoStatusEnum.default("imported"),
+  lastMirrored: z.date().optional(),
+  errorMessage: z.string().optional(),
+
   repositoryCount: z.number().default(0),
 
   createdAt: z.date().default(() => new Date()),

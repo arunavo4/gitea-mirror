@@ -27,6 +27,7 @@ export default function Repository() {
     searchTerm: "",
     status: "",
   });
+  const [loadingRepoIds, setLoadingRepoIds] = useState<Set<string>>(new Set()); // this is used when the api actions are performed
 
   useEffect(() => {
     const fetchRepositories = async () => {
@@ -94,6 +95,8 @@ export default function Repository() {
         return;
       }
 
+      setLoadingRepoIds((prev) => new Set(prev).add(repoId));
+
       const reqPayload: MirrorRepoRequest = {
         userId: user.id,
         repositoryIds: [repoId],
@@ -120,6 +123,12 @@ export default function Repository() {
       }
     } catch (error) {
       console.error("Error mirroring repository:", error);
+    } finally {
+      setLoadingRepoIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(repoId);
+        return newSet;
+      });
     }
   };
 
@@ -181,6 +190,7 @@ export default function Repository() {
         filter={filter}
         setFilter={setFilter}
         onMirror={handleMirrorRepo}
+        loadingRepoIds={loadingRepoIds}
       />
     </div>
   );

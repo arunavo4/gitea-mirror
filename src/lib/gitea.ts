@@ -4,7 +4,10 @@ import { Octokit } from "@octokit/rest";
 import type { Config } from "@/types/config";
 import type { Repository } from "./db/schema";
 import superagent from "superagent";
-import { getGithubRepoCloneUrl } from "./github";
+import {
+  getGithubOrganizationRepositories,
+  getGithubRepoCloneUrl,
+} from "./github";
 
 export const mirrorGithubRepoToGitea = async ({
   octokit,
@@ -83,11 +86,9 @@ export async function getOrCreateGiteaOrg({
 
   if (orgRes.ok) {
     const org = await orgRes.json();
-    console.log(`Found existing Gitea org: ${orgName} (ID: ${org.id})`);
     return org.id;
   }
 
-  console.log(`Creating new Gitea org: ${orgName}`);
   const createRes = await fetch(`${config.giteaConfig.url}/api/v1/orgs`, {
     method: "POST",
     headers: {
@@ -107,7 +108,6 @@ export async function getOrCreateGiteaOrg({
   }
 
   const newOrg = await createRes.json();
-  console.log(`Created Gitea org: ${newOrg.username} (ID: ${newOrg.id})`);
   return newOrg.id;
 }
 
@@ -126,8 +126,6 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
     throw new Error("Gitea config is required.");
   }
 
-  console.log(`Cloning issues for repo "${repo.name}"...`);
-
   const { data: issues } = await octokit.rest.issues.listForRepo({
     owner: repo.owner.login,
     repo: repo.name,
@@ -136,7 +134,6 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
   });
 
   if (issues.length === 0) {
-    console.log(`No issues to clone for repo "${repo.name}".`);
     return;
   }
 
@@ -183,7 +180,6 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
 
     const newLabel = await createRes.json();
     giteaLabels.push(newLabel); // update local cache
-    console.log(`Created label "${labelName}"`);
     return newLabel.id;
   }
 
@@ -219,7 +215,7 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
         body: JSON.stringify({
           title: issue.title,
           body: issue.body || "",
-          labels: labelIds, // <-- send label IDs!
+          labels: labelIds, // <-- send label IDs
           closed: issue.state === "closed",
         }),
       }
@@ -227,7 +223,7 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
 
     if (!createIssueRes.ok) {
       console.error(
-        `❌ Failed to create issue "${
+        `Failed to create issue "${
           issue.title
         }": ${await createIssueRes.text()}`
       );
@@ -235,8 +231,6 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
       console.log(`Created issue "${issue.title}"`);
     }
   }
-
-  console.log(`Finished cloning issues for repo "${repo.name}"`);
 }
 
 export async function migrateRepoToGiteaOrg({
@@ -248,7 +242,7 @@ export async function migrateRepoToGiteaOrg({
 }: {
   octokit: Octokit;
   config: Partial<Config>;
-  repo: any;
+  repo: GitRepo;
   giteaOrgId: number;
   orgName: string;
 }) {
@@ -258,19 +252,19 @@ export async function migrateRepoToGiteaOrg({
 
   const { cloneUrl } = await getGithubRepoCloneUrl({
     octokit,
-    owner: repo.owner.login,
+    owner: repo.owner,
     repo: repo.name,
   });
 
-  console.log(`Clone URL for repo "${repo.name}": ${cloneUrl}`);
-
   let cloneAddress = cloneUrl;
-  if (repo.private) {
+
+  if (repo.isPrivate) {
     if (!config.githubConfig?.token) {
       throw new Error(
         "GitHub token is required to mirror private repositories."
       );
     }
+
     cloneAddress = cloneUrl.replace(
       "https://",
       `https://${config.githubConfig.token}@`
@@ -290,7 +284,7 @@ export async function migrateRepoToGiteaOrg({
         uid: giteaOrgId,
         repo_name: repo.name,
         mirror: true,
-        private: repo.private,
+        private: repo.isPrivate,
       }),
     }
   );
@@ -301,15 +295,13 @@ export async function migrateRepoToGiteaOrg({
     return;
   }
 
-  console.log(`Successfully mirrored repo: ${repo.name}`);
-
   // After migrating the repo, clone issues
-  await mirrorGithubOrgRepoIssuesToGiteaOrg({
-    config,
-    octokit,
-    repo,
-    orgName,
-  });
+  // await mirrorGithubOrgRepoIssuesToGiteaOrg({
+  //   config,
+  //   octokit,
+  //   repo,
+  //   orgName,
+  // });
 }
 
 export async function mirrorGithubOrgToGitea({
@@ -331,15 +323,10 @@ export async function mirrorGithubOrgToGitea({
       config,
     });
 
-    const { data: repos } = await octokit.rest.repos.listForOrg({
-      org: orgName,
-      type: "all",
-      per_page: 100,
+    const repos = await getGithubOrganizationRepositories({
+      octokit,
+      organizationName: orgName,
     });
-
-    console.log(
-      `📦 Found ${repos.length} repositories in GitHub org "${orgName}"`
-    );
 
     for (const repo of repos) {
       await migrateRepoToGiteaOrg({
@@ -350,8 +337,6 @@ export async function mirrorGithubOrgToGitea({
         orgName,
       });
     }
-
-    console.log("Migration completed successfully.");
   } catch (error) {
     console.error("Migration failed:", error);
   }
