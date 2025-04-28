@@ -1,10 +1,10 @@
-import type { GitOrg } from "@/types/organizations";
 import type { GitRepo } from "@/types/Repository";
 import { Octokit } from "@octokit/rest";
 import type { Config } from "@/types/config";
 import type { Repository } from "./db/schema";
 import superagent from "superagent";
 import { getGithubOrganizationRepositories } from "./github";
+import { createMirrorJob } from "./helpers";
 
 export const mirrorGithubRepoToGitea = async ({
   octokit,
@@ -67,45 +67,74 @@ export async function getOrCreateGiteaOrg({
   orgName: string;
   config: Partial<Config>;
 }): Promise<number> {
-  if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
+  if (
+    !config.giteaConfig?.url ||
+    !config.giteaConfig?.token ||
+    !config.userId
+  ) {
     throw new Error("Gitea config is required.");
   }
 
-  const orgRes = await fetch(
-    `${config.giteaConfig.url}/api/v1/orgs/${orgName}`,
-    {
+  try {
+    const orgRes = await fetch(
+      `${config.giteaConfig.url}/api/v1/orgs/${orgName}`,
+      {
+        headers: {
+          Authorization: `token ${config.giteaConfig.token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (orgRes.ok) {
+      const org = await orgRes.json();
+      return org.id;
+    }
+
+    const createRes = await fetch(`${config.giteaConfig.url}/api/v1/orgs`, {
+      method: "POST",
       headers: {
         Authorization: `token ${config.giteaConfig.token}`,
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        username: orgName,
+        full_name: `${orgName} Org`,
+        description: `Mirrored organization from GitHub ${orgName}`,
+        visibility: "public",
+      }),
+    });
+
+    if (!createRes.ok) {
+      throw new Error(`Failed to create Gitea org: ${await createRes.text()}`);
     }
-  );
 
-  if (orgRes.ok) {
-    const org = await orgRes.json();
-    return org.id;
+    await createMirrorJob({
+      userId: config.userId,
+      organizationName: orgName,
+      status: "imported",
+      message: `Organization ${orgName} fetched successfully`,
+      details: `Organization ${orgName} was fetched from GitHub`,
+    });
+
+    const newOrg = await createRes.json();
+    return newOrg.id;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unknown error occurred in getOrCreateGiteaOrg.";
+
+    await createMirrorJob({
+      userId: "ani1609",
+      organizationName: orgName,
+      message: `Failed to create Gitea organization: ${orgName}`,
+      status: "failed",
+      details: `Error: ${errorMessage}`,
+    });
+
+    throw new Error(`Error in getOrCreateGiteaOrg: ${errorMessage}`);
   }
-
-  const createRes = await fetch(`${config.giteaConfig.url}/api/v1/orgs`, {
-    method: "POST",
-    headers: {
-      Authorization: `token ${config.giteaConfig.token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      username: orgName,
-      full_name: `${orgName} Org`,
-      description: `Mirrored organization from GitHub ${orgName}`,
-      visibility: "public",
-    }),
-  });
-
-  if (!createRes.ok) {
-    throw new Error(`Failed to create Gitea org: ${await createRes.text()}`);
-  }
-
-  const newOrg = await createRes.json();
-  return newOrg.id;
 }
 
 export async function mirrorGitHubRepoToGiteaOrg({
