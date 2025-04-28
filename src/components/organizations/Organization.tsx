@@ -6,7 +6,6 @@ import { OrganizationList } from "./OrganizationsList";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import type {
-  OrgFilter,
   MembershipRole,
   OrganizationsApiResponse,
 } from "@/types/organizations";
@@ -18,12 +17,13 @@ import {
   SelectValue,
 } from "../ui/select";
 import type { MirrorOrgRequest, MirrorOrgResponse } from "@/types/mirror";
+import useFilterParams from "@/hooks/useFilterParams";
 
 export function Organization() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { user } = useAuth();
-  const [filter, setFilter] = useState<OrgFilter>({
+  const { filter, setFilter } = useFilterParams({
     searchTerm: "",
     membershipRole: "",
   });

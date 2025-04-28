@@ -26,8 +26,3 @@ export interface GitOrg {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export interface OrgFilter {
-  searchTerm: string;
-  membershipRole: MembershipRole | "";
-}

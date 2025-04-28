@@ -1,18 +1,18 @@
 import { useMemo, useState } from "react";
 import type { MirrorJob } from "@/lib/db/schema";
-import type { ActivityFilter } from "@/types/activities";
 import Fuse from "fuse.js";
 import { Button } from "../ui/button";
 import { RefreshCw } from "lucide-react";
 import { Card } from "../ui/card";
 import { formatDate, getStatusColor } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
+import type { FilterParams } from "@/types/filter";
 
 interface ActivityListProps {
   activities: MirrorJob[];
   isLoading: boolean;
-  filter: ActivityFilter;
-  setFilter: (filter: ActivityFilter) => void;
+  filter: FilterParams;
+  setFilter: (filter: FilterParams) => void;
 }
 
 export default function ActivityList({

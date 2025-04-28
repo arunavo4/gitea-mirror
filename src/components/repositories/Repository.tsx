@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import { RepositoryTable } from "./RepositoryTable";
 import type { Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
-import type {
-  RepoFilter,
-  RepositoryApiResponse,
-  RepoStatus,
-} from "@/types/Repository";
+import type { RepositoryApiResponse, RepoStatus } from "@/types/Repository";
 import { apiRequest } from "@/lib/utils";
 import {
   Select,
@@ -18,12 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Search, Filter, RefreshCw } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
+import useFilterParams from "@/hooks/useFilterParams";
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const [filter, setFilter] = useState<RepoFilter>({
+  const { filter, setFilter } = useFilterParams({
     searchTerm: "",
     status: "",
   });

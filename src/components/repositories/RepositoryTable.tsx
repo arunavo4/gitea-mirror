@@ -4,14 +4,14 @@ import { GitFork, ExternalLink, RefreshCw } from "lucide-react";
 import type { Repository } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { formatDate, getStatusColor } from "@/lib/utils";
-import type { RepoFilter } from "@/types/Repository";
+import type { FilterParams } from "@/types/filter";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface RepositoryTableProps {
   repositories: Repository[];
   isLoading: boolean;
-  filter: RepoFilter;
-  setFilter: (filter: RepoFilter) => void;
+  filter: FilterParams;
+  setFilter: (filter: FilterParams) => void;
   onMirror: ({ repoId }: { repoId: string }) => Promise<void>;
   loadingRepoIds: Set<string>;
 }

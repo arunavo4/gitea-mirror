@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, ExternalLink, RefreshCw } from "lucide-react";
 import type { Organization } from "@/lib/db/schema";
-import type { OrgFilter } from "@/types/organizations";
+import type { FilterParams } from "@/types/filter";
 import Fuse from "fuse.js";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,8 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 interface OrganizationListProps {
   organizations: Organization[];
   isLoading: boolean;
-  filter: OrgFilter;
-  setFilter: (filter: OrgFilter) => void;
+  filter: FilterParams;
+  setFilter: (filter: FilterParams) => void;
   onMirror: ({ orgId }: { orgId: string }) => Promise<void>;
   loadingOrgIds: Set<string>;
 }

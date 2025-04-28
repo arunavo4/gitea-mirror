@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, Download, RefreshCw } from "lucide-react";
-import { apiRequest, formatDate, getStatusColor } from "@/lib/utils";
+import { apiRequest } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import type { MirrorJob } from "@/lib/db/schema";
-import type { ActivityApiResponse, ActivityFilter } from "@/types/activities";
+import type { ActivityApiResponse } from "@/types/activities";
 import {
   Select,
   SelectContent,
@@ -15,12 +14,13 @@ import {
 } from "../ui/select";
 import type { RepoStatus } from "@/types/Repository";
 import ActivityList from "./ActivityList";
+import useFilterParams from "@/hooks/useFilterParams";
 
 export function ActivityLog() {
   const { user } = useAuth();
   const [activities, setActivities] = useState<MirrorJob[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [filter, setFilter] = useState<ActivityFilter>({
+  const { filter, setFilter } = useFilterParams({
     searchTerm: "",
     status: "",
   });

@@ -20,11 +20,6 @@ export const repositoryVisibilityEnum = z.enum([
 
 export type RepositoryVisibility = z.infer<typeof repositoryVisibilityEnum>;
 
-export interface RepoFilter {
-  searchTerm: string;
-  status: RepoStatus | "";
-}
-
 export interface RepositoryApiResponse {
   repositories: Repository[];
 }
