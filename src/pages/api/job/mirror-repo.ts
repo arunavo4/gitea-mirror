@@ -4,7 +4,10 @@ import { db, configs, repositories } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
 import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
 import { createMirrorJob } from "@/lib/helpers";
-import { mirrorGithubRepoToGitea } from "@/lib/gitea";
+import {
+  mirrorGithubRepoToGitea,
+  mirrorGutHubOrgRepoToGiteaOrg,
+} from "@/lib/gitea";
 import { createGitHubClient } from "@/lib/github";
 
 export const POST: APIRoute = async ({ request }) => {
@@ -99,19 +102,36 @@ export const POST: APIRoute = async ({ request }) => {
         const octokit = createGitHubClient(config.githubConfig.token);
 
         try {
-          await mirrorGithubRepoToGitea({
-            octokit,
-            repository: {
-              ...repo,
-              status: repoStatusEnum.parse("mirroring"),
-              organization: repo.organization ?? undefined,
-              lastMirrored: repo.lastMirrored ?? undefined,
-              errorMessage: repo.errorMessage ?? undefined,
-              forkedFrom: repo.forkedFrom ?? undefined,
-              visibility: repositoryVisibilityEnum.parse(repo.visibility),
-            },
-            config,
-          });
+          if (repo.organization) {
+            await mirrorGutHubOrgRepoToGiteaOrg({
+              config,
+              octokit,
+              orgName: repo.organization,
+              repository: {
+                ...repo,
+                status: repoStatusEnum.parse("mirroring"),
+                organization: repo.organization ?? undefined,
+                lastMirrored: repo.lastMirrored ?? undefined,
+                errorMessage: repo.errorMessage ?? undefined,
+                forkedFrom: repo.forkedFrom ?? undefined,
+                visibility: repositoryVisibilityEnum.parse(repo.visibility),
+              },
+            });
+          } else {
+            await mirrorGithubRepoToGitea({
+              octokit,
+              repository: {
+                ...repo,
+                status: repoStatusEnum.parse("mirroring"),
+                organization: repo.organization ?? undefined,
+                lastMirrored: repo.lastMirrored ?? undefined,
+                errorMessage: repo.errorMessage ?? undefined,
+                forkedFrom: repo.forkedFrom ?? undefined,
+                visibility: repositoryVisibilityEnum.parse(repo.visibility),
+              },
+              config,
+            });
+          }
 
           // Update status to "mirrored"
           await db

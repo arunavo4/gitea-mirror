@@ -4,10 +4,7 @@ import { Octokit } from "@octokit/rest";
 import type { Config } from "@/types/config";
 import type { Repository } from "./db/schema";
 import superagent from "superagent";
-import {
-  getGithubOrganizationRepositories,
-  getGithubRepoCloneUrl,
-} from "./github";
+import { getGithubOrganizationRepositories } from "./github";
 
 export const mirrorGithubRepoToGitea = async ({
   octokit,
@@ -25,7 +22,7 @@ export const mirrorGithubRepoToGitea = async ({
 
     let cloneAddress = repository.cloneUrl;
 
-    // If the repo is private, inject the GitHub token into the clone URL
+    // If the repository is private, inject the GitHub token into the clone URL
     if (repository.isPrivate) {
       if (!config.githubConfig.token) {
         throw new Error(
@@ -111,15 +108,145 @@ export async function getOrCreateGiteaOrg({
   return newOrg.id;
 }
 
-export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
+export async function mirrorGitHubRepoToGiteaOrg({
+  octokit,
+  config,
+  repository,
+  giteaOrgId,
+}: {
+  octokit: Octokit;
+  config: Partial<Config>;
+  repository: GitRepo;
+  giteaOrgId: number;
+}) {
+  if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
+    throw new Error("Gitea config is required.");
+  }
+
+  let cloneAddress = repository.cloneUrl;
+
+  if (repository.isPrivate) {
+    if (!config.githubConfig?.token) {
+      throw new Error(
+        "GitHub token is required to mirror private repositories."
+      );
+    }
+
+    cloneAddress = repository.cloneUrl.replace(
+      "https://",
+      `https://${config.githubConfig.token}@`
+    );
+  }
+
+  const migrateRes = await fetch(
+    `${config.giteaConfig.url}/api/v1/repos/migrate`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `token ${config.giteaConfig.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        clone_addr: cloneAddress,
+        uid: giteaOrgId,
+        repo_name: repository.name,
+        mirror: true,
+        private: repository.isPrivate,
+      }),
+    }
+  );
+
+  if (!migrateRes.ok) {
+    const errorText = await migrateRes.text();
+    console.error(
+      `Failed to migrate repository "${repository.name}": ${errorText}`
+    );
+    return;
+  }
+
+  // After migrating the repository, clone issues
+  // await mirrorGithubOrgRepoIssuesToGiteaOrg({
+  //   config,
+  //   octokit,
+  //   repository,
+  //   orgName,
+  // });
+}
+
+export async function mirrorGutHubOrgRepoToGiteaOrg({
   config,
   octokit,
-  repo,
+  repository,
   orgName,
 }: {
   config: Partial<Config>;
   octokit: Octokit;
-  repo: any;
+  repository: GitRepo;
+  orgName: string;
+}) {
+  if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
+    throw new Error("Gitea config is required.");
+  }
+
+  const giteaOrgId = await getOrCreateGiteaOrg({
+    orgName,
+    config,
+  });
+
+  await mirrorGitHubRepoToGiteaOrg({
+    octokit,
+    config,
+    repository,
+    giteaOrgId,
+  });
+}
+
+export async function mirrorGitHubOrgToGitea({
+  orgName,
+  octokit,
+  config,
+}: {
+  orgName: string;
+  octokit: Octokit;
+  config: Partial<Config>;
+}) {
+  try {
+    if (!config.githubConfig?.token || !config.giteaConfig?.url) {
+      throw new Error("GitHub token and Gitea URL are required.");
+    }
+
+    const giteaOrgId = await getOrCreateGiteaOrg({
+      orgName,
+      config,
+    });
+
+    const repos = await getGithubOrganizationRepositories({
+      octokit,
+      organizationName: orgName,
+    });
+
+    for (const repository of repos) {
+      await mirrorGitHubRepoToGiteaOrg({
+        octokit,
+        config,
+        repository,
+        giteaOrgId,
+      });
+    }
+  } catch (error) {
+    console.error("Migration failed:", error);
+  }
+}
+
+export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
+  config,
+  octokit,
+  repository,
+  orgName,
+}: {
+  config: Partial<Config>;
+  octokit: Octokit;
+  repository: any;
   orgName: string;
 }) {
   if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
@@ -127,8 +254,8 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
   }
 
   const { data: issues } = await octokit.rest.issues.listForRepo({
-    owner: repo.owner.login,
-    repo: repo.name,
+    owner: repository.owner.login,
+    repo: repository.name,
     state: "all",
     per_page: 100,
   });
@@ -139,7 +266,7 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
 
   // Step 1: Get existing Gitea labels
   const giteaLabelsRes = await fetch(
-    `${config.giteaConfig.url}/api/v1/repos/${orgName}/${repo.name}/labels`,
+    `${config.giteaConfig.url}/api/v1/repos/${orgName}/${repository.name}/labels`,
     {
       headers: {
         Authorization: `token ${config.giteaConfig.token}`,
@@ -157,7 +284,7 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
 
     // Create label if missing
     const createRes = await fetch(
-      `${config.giteaConfig?.url}/api/v1/repos/${orgName}/${repo.name}/labels`,
+      `${config.giteaConfig?.url}/api/v1/repos/${orgName}/${repository.name}/labels`,
       {
         method: "POST",
         headers: {
@@ -205,7 +332,7 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
     }
 
     const createIssueRes = await fetch(
-      `${config.giteaConfig.url}/api/v1/repos/${orgName}/${repo.name}/issues`,
+      `${config.giteaConfig.url}/api/v1/repos/${orgName}/${repository.name}/issues`,
       {
         method: "POST",
         headers: {
@@ -230,114 +357,5 @@ export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
     } else {
       console.log(`Created issue "${issue.title}"`);
     }
-  }
-}
-
-export async function migrateRepoToGiteaOrg({
-  octokit,
-  config,
-  repo,
-  giteaOrgId,
-  orgName,
-}: {
-  octokit: Octokit;
-  config: Partial<Config>;
-  repo: GitRepo;
-  giteaOrgId: number;
-  orgName: string;
-}) {
-  if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
-    throw new Error("Gitea config is required.");
-  }
-
-  const { cloneUrl } = await getGithubRepoCloneUrl({
-    octokit,
-    owner: repo.owner,
-    repo: repo.name,
-  });
-
-  let cloneAddress = cloneUrl;
-
-  if (repo.isPrivate) {
-    if (!config.githubConfig?.token) {
-      throw new Error(
-        "GitHub token is required to mirror private repositories."
-      );
-    }
-
-    cloneAddress = cloneUrl.replace(
-      "https://",
-      `https://${config.githubConfig.token}@`
-    );
-  }
-
-  const migrateRes = await fetch(
-    `${config.giteaConfig.url}/api/v1/repos/migrate`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `token ${config.giteaConfig.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        clone_addr: cloneAddress,
-        uid: giteaOrgId,
-        repo_name: repo.name,
-        mirror: true,
-        private: repo.isPrivate,
-      }),
-    }
-  );
-
-  if (!migrateRes.ok) {
-    const errorText = await migrateRes.text();
-    console.error(`Failed to migrate repo "${repo.name}": ${errorText}`);
-    return;
-  }
-
-  // After migrating the repo, clone issues
-  // await mirrorGithubOrgRepoIssuesToGiteaOrg({
-  //   config,
-  //   octokit,
-  //   repo,
-  //   orgName,
-  // });
-}
-
-export async function mirrorGithubOrgToGitea({
-  orgName,
-  octokit,
-  config,
-}: {
-  orgName: string;
-  octokit: Octokit;
-  config: Partial<Config>;
-}) {
-  try {
-    if (!config.githubConfig?.token || !config.giteaConfig?.url) {
-      throw new Error("GitHub token and Gitea URL are required.");
-    }
-
-    const giteaOrgId = await getOrCreateGiteaOrg({
-      orgName,
-      config,
-    });
-
-    const repos = await getGithubOrganizationRepositories({
-      octokit,
-      organizationName: orgName,
-    });
-
-    for (const repo of repos) {
-      await migrateRepoToGiteaOrg({
-        octokit,
-        config,
-        repo,
-        giteaOrgId,
-        orgName,
-      });
-    }
-  } catch (error) {
-    console.error("Migration failed:", error);
   }
 }

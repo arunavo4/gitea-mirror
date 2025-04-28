@@ -3,7 +3,7 @@ import type { MirrorOrgRequest, MirrorOrgResponse } from "@/types/mirror";
 import { db, configs, organizations } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
 import { createGitHubClient } from "@/lib/github";
-import { mirrorGithubOrgToGitea } from "@/lib/gitea";
+import { mirrorGitHubOrgToGitea } from "@/lib/gitea";
 import { createMirrorJob } from "@/lib/helpers";
 import { repoStatusEnum } from "@/types/Repository";
 import type { MembershipRole } from "@/types/organizations";
@@ -99,7 +99,7 @@ export const POST: APIRoute = async ({ request }) => {
 
           const octokit = createGitHubClient(config.githubConfig.token);
 
-          await mirrorGithubOrgToGitea({
+          await mirrorGitHubOrgToGitea({
             config,
             octokit,
             orgName: org.name,

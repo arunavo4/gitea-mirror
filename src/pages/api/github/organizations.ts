@@ -109,6 +109,8 @@ export const GET: APIRoute = async ({ request }) => {
       ...org,
       status: repoStatusEnum.parse(org.status),
       membershipRole: membershipRoleEnum.parse(org.membershipRole),
+      lastMirrored: org.lastMirrored ?? undefined,
+      errorMessage: org.errorMessage ?? undefined,
     }));
 
     const resPayload: OrganizationsApiResponse = {
