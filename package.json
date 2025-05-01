@@ -23,9 +23,9 @@
     "setup:real": "pnpm install && pnpm fix-db && pnpm cleanup-db && pnpm init-db"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.2.4",
-    "@astrojs/node": "^9.2.0",
-    "@astrojs/react": "^4.2.4",
+    "@astrojs/mdx": "^4.2.6",
+    "@astrojs/node": "^9.2.1",
+    "@astrojs/react": "^4.2.7",
     "@libsql/client": "^0.15.4",
     "@octokit/rest": "^21.1.1",
     "@radix-ui/react-avatar": "^1.1.4",
@@ -39,7 +39,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
-    "astro": "^5.7.0",
+    "astro": "^5.7.10",
     "axios": "^1.8.4",
     "bcryptjs": "^3.0.2",
     "canvas-confetti": "^1.9.3",
