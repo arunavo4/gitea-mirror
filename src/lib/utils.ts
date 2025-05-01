@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import axios, { AxiosError } from "axios";
-import type { AxiosRequestConfig } from "axios";
+import axios from "axios";
+import type { AxiosError, AxiosRequestConfig } from "axios";
 import type { RepoStatus } from "@/types/Repository";
 
 export const API_BASE = "/api";
