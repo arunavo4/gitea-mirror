@@ -70,9 +70,9 @@ export const POST: APIRoute = async ({ request }) => {
     );
   } catch (error) {
     console.error('Gitea connection test failed:', error);
-    
+
     // Handle specific error types
-    if (error.response) {
+    if (axios.isAxiosError(error) && error.response) {
       if (error.response.status === 401) {
         return new Response(
           JSON.stringify({
@@ -103,7 +103,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // Handle connection errors
-    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+    if (axios.isAxiosError(error) && (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND')) {
       return new Response(
         JSON.stringify({
           success: false,
@@ -122,7 +122,7 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({
         success: false,
-        message: `Gitea connection test failed: ${error.message || 'Unknown error'}`,
+        message: `Gitea connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       }),
       {
         status: 500,
