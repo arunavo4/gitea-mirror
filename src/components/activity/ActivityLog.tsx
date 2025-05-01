@@ -1,97 +1,70 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, Download, RefreshCw } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { apiRequest } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import type { MirrorJob } from "@/lib/db/schema";
+import type { ActivityApiResponse } from "@/types/activities";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import type { RepoStatus } from "@/types/Repository";
+import ActivityList from "./ActivityList";
+import useFilterParams from "@/hooks/useFilterParams";
 
-interface ActivityItem {
-  id: string;
-  message: string;
-  timestamp: Date;
-  status: "success" | "error" | "info" | "warning";
-  details?: string;
-  repositoryName?: string;
-}
-
-interface ActivityLogProps {
-  activities: ActivityItem[];
-  onRefresh: () => void;
-}
-
-export function ActivityLog({ activities, onRefresh }: ActivityLogProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-
-  // Filter activities based on search term and status filter
-  const filteredActivities = activities.filter((activity) => {
-    const matchesSearch =
-      activity.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (activity.repositoryName &&
-        activity.repositoryName
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase()));
-
-    const matchesStatus = statusFilter
-      ? activity.status === statusFilter
-      : true;
-
-    return matchesSearch && matchesStatus;
+export function ActivityLog() {
+  const { user } = useAuth();
+  const [activities, setActivities] = useState<MirrorJob[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { filter, setFilter } = useFilterParams({
+    searchTerm: "",
+    status: "",
   });
 
-  const toggleExpand = (id: string) => {
-    const newExpandedItems = new Set(expandedItems);
-    if (expandedItems.has(id)) {
-      newExpandedItems.delete(id);
-    } else {
-      newExpandedItems.add(id);
-    }
-    setExpandedItems(newExpandedItems);
-  };
+  useEffect(() => {
+    const fetchActivities = async () => {
+      if (!user) return;
 
-  const exportLog = () => {
-    const csvContent = [
-      ["Timestamp", "Status", "Message", "Repository", "Details"].join(","),
-      ...filteredActivities.map((activity) =>
-        [
-          activity.timestamp.toISOString(),
-          activity.status,
-          `"${activity.message.replace(/"/g, '""')}"`,
-          activity.repositoryName || "",
-          activity.details ? `"${activity.details.replace(/"/g, '""')}"` : "",
-        ].join(",")
-      ),
-    ].join("\n");
+      setIsLoading(true);
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `activity-log-${new Date().toISOString().split("T")[0]}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+      const response = await apiRequest<ActivityApiResponse>(
+        `/activities?userId=${user.id}`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (response.success) {
+        setActivities(response.activities);
+      } else {
+        console.error(response.message);
+      }
+
+      setIsLoading(false);
+    };
+
+    fetchActivities();
+  }, [user]);
 
   return (
     <div className="flex flex-col gap-y-8">
       <div className="flex flex-row items-center justify-end">
-        {/* <CardTitle className="text-xl">Activity Log</CardTitle> */}
         <div className="flex gap-x-4">
-          <Button variant="outline" onClick={exportLog}>
+          <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button onClick={onRefresh}>
+          <Button>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
         </div>
       </div>
+
       <div className="flex flex-col gap-y-6">
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="relative w-full sm:w-md">
@@ -100,23 +73,36 @@ export function ActivityLog({ activities, onRefresh }: ActivityLogProps) {
               type="text"
               placeholder="Search activities..."
               className="pl-8 h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={filter.searchTerm}
+              onChange={(e) =>
+                setFilter((prev) => ({ ...prev, searchTerm: e.target.value }))
+              }
             />
           </div>
 
           <div className="flex gap-x-4">
-            <select
-              className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              value={statusFilter || ""}
-              onChange={(e) => setStatusFilter(e.target.value || null)}
+            <Select
+              value={filter.status || "all"}
+              onValueChange={(value) =>
+                setFilter((prev) => ({
+                  ...prev,
+                  status: value === "all" ? "" : (value as RepoStatus),
+                }))
+              }
             >
-              <option value="">All Status</option>
-              <option value="success">Success</option>
-              <option value="error">Error</option>
-              <option value="warning">Warning</option>
-              <option value="info">Info</option>
-            </select>
+              <SelectTrigger className="w-[140px] h-9 max-h-9">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="imported">Imported</SelectItem>
+                <SelectItem value="mirroring">Mirroring</SelectItem>
+                <SelectItem value="mirrored">Mirrored</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="syncing">Syncing</SelectItem>
+                <SelectItem value="synced">Synced</SelectItem>
+              </SelectContent>
+            </Select>
 
             <Button variant="outline">
               <Filter className="h-4 w-4 mr-2" />
@@ -125,98 +111,13 @@ export function ActivityLog({ activities, onRefresh }: ActivityLogProps) {
           </div>
         </div>
 
-        {filteredActivities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <RefreshCw className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No activities found</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-md">
-              {searchTerm || statusFilter
-                ? "Try adjusting your search or filter criteria."
-                : "No mirroring activities have been recorded yet."}
-            </p>
-            {searchTerm || statusFilter ? (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm("");
-                  setStatusFilter(null);
-                }}
-              >
-                Clear Filters
-              </Button>
-            ) : (
-              <Button onClick={onRefresh}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            )}
-          </div>
-        ) : (
-          <Card className="border rounded-md divide-y">
-            {filteredActivities.map((activity, index) => (
-              <div key={index} className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className="relative mt-1">
-                    <div
-                      className={`h-2 w-2 rounded-full ${getStatusColor(
-                        activity.status
-                      )}`}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
-                      <p className="font-medium">{activity.message}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(activity.timestamp)}
-                      </p>
-                    </div>
-
-                    {activity.repositoryName && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Repository: {activity.repositoryName}
-                      </p>
-                    )}
-
-                    {activity.details && (
-                      <div className="mt-2">
-                        <Button
-                          variant="ghost"
-                          onClick={() => toggleExpand(activity.id)}
-                          className="text-xs h-7 px-2"
-                        >
-                          {expandedItems.has(activity.id)
-                            ? "Hide Details"
-                            : "Show Details"}
-                        </Button>
-
-                        {expandedItems.has(activity.id) && (
-                          <pre className="mt-2 p-3 bg-muted rounded-md text-xs overflow-auto">
-                            {activity.details}
-                          </pre>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </Card>
-        )}
+        <ActivityList
+          activities={activities}
+          isLoading={isLoading}
+          filter={filter}
+          setFilter={setFilter}
+        />
       </div>
     </div>
   );
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "success":
-      return "bg-green-500";
-    case "error":
-      return "bg-red-500";
-    case "warning":
-      return "bg-yellow-500";
-    case "info":
-    default:
-      return "bg-blue-500";
-  }
 }

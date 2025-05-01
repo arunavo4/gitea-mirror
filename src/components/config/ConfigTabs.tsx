@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,6 +10,7 @@ import { GitHubConfigForm } from "./GitHubConfigForm";
 import { GiteaConfigForm } from "./GiteaConfigForm";
 import { ScheduleConfigForm } from "./ScheduleConfigForm";
 import type {
+  ConfigApiResponse,
   GiteaConfig,
   GitHubConfig,
   SaveConfigApiRequest,
@@ -17,43 +18,73 @@ import type {
   ScheduleConfig,
 } from "@/types/config";
 import { Button } from "../ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/utils";
+import { Copy, CopyCheck } from "lucide-react";
 
-interface ConfigTabsProps {
-  configPlaceholders: {
-    githubConfig: GitHubConfig;
-    giteaConfig: GiteaConfig;
-    scheduleConfig: ScheduleConfig;
-  };
-  isLoading: boolean;
-}
+type ConfigState = {
+  githubConfig: GitHubConfig;
+  giteaConfig: GiteaConfig;
+  scheduleConfig: ScheduleConfig;
+};
 
-export function ConfigTabs({ configPlaceholders, isLoading }: ConfigTabsProps) {
-  const [config, setConfig] = useState<{
-    githubConfig: GitHubConfig;
-    giteaConfig: GiteaConfig;
-    scheduleConfig: ScheduleConfig;
-  }>({
-    githubConfig: configPlaceholders.githubConfig,
-    giteaConfig: configPlaceholders.giteaConfig,
-    scheduleConfig: configPlaceholders.scheduleConfig,
+export function ConfigTabs() {
+  const [config, setConfig] = useState<ConfigState>({
+    githubConfig: {
+      username: "",
+      token: "",
+      skipForks: false,
+      privateRepositories: false,
+      mirrorIssues: false,
+      mirrorStarred: false,
+      mirrorOrganizations: false,
+      onlyMirrorOrgs: false,
+      preserveOrgStructure: false,
+      skipStarredIssues: false,
+    },
+
+    // Mock Gitea config
+    giteaConfig: {
+      url: "",
+      token: "",
+      organization: "github-mirrors",
+      visibility: "public",
+      starredReposOrg: "github",
+    },
+
+    // Mock schedule config
+    scheduleConfig: {
+      enabled: false,
+      interval: 3600,
+    },
   });
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [dockerCode, setDockerCode] = useState<string>("");
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   const handleSaveConfig = async () => {
     try {
+      if (!user || !user.id) {
+        return;
+      }
+
       const reqPyload: SaveConfigApiRequest = {
+        userId: user.id,
         githubConfig: config.githubConfig,
         giteaConfig: config.giteaConfig,
         scheduleConfig: config.scheduleConfig,
       };
       console.log("Saving config:", reqPyload);
       // Save the Schedule config to the database
-      const response = await fetch("/api/config/save", {
+      const response = await fetch("/api/config", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(reqPyload),
       });
+
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
         console.log("Config saved successfully:", result);
@@ -89,6 +120,83 @@ export function ConfigTabs({ configPlaceholders, isLoading }: ConfigTabsProps) {
         })
       );
     }
+  };
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        if (!user) {
+          return;
+        }
+
+        setIsLoading(true);
+
+        const response = await apiRequest<ConfigApiResponse>(
+          `/config?userId=${user.id}`,
+          {
+            method: "GET",
+          }
+        );
+
+        if (!response.error) {
+          console.log("Fetched configuration:", response);
+          setConfig({
+            githubConfig: response.githubConfig,
+            giteaConfig: response.giteaConfig,
+            scheduleConfig: response.scheduleConfig,
+          });
+        }
+
+        console.log("Fetched configuration:", response);
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching configuration:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConfig();
+  }, [user]);
+
+  useEffect(() => {
+    const generateDockerCode = () => {
+      return `version: "3.3"
+services:
+  gitea-mirror:
+    image: arunavo4/gitea-mirror:latest
+    restart: unless-stopped
+    container_name: gitea-mirror
+    environment:
+      - GITHUB_USERNAME=${config.githubConfig.username}
+      - GITEA_URL=${config.giteaConfig.url}
+      - GITEA_TOKEN=${config.giteaConfig.token}
+      - GITHUB_TOKEN=${config.githubConfig.token}
+      - MIRROR_ISSUES=${config.githubConfig.mirrorIssues}
+      - MIRROR_STARRED=${config.githubConfig.mirrorStarred}
+      - MIRROR_ORGANIZATIONS=${config.githubConfig.mirrorOrganizations}
+      - PRESERVE_ORG_STRUCTURE=${config.githubConfig.preserveOrgStructure}
+      - ONLY_MIRROR_ORGS=${config.githubConfig.onlyMirrorOrgs}
+      - GITEA_ORGANIZATION=${config.giteaConfig.organization}
+      - GITEA_ORG_VISIBILITY=${config.giteaConfig.visibility}
+      - DELAY=${config.scheduleConfig.interval}`;
+    };
+
+    const code = generateDockerCode();
+    setDockerCode(code);
+  }, [config]);
+
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      },
+      (err) => {
+        console.error("Could not copy text: ", err);
+      }
+    );
   };
 
   return isLoading ? (
@@ -158,37 +266,33 @@ export function ConfigTabs({ configPlaceholders, isLoading }: ConfigTabsProps) {
         </CardContent>
       </Card>
 
-      {/* <Card>
+      <Card>
         <CardHeader>
           <CardTitle>Docker Configuration</CardTitle>
           <CardDescription>
             Equivalent Docker configuration for your current settings.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+
+        <CardContent className="relative">
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute top-4 right-10"
+            onClick={() => handleCopyToClipboard(dockerCode)}
+          >
+            {isCopied ? (
+              <CopyCheck className="text-green-500" />
+            ) : (
+              <Copy className="text-muted-foreground" />
+            )}
+          </Button>
+
           <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
-            {`version: "3.3"
-services:
-  gitea-mirror:
-    image: arunavo4/gitea-mirror:latest
-    restart: unless-stopped
-    container_name: gitea-mirror
-    environment:
-      - GITHUB_USERNAME=${githubConfig.username}
-      - GITEA_URL=${giteaConfig.url}
-      - GITEA_TOKEN=your-gitea-token
-      - GITHUB_TOKEN=your-github-token
-      - MIRROR_ISSUES=${githubConfig.mirrorIssues}
-      - MIRROR_STARRED=${githubConfig.mirrorStarred}
-      - MIRROR_ORGANIZATIONS=${githubConfig.mirrorOrganizations}
-      - PRESERVE_ORG_STRUCTURE=${githubConfig.preserveOrgStructure}
-      - ONLY_MIRROR_ORGS=${githubConfig.onlyMirrorOrgs}
-      - GITEA_ORGANIZATION=${giteaConfig.organization}
-      - GITEA_ORG_VISIBILITY=${giteaConfig.visibility}
-      - DELAY=${scheduleConfig.interval}`}
+            {dockerCode}
           </pre>
         </CardContent>
-      </Card> */}
+      </Card>
     </div>
   );
 }

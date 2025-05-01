@@ -40,6 +40,7 @@ export interface MockData {
 }
 
 export interface SaveConfigApiRequest {
+  userId: string;
   githubConfig: GitHubConfig;
   giteaConfig: GiteaConfig;
   scheduleConfig: ScheduleConfig;

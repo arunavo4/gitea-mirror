@@ -6,81 +6,58 @@ import { eq } from "drizzle-orm";
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { githubConfig, giteaConfig, scheduleConfig } = body;
+    const { userId, githubConfig, giteaConfig, scheduleConfig } = body;
 
-    if (!githubConfig || !giteaConfig || !scheduleConfig) {
+    if (!userId || !githubConfig || !giteaConfig || !scheduleConfig) {
       return new Response(
         JSON.stringify({
           success: false,
-          message: "All configuration sections are required",
+          message:
+            "userId, githubConfig, giteaConfig, and scheduleConfig are required.",
         }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         }
       );
     }
 
-    // Preserve existing tokens if they're empty in the new config
-    // This prevents tokens from being lost when the form is submitted with empty token fields
-    try {
-      const existingConfig = await db.select().from(configs).limit(1);
-      if (existingConfig.length > 0) {
-        const existing = existingConfig[0];
+    // Fetch existing config
+    const existingConfigResult = await db
+      .select()
+      .from(configs)
+      .where(eq(configs.userId, userId))
+      .limit(1);
 
-        // Parse existing configs
-        const existingGithubConfig =
-          typeof existing.githubConfig === "string"
-            ? JSON.parse(existing.githubConfig)
-            : existing.githubConfig;
+    const existingConfig = existingConfigResult[0];
 
-        const existingGiteaConfig =
-          typeof existing.giteaConfig === "string"
-            ? JSON.parse(existing.giteaConfig)
-            : existing.giteaConfig;
+    // Preserve tokens if fields are empty
+    if (existingConfig) {
+      try {
+        const existingGithub =
+          typeof existingConfig.githubConfig === "string"
+            ? JSON.parse(existingConfig.githubConfig)
+            : existingConfig.githubConfig;
 
-        // If new GitHub token is empty but we have an existing one, use the existing one
-        if (!githubConfig.token && existingGithubConfig.token) {
-          githubConfig.token = existingGithubConfig.token;
+        const existingGitea =
+          typeof existingConfig.giteaConfig === "string"
+            ? JSON.parse(existingConfig.giteaConfig)
+            : existingConfig.giteaConfig;
+
+        if (!githubConfig.token && existingGithub.token) {
+          githubConfig.token = existingGithub.token;
         }
 
-        // If new Gitea token is empty but we have an existing one, use the existing one
-        if (!giteaConfig.token && existingGiteaConfig.token) {
-          giteaConfig.token = existingGiteaConfig.token;
+        if (!giteaConfig.token && existingGitea.token) {
+          giteaConfig.token = existingGitea.token;
         }
+      } catch (tokenError) {
+        console.error("Failed to preserve tokens:", tokenError);
       }
-    } catch (tokenError) {
-      console.error("Error preserving existing tokens:", tokenError);
-      // Continue with save operation even if token preservation fails
     }
 
-    // Get the first user (for now, we'll associate the config with the first user)
-    const firstUser = await db.select().from(users).limit(1);
-    if (firstUser.length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: "No users found in the database",
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
-
-    const userId = firstUser[0].id;
-
-    // Check if a config already exists
-    const existingConfig = await db.select().from(configs).limit(1);
-
-    if (existingConfig.length > 0) {
-      // Update existing config
-      const configId = existingConfig[0].id;
+    if (existingConfig) {
+      // Update path
       await db
         .update(configs)
         .set({
@@ -89,67 +66,80 @@ export const POST: APIRoute = async ({ request }) => {
           scheduleConfig,
           updatedAt: new Date(),
         })
-        .where(eq(configs.id, configId));
+        .where(eq(configs.id, existingConfig.id));
 
       return new Response(
         JSON.stringify({
           success: true,
           message: "Configuration updated successfully",
-          configId,
+          configId: existingConfig.id,
         }),
         {
           status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    } else {
-      // Create new config
-      const configId = uuidv4();
-      await db.insert(configs).values({
-        id: configId,
-        userId,
-        name: "Default Configuration",
-        isActive: true,
-        githubConfig,
-        giteaConfig,
-        include: [],
-        exclude: [],
-        scheduleConfig,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Configuration created successfully",
-          configId,
-        }),
-        {
-          status: 201,
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         }
       );
     }
-  } catch (error) {
-    console.error("Error saving configuration:", error);
+
+    // Fallback user check (optional if you're always passing userId)
+    const userExists = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (userExists.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Invalid userId. No matching user found.",
+        }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Create new config
+    const configId = uuidv4();
+    await db.insert(configs).values({
+      id: configId,
+      userId,
+      name: "Default Configuration",
+      isActive: true,
+      githubConfig,
+      giteaConfig,
+      include: [],
+      exclude: [],
+      scheduleConfig,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     return new Response(
       JSON.stringify({
+        success: true,
+        message: "Configuration created successfully",
+        configId,
+      }),
+      {
+        status: 201,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  } catch (error) {
+    console.error("Error saving configuration:", error);
+    return new Response(
+      JSON.stringify({
         success: false,
-        message: `Error saving configuration: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
+        message:
+          "Error saving configuration: " +
+          (error instanceof Error ? error.message : "Unknown error"),
       }),
       {
         status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       }
     );
   }

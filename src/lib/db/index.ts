@@ -31,9 +31,9 @@ export const users = sqliteTable("users", {
     .default(new Date()),
 });
 
-const githubSchema = configSchema.shape.github;
-const giteaSchema = configSchema.shape.gitea;
-const scheduleSchema = configSchema.shape.schedule;
+const githubSchema = configSchema.shape.githubConfig;
+const giteaSchema = configSchema.shape.giteaConfig;
+const scheduleSchema = configSchema.shape.scheduleConfig;
 
 export const configs = sqliteTable("configs", {
   id: text("id").primaryKey(),
@@ -85,21 +85,39 @@ export const repositories = sqliteTable("repositories", {
   name: text("name").notNull(),
   fullName: text("full_name").notNull(),
   url: text("url").notNull(),
+  cloneUrl: text("clone_url").notNull(),
+  owner: text("owner").notNull(),
+  organization: text("organization"),
+
   isPrivate: integer("is_private", { mode: "boolean" })
     .notNull()
     .default(false),
-  isFork: integer("is_fork", { mode: "boolean" }).notNull().default(false),
-  owner: text("owner").notNull(),
-  organization: text("organization"),
+  isForked: integer("is_fork", { mode: "boolean" }).notNull().default(false),
+  forkedFrom: text("forked_from"),
+
   hasIssues: integer("has_issues", { mode: "boolean" })
     .notNull()
     .default(false),
   isStarred: integer("is_starred", { mode: "boolean" })
     .notNull()
     .default(false),
+  isArchived: integer("is_archived", { mode: "boolean" })
+    .notNull()
+    .default(false),
+
+  size: integer("size").notNull().default(0),
+  hasLFS: integer("has_lfs", { mode: "boolean" }).notNull().default(false),
+  hasSubmodules: integer("has_submodules", { mode: "boolean" })
+    .notNull()
+    .default(false),
+
+  defaultBranch: text("default_branch").notNull(),
+  visibility: text("visibility").notNull().default("public"),
+
   status: text("status").notNull().default("imported"),
   lastMirrored: integer("last_mirrored", { mode: "timestamp" }),
   errorMessage: text("error_message"),
+
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(new Date()),
@@ -110,33 +128,43 @@ export const repositories = sqliteTable("repositories", {
 
 export const mirrorJobs = sqliteTable("mirror_jobs", {
   id: text("id").primaryKey(),
-  configId: text("config_id")
+  userId: text("user_id")
     .notNull()
-    .references(() => configs.id),
-  repositoryId: text("repository_id").references(() => repositories.id),
-  status: text("status").notNull().default("pending"),
-  startedAt: integer("started_at", { mode: "timestamp" }),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
-  log: text("log", { mode: "json" }).notNull().default("[]"),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .references(() => users.id),
+  repositoryName: text("repository_name"),
+  organizationName: text("organization_name"),
+  details: text("details"),
+  status: text("status").notNull().default("imported"),
+  message: text("message").notNull(),
+  timestamp: integer("timestamp", { mode: "timestamp" })
     .notNull()
     .default(new Date()),
 });
 
 export const organizations = sqliteTable("organizations", {
   id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
   configId: text("config_id")
     .notNull()
     .references(() => configs.id),
   name: text("name").notNull(),
-  type: text("type").notNull().default("member"),
+
+  avatarUrl: text("avatar_url").notNull(),
+
+  membershipRole: text("membership_role").notNull().default("member"),
+
   isIncluded: integer("is_included", { mode: "boolean" })
     .notNull()
     .default(true),
+
+  status: text("status").notNull().default("imported"),
+  lastMirrored: integer("last_mirrored", { mode: "timestamp" }),
+  errorMessage: text("error_message"),
+
   repositoryCount: integer("repository_count").notNull().default(0),
+
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(new Date()),

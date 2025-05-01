@@ -2,11 +2,18 @@ import type { APIRoute } from "astro";
 import { db, repositories } from "@/lib/db";
 import { configs } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import * as github from "@/lib/github";
-import type { GiteaConfig, GitHubConfig, ScheduleConfig } from "@/types/config";
-import { safeParse } from "@/lib/utils";
-import type { RepositoryApiResponse } from "@/types/Repository";
+import {
+  repositoryVisibilityEnum,
+  repoStatusEnum,
+  type RepositoryApiResponse,
+} from "@/types/Repository";
 import { v4 as uuidv4 } from "uuid";
+import { createMirrorJob } from "@/lib/helpers";
+import {
+  createGitHubClient,
+  getGithubRepositories,
+  getGithubStarredRepositories,
+} from "@/lib/github";
 
 export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
@@ -36,17 +43,7 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
-    const rawConfig = userConfig[0];
-
-    // Parsed config with all fields
-    const config = {
-      ...rawConfig,
-      githubConfig: safeParse<GitHubConfig>(rawConfig.githubConfig),
-      giteaConfig: safeParse<GiteaConfig>(rawConfig.giteaConfig),
-      include: safeParse<string[]>(rawConfig.include) ?? [],
-      exclude: safeParse<string[]>(rawConfig.exclude) ?? [],
-      scheduleConfig: safeParse<ScheduleConfig>(rawConfig.scheduleConfig),
-    };
+    const config = userConfig[0];
 
     if (!config.githubConfig || !config.githubConfig.token) {
       return new Response(
@@ -55,10 +52,21 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
-    const octokit = github.createGitHubClient(config.githubConfig.token);
+    // Create GitHub client
+    const octokit = createGitHubClient(config.githubConfig.token);
 
     // Fetch GitHub repositories based on the user's config
-    const githubRepos = await github.getUserRepositories(octokit, config);
+    const basicAndForkedRepos = await getGithubRepositories({
+      octokit,
+      config,
+    });
+
+    const starredRepos = await getGithubStarredRepositories({
+      octokit,
+      config,
+    });
+
+    const allGithubRepos = [...basicAndForkedRepos, ...starredRepos];
 
     // Fetch all the repositories of the user from the database
     const existingRepos = await db
@@ -67,31 +75,60 @@ export const GET: APIRoute = async ({ request }) => {
       .where(eq(repositories.userId, userId));
 
     // Sync to DB (Insert or Update)
-    for (const repo of githubRepos) {
+    for (const repo of allGithubRepos) {
       const existing = existingRepos.find((r) => r.fullName === repo.fullName);
 
       if (!existing) {
         const repoId = uuidv4();
-        console.log("gen repo id:", repoId);
 
         await db.insert(repositories).values({
           id: repoId,
           userId,
-          configId: rawConfig.id,
+          configId: config.id,
+
           name: repo.name,
           fullName: repo.fullName,
           url: repo.url,
-          isPrivate: repo.isPrivate,
-          isFork: repo.isFork,
+          cloneUrl: repo.cloneUrl,
+
           owner: repo.owner,
           organization: repo.organization,
+
+          isPrivate: repo.isPrivate,
+          isForked: repo.isForked,
+          forkedFrom: repo.forkedFrom,
+
           hasIssues: repo.hasIssues,
           isStarred: repo.isStarred,
+          isArchived: repo.isArchived,
+
+          size: repo.size,
+          hasLFS: repo.hasLFS,
+          hasSubmodules: repo.hasSubmodules,
+
+          defaultBranch: repo.defaultBranch,
+          visibility: repo.visibility,
+
+          status: repo.status,
+          lastMirrored: repo.lastMirrored,
+          errorMessage: repo.errorMessage,
+
+          createdAt: repo.createdAt,
+          updatedAt: repo.updatedAt,
+        });
+
+        // Create a mirror job for the newly added repository
+        await createMirrorJob({
+          userId,
+          repositoryName: repo.name,
+          message: `Repository ${repo.name} fetched successfully`,
+          status: "imported",
+          details: `Repository ${repo.name} was fetched from GitHub`,
         });
       } else {
         await db
           .update(repositories)
-          .set({ ...repo, id: existing.id, updatedAt: new Date() })
+          .set({ updatedAt: new Date() })
           .where(eq(repositories.id, existing.id));
       }
     }
@@ -105,10 +142,12 @@ export const GET: APIRoute = async ({ request }) => {
     const response: RepositoryApiResponse = {
       repositories: latestRepositories.map((repo) => ({
         ...repo,
-        organization: repo.organization ?? undefined, // Convert null to undefined
-        lastMirrored: repo.lastMirrored ?? undefined, // Convert null to undefined
-        errorMessage: repo.errorMessage ?? undefined, // Convert null to undefined
-        status: "imported", // Default or derived status value
+        organization: repo.organization ?? undefined,
+        lastMirrored: repo.lastMirrored ?? undefined,
+        errorMessage: repo.errorMessage ?? undefined,
+        forkedFrom: repo.forkedFrom ?? undefined,
+        status: repoStatusEnum.parse(repo.status),
+        visibility: repositoryVisibilityEnum.parse(repo.visibility),
       })),
     };
 

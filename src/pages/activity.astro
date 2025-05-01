@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { MainLayout } from '@/components/layout/MainLayout';
+import App, { MainLayout } from '@/components/layout/MainLayout';
 import { ActivityLog } from '@/components/activity/ActivityLog';
 import { ENV, MOCK_DATA } from '@/lib/config';
 import { db, mirrorJobs } from '@/lib/db';
@@ -88,15 +88,6 @@ const handleRefresh = () => {
     <ThemeScript />
   </head>
   <body>
-    <MainLayout client:load>
-      <!-- <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-bold">Activity Log</h1>
-      </div> -->
-
-      <ActivityLog
-        activities={activityData}
-        onRefresh={handleRefresh}
-      />
-    </MainLayout>
+    <App page='activity-log'client:load />
   </body>
 </html>

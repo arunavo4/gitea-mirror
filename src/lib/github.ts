@@ -1,7 +1,8 @@
+import type { GitOrg, MembershipRole } from "@/types/organizations";
+import type { GitRepo, RepoStatus } from "@/types/Repository";
 import { Octokit } from "@octokit/rest";
-import type { Repository } from "./db/schema";
 import type { Config } from "@/types/config";
-import type { GitRepo } from "@/types/Repository";
+import type { Repository } from "./db/schema";
 
 /**
  * Creates an authenticated Octokit instance
@@ -13,195 +14,17 @@ export function createGitHubClient(token: string): Octokit {
 }
 
 /**
- * Get user repositories from GitHub
- */
-export async function getUserRepositories(
-  octokit: Octokit,
-  config: Partial<Config>
-): Promise<GitRepo[]> {
-  const { data: repos } = await octokit.repos.listForAuthenticatedUser({
-    per_page: 100,
-    sort: "updated",
-  });
-
-  return repos
-    .filter((repo) => {
-      // Skip forks if configured
-      if (config.github?.skipForks && repo.fork) {
-        return false;
-      }
-
-      // Skip private repos if not configured to include them
-      if (repo.private && !config.github?.privateRepositories) {
-        return false;
-      }
-
-      return true;
-    })
-    .map((repo) => ({
-      id: repo.id,
-      name: repo.name,
-      fullName: repo.full_name,
-      url: repo.html_url,
-      isPrivate: repo.private,
-      isFork: repo.fork,
-      owner: repo.owner.login,
-      organization:
-        repo.owner.type === "Organization" ? repo.owner.login : undefined,
-      hasIssues: repo.has_issues !== undefined ? repo.has_issues : false,
-      isStarred: false, // Will be set separately
-    }));
-}
-
-/**
- * Get starred repositories from GitHub
- */
-export async function getStarredRepositories(
-  octokit: Octokit,
-  config: Partial<Config>
-): Promise<Repository[]> {
-  const { data: repos } =
-    await octokit.activity.listReposStarredByAuthenticatedUser({
-      per_page: 100,
-      sort: "updated",
-    });
-
-  return repos.map((repo) => ({
-    name: repo.name,
-    fullName: repo.full_name,
-    url: repo.html_url,
-    isPrivate: repo.private,
-    isFork: repo.fork,
-    owner: repo.owner.login,
-    organization:
-      repo.owner.type === "Organization" ? repo.owner.login : undefined,
-    hasIssues: repo.has_issues ?? false,
-    isStarred: true,
-    status: "pending",
-    configId: config.id || "",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }));
-}
-
-/**
- * Get organization repositories from GitHub
- */
-export async function getOrganizationRepositories(
-  octokit: Octokit,
-  orgName: string,
-  config: Partial<Config>
-): Promise<Repository[]> {
-  const { data: repos } = await octokit.repos.listForOrg({
-    org: orgName,
-    per_page: 100,
-    sort: "updated",
-  });
-
-  return repos
-    .filter((repo) => {
-      // Skip forks if configured
-      if (config.github?.skipForks && repo.fork) {
-        return false;
-      }
-
-      // Skip private repos if not configured to include them
-      if (repo.private && !config.github?.privateRepositories) {
-        return false;
-      }
-
-      return true;
-    })
-    .map((repo) => ({
-      name: repo.name,
-      fullName: repo.full_name,
-      url: repo.html_url,
-      isPrivate: repo.private,
-      isFork: repo.fork,
-      owner: repo.owner.login,
-      organization:
-        repo.owner.type === "Organization" ? repo.owner.login : undefined,
-      hasIssues: repo.has_issues ?? false,
-      isStarred: false,
-      status: "pending",
-      configId: config.id || "",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }));
-}
-
-/**
- * Get user organizations from GitHub
- */
-export async function getUserOrganizations(octokit: Octokit): Promise<any[]> {
-  const { data: orgs } = await octokit.orgs.listForAuthenticatedUser({
-    per_page: 100,
-  });
-
-  return orgs.map((org) => ({
-    name: org.login,
-    type: "member",
-    avatarUrl: org.avatar_url,
-    description: org.description,
-  }));
-}
-
-/**
- * Get repository issues from GitHub
- */
-export async function getRepositoryIssues(
-  octokit: Octokit,
-  owner: string,
-  repo: string
-): Promise<any[]> {
-  const { data: issues } = await octokit.issues.listForRepo({
-    owner,
-    repo,
-    per_page: 100,
-    state: "all",
-  });
-
-  return issues.map((issue) => ({
-    number: issue.number,
-    title: issue.title,
-    body: issue.body,
-    state: issue.state,
-    user: issue.user?.login || "unknown",
-    labels: issue.labels
-      .map((label) => (typeof label === "string" ? label : label.name))
-      .filter(Boolean),
-    createdAt: issue.created_at,
-    updatedAt: issue.updated_at,
-    closedAt: issue.closed_at,
-  }));
-}
-
-/**
- * Get repository contents from GitHub
- */
-export async function getRepositoryContents(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  path: string = ""
-): Promise<any> {
-  const { data } = await octokit.repos.getContent({
-    owner,
-    repo,
-    path,
-  });
-
-  return data;
-}
-
-/**
  * Clone a repository from GitHub
  */
-export async function cloneRepository(
-  octokit: Octokit,
-  owner: string,
-  repo: string
-): Promise<{ url: string; cloneUrl: string }> {
+export async function getGithubRepoCloneUrl({
+  octokit,
+  owner,
+  repo,
+}: {
+  octokit: Octokit;
+  owner: string;
+  repo: string;
+}): Promise<{ url: string; cloneUrl: string }> {
   const { data } = await octokit.repos.get({
     owner,
     repo,
@@ -211,4 +34,224 @@ export async function cloneRepository(
     url: data.html_url,
     cloneUrl: data.clone_url,
   };
+}
+
+/**
+ * Get user repositories from GitHub
+ * todo: need to handle pagination and apply more filters based on user config
+ */
+export async function getGithubRepositories({
+  octokit,
+  config,
+}: {
+  octokit: Octokit;
+  config: Partial<Config>;
+}): Promise<GitRepo[]> {
+  try {
+    const repos = await octokit.paginate(
+      octokit.repos.listForAuthenticatedUser,
+      { per_page: 100 }
+    );
+
+    return repos.map((repo) => ({
+      name: repo.name,
+      fullName: repo.full_name,
+      url: repo.html_url,
+      cloneUrl: repo.clone_url,
+
+      owner: repo.owner.login,
+      organization:
+        repo.owner.type === "Organization" ? repo.owner.login : undefined,
+
+      isPrivate: repo.private,
+      isForked: repo.fork,
+      forkedFrom: (repo as typeof repo & { parent?: { full_name: string } })
+        .parent?.full_name,
+
+      hasIssues: repo.has_issues,
+      isStarred: false, // if you need starred separately, it has to come from another API
+      isArchived: repo.archived,
+
+      size: repo.size,
+      hasLFS: false,
+      hasSubmodules: false,
+
+      defaultBranch: repo.default_branch,
+      visibility: (repo.visibility ?? "public") as GitRepo["visibility"],
+
+      status: "imported",
+      lastMirrored: undefined,
+      errorMessage: undefined,
+
+      createdAt: repo.created_at ? new Date(repo.created_at) : new Date(),
+      updatedAt: repo.updated_at ? new Date(repo.updated_at) : new Date(),
+    }));
+  } catch (error) {
+    throw new Error(
+      `Error fetching repositories: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+export async function getGithubStarredRepositories({
+  octokit,
+  config,
+}: {
+  octokit: Octokit;
+  config: Partial<Config>;
+}) {
+  try {
+    const starredRepos = await octokit.paginate(
+      octokit.activity.listReposStarredByAuthenticatedUser,
+      {
+        per_page: 100,
+      }
+    );
+
+    return starredRepos.map((repo) => ({
+      name: repo.name,
+      fullName: repo.full_name,
+      url: repo.html_url,
+      cloneUrl: repo.clone_url,
+
+      owner: repo.owner.login,
+      organization:
+        repo.owner.type === "Organization" ? repo.owner.login : undefined,
+
+      isPrivate: repo.private,
+      isForked: repo.fork,
+      forkedFrom: undefined,
+
+      hasIssues: repo.has_issues,
+      isStarred: true,
+      isArchived: repo.archived,
+
+      size: repo.size,
+      hasLFS: false, // Placeholder
+      hasSubmodules: false, // Placeholder
+
+      defaultBranch: repo.default_branch,
+      visibility: (repo.visibility ?? "public") as GitRepo["visibility"],
+
+      status: "imported",
+      lastMirrored: undefined,
+      errorMessage: undefined,
+
+      createdAt: repo.created_at ? new Date(repo.created_at) : new Date(),
+      updatedAt: repo.updated_at ? new Date(repo.updated_at) : new Date(),
+    }));
+  } catch (error) {
+    throw new Error(
+      `Error fetching starred repositories: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+/**
+ * Get user github organizations
+ */
+export async function getGithubOrganizations({
+  octokit,
+  config,
+}: {
+  octokit: Octokit;
+  config: Partial<Config>;
+}): Promise<GitOrg[]> {
+  try {
+    const { data: orgs } = await octokit.orgs.listForAuthenticatedUser({
+      per_page: 100,
+    });
+
+    const organizations = await Promise.all(
+      orgs.map(async (org) => {
+        const [{ data: orgDetails }, { data: membership }] = await Promise.all([
+          octokit.orgs.get({ org: org.login }),
+          octokit.orgs.getMembershipForAuthenticatedUser({ org: org.login }),
+        ]);
+
+        const totalRepos =
+          orgDetails.public_repos + (orgDetails.total_private_repos ?? 0);
+
+        return {
+          name: org.login,
+          avatarUrl: org.avatar_url,
+          membershipRole: membership.role as MembershipRole,
+          isIncluded: false,
+          status: "imported" as RepoStatus,
+          repositoryCount: totalRepos,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      })
+    );
+
+    return organizations;
+  } catch (error) {
+    throw new Error(
+      `Error fetching organizations: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+/**
+ * Get repositories for a specific organization
+ */
+export async function getGithubOrganizationRepositories({
+  octokit,
+  organizationName,
+}: {
+  octokit: Octokit;
+  organizationName: string;
+}): Promise<GitRepo[]> {
+  try {
+    const repos = await octokit.paginate(octokit.repos.listForOrg, {
+      org: organizationName,
+      per_page: 100,
+    });
+
+    return repos.map((repo) => ({
+      name: repo.name,
+      fullName: repo.full_name,
+      url: repo.html_url,
+      cloneUrl: repo.clone_url ?? "",
+
+      owner: repo.owner.login,
+      organization: repo.owner.login,
+
+      isPrivate: repo.private,
+      isForked: repo.fork,
+      forkedFrom: (repo as typeof repo & { parent?: { full_name: string } })
+        .parent?.full_name,
+
+      hasIssues: repo.has_issues ?? false,
+      isStarred: false, // Organization starred repos are separate API
+      isArchived: repo.archived ?? false,
+
+      size: repo.size ?? 0,
+      hasLFS: false,
+      hasSubmodules: false,
+
+      defaultBranch: repo.default_branch ?? "main",
+      visibility: (repo.visibility ?? "public") as GitRepo["visibility"],
+
+      status: "imported",
+      lastMirrored: undefined,
+      errorMessage: undefined,
+
+      createdAt: repo.created_at ? new Date(repo.created_at) : new Date(),
+      updatedAt: repo.updated_at ? new Date(repo.updated_at) : new Date(),
+    }));
+  } catch (error) {
+    throw new Error(
+      `Error fetching organization repositories: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
 }

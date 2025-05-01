@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
+import { membershipRoleEnum } from "@/types/organizations";
 
 // User schema
 export const userSchema = z.object({
@@ -18,7 +20,7 @@ export const configSchema = z.object({
   userId: z.string().uuid(),
   name: z.string().min(1),
   isActive: z.boolean().default(true),
-  github: z.object({
+  githubConfig: z.object({
     username: z.string().min(1),
     token: z.string().optional(),
     skipForks: z.boolean().default(false),
@@ -36,7 +38,7 @@ export const configSchema = z.object({
     preserveOrgStructure: z.boolean().default(false),
     skipStarredIssues: z.boolean().default(false),
   }),
-  gitea: z.object({
+  giteaConfig: z.object({
     url: z.string().url(),
     token: z.string().min(1),
     organization: z.string().optional(),
@@ -45,7 +47,7 @@ export const configSchema = z.object({
   }),
   include: z.array(z.string()).default(["*"]),
   exclude: z.array(z.string()).default([]),
-  schedule: z.object({
+  scheduleConfig: z.object({
     enabled: z.boolean().default(false),
     interval: z.number().min(1).default(3600), // in seconds
     lastRun: z.date().optional(),
@@ -62,20 +64,34 @@ export const repositorySchema = z.object({
   id: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
   configId: z.string().uuid(),
+
   name: z.string().min(1),
   fullName: z.string().min(1),
   url: z.string().url(),
-  isPrivate: z.boolean().default(false),
-  isFork: z.boolean().default(false),
+  cloneUrl: z.string().url(),
+
   owner: z.string().min(1),
   organization: z.string().optional(),
+
+  isPrivate: z.boolean().default(false),
+  isForked: z.boolean().default(false),
+  forkedFrom: z.string().optional(),
+
   hasIssues: z.boolean().default(false),
   isStarred: z.boolean().default(false),
-  status: z
-    .enum(["pending", "mirrored", "failed", "imported"])
-    .default("pending"),
+  isArchived: z.boolean().default(false),
+
+  size: z.number(),
+  hasLFS: z.boolean().default(false),
+  hasSubmodules: z.boolean().default(false),
+
+  defaultBranch: z.string(),
+  visibility: repositoryVisibilityEnum.default("public"),
+
+  status: repoStatusEnum.default("imported"),
   lastMirrored: z.date().optional(),
   errorMessage: z.string().optional(),
+
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });
@@ -85,24 +101,13 @@ export type Repository = z.infer<typeof repositorySchema>;
 // Mirror job schema
 export const mirrorJobSchema = z.object({
   id: z.string().uuid().optional(),
-  configId: z.string().uuid(),
-  repositoryId: z.string().uuid().optional(),
-  status: z
-    .enum(["pending", "running", "completed", "failed"])
-    .default("pending"),
-  startedAt: z.date().optional(),
-  completedAt: z.date().optional(),
-  log: z
-    .array(
-      z.object({
-        timestamp: z.date().default(() => new Date()),
-        message: z.string(),
-        level: z.enum(["info", "warning", "error"]).default("info"),
-      })
-    )
-    .default([]),
-  createdAt: z.date().default(() => new Date()),
-  updatedAt: z.date().default(() => new Date()),
+  userId: z.string().uuid().optional(),
+  repositoryName: z.string().optional(),
+  organizationName: z.string().optional(),
+  details: z.string().optional(),
+  status: repoStatusEnum.default("imported"),
+  message: z.string(),
+  timestamp: z.date().default(() => new Date()),
 });
 
 export type MirrorJob = z.infer<typeof mirrorJobSchema>;
@@ -110,11 +115,23 @@ export type MirrorJob = z.infer<typeof mirrorJobSchema>;
 // Organization schema
 export const organizationSchema = z.object({
   id: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
   configId: z.string().uuid(),
+
+  avatarUrl: z.string().url(),
+
   name: z.string().min(1),
-  type: z.enum(["member", "public"]).default("member"),
-  isIncluded: z.boolean().default(true),
+
+  membershipRole: membershipRoleEnum.default("member"),
+
+  isIncluded: z.boolean().default(false),
+
+  status: repoStatusEnum.default("imported"),
+  lastMirrored: z.date().optional(),
+  errorMessage: z.string().optional(),
+
   repositoryCount: z.number().default(0),
+
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
 });

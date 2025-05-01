@@ -1,54 +1,8 @@
 ---
 import '../styles/global.css';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { OrganizationList } from '@/components/organizations/OrganizationList';
-import { AddOrganizationDialog } from '@/components/organizations/AddOrganizationDialog';
-import { Button } from '@/components/ui/button';
-import { Users, RefreshCw } from 'lucide-react';
-import { ENV, MOCK_DATA } from '@/lib/config';
-import { db, organizations } from '@/lib/db';
+import App from '@/components/layout/MainLayout';
 import ThemeScript from '@/components/theme/ThemeScript.astro';
 
-// In production mode, fetch real data from the database
-// In development mode, use mock data
-let orgData:any[] = [];
-
-if (ENV.USE_MOCK_DATA) {
-  console.log('Using mock data for development');
-  orgData = MOCK_DATA.organizations;
-} else {
-  try {
-    // Fetch organizations from database
-    const dbOrgs = await db.select().from(organizations);
-    orgData = dbOrgs;
-  } catch (error) {
-    console.error('Error fetching organizations:', error);
-    // Fallback to empty array if database access fails
-    orgData = [];
-  }
-}
-
-// Client-side state for dialog
-let isDialogOpen = false;
-
-// Client-side functions
-const handleToggleInclude = (id: string, included: boolean) => {
-  console.log(`Toggle organization ${id} to ${included ? 'included' : 'excluded'}`);
-  // In a real implementation, this would call the API to update the organization
-};
-
-const handleAddOrganization = () => {
-  isDialogOpen = true;
-};
-
-const handleCloseDialog = () => {
-  isDialogOpen = false;
-};
-
-const handleAddOrg = (name: string, type: string) => {
-  console.log(`Add organization ${name} of type ${type}`);
-  // In a real implementation, this would call the API to add the organization
-};
 ---
 
 <html lang="en">
@@ -61,34 +15,8 @@ const handleAddOrg = (name: string, type: string) => {
     <ThemeScript />
   </head>
   <body>
-    <MainLayout client:load>
-      <div class="flex flex-col gap-y-8">
-        <div class="flex items-center justify-end">
-          <!-- <h1 class="text-3xl font-bold">Organizations</h1> -->
-          <div class="flex gap-x-4">
-            <Button variant="outline" client:load>
-              <Users className="mr-2 h-4 w-4" />
-              Add Organization
-            </Button>
-            <Button>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
-        </div>
 
-        <OrganizationList
-          organizations={orgData}
-          onToggleInclude={handleToggleInclude}
-          onAddOrganization={handleAddOrganization}
-        />
-      </div>
+    <App page="organizations" client:load />
 
-      <AddOrganizationDialog
-        isOpen={isDialogOpen}
-        onClose={handleCloseDialog}
-        onAdd={handleAddOrg}
-      />
-    </MainLayout>
   </body>
 </html>
