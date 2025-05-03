@@ -48,9 +48,9 @@ export function Organization() {
         if (response.success) {
           console.log("Organizations:", response.organizations);
           setOrganizations(response.organizations);
+        } else {
+          console.error("Error fetching organizations:", response.error);
         }
-
-        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching organizations:", error);
       } finally {

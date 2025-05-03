@@ -20,9 +20,21 @@ export const repositoryVisibilityEnum = z.enum([
 
 export type RepositoryVisibility = z.infer<typeof repositoryVisibilityEnum>;
 
-export interface RepositoryApiResponse {
+export interface RepositoryApiSuccessResponse {
+  success: true;
+  message: string;
   repositories: Repository[];
 }
+
+export interface RepositoryApiErrorResponse {
+  success: false;
+  error: string;
+  message?: string;
+}
+
+export type RepositoryApiResponse =
+  | RepositoryApiSuccessResponse
+  | RepositoryApiErrorResponse;
 
 export interface GitRepo {
   name: string;
