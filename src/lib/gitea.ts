@@ -6,6 +6,27 @@ import superagent from "superagent";
 import { getGithubOrganizationRepositories } from "./github";
 import { createMirrorJob } from "./helpers";
 
+export const isRepoPresentInGitea = async ({
+  config,
+  owner,
+  repoName,
+}: {
+  config: Partial<Config>;
+  owner: string;
+  repoName: string;
+}): Promise<boolean> => {
+  const { url, token } = config.giteaConfig!;
+  const apiUrl = `${url}/api/v1/repos/${owner}/${repoName}`;
+
+  const res = await fetch(apiUrl, {
+    headers: {
+      Authorization: `token ${token}`,
+    },
+  });
+
+  return res.status === 200;
+};
+
 export const mirrorGithubRepoToGitea = async ({
   octokit,
   repository,
@@ -22,6 +43,19 @@ export const mirrorGithubRepoToGitea = async ({
 
     if (!config.giteaConfig.username) {
       throw new Error("Gitea username is required.");
+    }
+
+    const isExisting = await isRepoPresentInGitea({
+      config,
+      owner: config.giteaConfig.username,
+      repoName: repository.name,
+    });
+
+    if (isExisting) {
+      console.log(
+        `Repository ${repository.name} already exists in Gitea. Skipping migration.`
+      );
+      return;
     }
 
     let cloneAddress = repository.cloneUrl;
