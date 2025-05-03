@@ -202,7 +202,7 @@ export async function mirrorGitHubRepoToGiteaOrg({
   // });
 }
 
-export async function mirrorGutHubOrgRepoToGiteaOrg({
+export async function mirrorGitHubOrgRepoToGiteaOrg({
   config,
   octokit,
   repository,

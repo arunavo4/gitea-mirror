@@ -6,7 +6,7 @@ import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
 import { createMirrorJob } from "@/lib/helpers";
 import {
   mirrorGithubRepoToGitea,
-  mirrorGutHubOrgRepoToGiteaOrg,
+  mirrorGitHubOrgRepoToGiteaOrg,
 } from "@/lib/gitea";
 import { createGitHubClient } from "@/lib/github";
 
@@ -102,8 +102,8 @@ export const POST: APIRoute = async ({ request }) => {
         const octokit = createGitHubClient(config.githubConfig.token);
 
         try {
-          if (repo.organization) {
-            await mirrorGutHubOrgRepoToGiteaOrg({
+          if (repo.organization && config.githubConfig.preserveOrgStructure) {
+            await mirrorGitHubOrgRepoToGiteaOrg({
               config,
               octokit,
               orgName: repo.organization,
