@@ -46,6 +46,7 @@ export function ConfigTabs() {
     // Mock Gitea config
     giteaConfig: {
       url: "",
+      username: "",
       token: "",
       organization: "github-mirrors",
       visibility: "public",

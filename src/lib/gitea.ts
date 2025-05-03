@@ -20,6 +20,10 @@ export const mirrorGithubRepoToGitea = async ({
       throw new Error("github config and gitea config are required.");
     }
 
+    if (!config.giteaConfig.username) {
+      throw new Error("Gitea username is required.");
+    }
+
     let cloneAddress = repository.cloneUrl;
 
     // If the repository is private, inject the GitHub token into the clone URL
@@ -46,7 +50,7 @@ export const mirrorGithubRepoToGitea = async ({
         repo_name: repository.name,
         mirror: true,
         private: repository.isPrivate,
-        repo_owner: "ani1609", // replace with your Gitea username or maybe some other dynamic value
+        repo_owner: config.giteaConfig.username,
         description: "",
         service: "git",
       });
@@ -126,7 +130,7 @@ export async function getOrCreateGiteaOrg({
         : "Unknown error occurred in getOrCreateGiteaOrg.";
 
     await createMirrorJob({
-      userId: "ani1609",
+      userId: config.userId,
       organizationName: orgName,
       message: `Failed to create Gitea organization: ${orgName}`,
       status: "failed",

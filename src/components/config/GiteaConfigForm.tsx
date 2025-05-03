@@ -73,11 +73,33 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
 
       <CardContent className="flex flex-col gap-y-6">
         <div>
-          <label htmlFor="url" className="block text-sm font-medium mb-1.5">
+          <label
+            htmlFor="gitea-username"
+            className="block text-sm font-medium mb-1.5"
+          >
+            Gitea Username
+          </label>
+          <input
+            id="gitea-username"
+            name="username"
+            type="text"
+            value={config.username}
+            onChange={handleChange}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            placeholder="https://your-gitea-instance.com"
+            required
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="gitea-url"
+            className="block text-sm font-medium mb-1.5"
+          >
             Gitea URL
           </label>
           <input
-            id="url"
+            id="gitea-url"
             name="url"
             type="url"
             value={config.url}
@@ -90,13 +112,13 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
 
         <div>
           <label
-            htmlFor="giteaToken"
+            htmlFor="gitea-token"
             className="block text-sm font-medium mb-1.5"
           >
             Gitea Token
           </label>
           <input
-            id="giteaToken"
+            id="gitea-token"
             name="token"
             type="password"
             value={config.token}
@@ -159,13 +181,13 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
 
           <div>
             <label
-              htmlFor="starredReposOrg"
+              htmlFor="starred-repos-org"
               className="block text-sm font-medium mb-1.5"
             >
               Starred Repositories Organization
             </label>
             <input
-              id="starredReposOrg"
+              id="starred-repos-org"
               name="starredReposOrg"
               type="text"
               value={config.starredReposOrg}

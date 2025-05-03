@@ -4,6 +4,7 @@ export type GiteaOrgVisibility = "public" | "private" | "limited";
 
 export interface GiteaConfig {
   url: string;
+  username: string;
   token: string;
   organization: string;
   visibility: GiteaOrgVisibility;

@@ -79,13 +79,13 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
       <CardContent className="flex flex-col gap-y-6">
         <div>
           <label
-            htmlFor="username"
+            htmlFor="github-username"
             className="block text-sm font-medium mb-1.5"
           >
             GitHub Username
           </label>
           <Input
-            id="username"
+            id="github-username"
             name="username"
             type="text"
             value={config.username}
@@ -97,11 +97,14 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
         </div>
 
         <div>
-          <label htmlFor="token" className="block text-sm font-medium mb-1.5">
+          <label
+            htmlFor="github-token"
+            className="block text-sm font-medium mb-1.5"
+          >
             GitHub Token
           </label>
           <Input
-            id="token"
+            id="github-token"
             name="token"
             type="password"
             value={config.token}
@@ -119,7 +122,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
           <div className="space-y-3">
             <div className="flex items-center">
               <Checkbox
-                id="skipForks"
+                id="skip-forks"
                 name="skipForks"
                 checked={config.skipForks}
                 onCheckedChange={(checked) =>
@@ -134,7 +137,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="skipForks"
+                htmlFor="skip-forks"
                 className="ml-2 block text-sm select-none"
               >
                 Skip Forks
@@ -143,7 +146,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
             <div className="flex items-center">
               <Checkbox
-                id="privateRepositories"
+                id="private-repositories"
                 name="privateRepositories"
                 checked={config.privateRepositories}
                 onCheckedChange={(checked) =>
@@ -158,7 +161,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="privateRepositories"
+                htmlFor="private-repositories"
                 className="ml-2 block text-sm select-none"
               >
                 Mirror Private Repositories
@@ -167,7 +170,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
             <div className="flex items-center">
               <Checkbox
-                id="mirrorIssues"
+                id="mirror-issues"
                 name="mirrorIssues"
                 checked={config.mirrorIssues}
                 onCheckedChange={(checked) =>
@@ -182,7 +185,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="mirrorIssues"
+                htmlFor="mirror-issues"
                 className="ml-2 block text-sm select-none"
               >
                 Mirror Issues
@@ -191,7 +194,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
             <div className="flex items-center">
               <Checkbox
-                id="mirrorStarred"
+                id="mirror-starred"
                 name="mirrorStarred"
                 checked={config.mirrorStarred}
                 onCheckedChange={(checked) =>
@@ -206,7 +209,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="mirrorStarred"
+                htmlFor="mirror-starred"
                 className="ml-2 block text-sm select-none"
               >
                 Mirror Starred Repositories
@@ -217,7 +220,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
           <div className="space-y-3">
             <div className="flex items-center">
               <Checkbox
-                id="mirrorOrganizations"
+                id="mirror-organizations"
                 name="mirrorOrganizations"
                 checked={config.mirrorOrganizations}
                 onCheckedChange={(checked) =>
@@ -232,7 +235,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="mirrorOrganizations"
+                htmlFor="mirror-organizations"
                 className="ml-2 block text-sm select-none"
               >
                 Mirror Organizations
@@ -241,7 +244,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
             <div className="flex items-center">
               <Checkbox
-                id="onlyMirrorOrgs"
+                id="only-mirror-orgs"
                 name="onlyMirrorOrgs"
                 checked={config.onlyMirrorOrgs}
                 onCheckedChange={(checked) =>
@@ -256,7 +259,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="onlyMirrorOrgs"
+                htmlFor="only-mirror-orgs"
                 className="ml-2 block text-sm select-none"
               >
                 Only Mirror Organizations
@@ -265,7 +268,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
             <div className="flex items-center">
               <Checkbox
-                id="preserveOrgStructure"
+                id="preserve-org-structure"
                 name="preserveOrgStructure"
                 checked={config.preserveOrgStructure}
                 onCheckedChange={(checked) =>
@@ -280,7 +283,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="preserveOrgStructure"
+                htmlFor="preserve-org-structure"
                 className="ml-2 block text-sm select-none"
               >
                 Preserve Organization Structure
@@ -289,7 +292,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
             <div className="flex items-center">
               <Checkbox
-                id="skipStarredIssues"
+                id="skip-starred-issues"
                 name="skipStarredIssues"
                 checked={config.skipStarredIssues}
                 onCheckedChange={(checked) =>
@@ -304,7 +307,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="skipStarredIssues"
+                htmlFor="skip-starred-issues"
                 className="ml-2 block text-sm select-none"
               >
                 Skip Issues for Starred Repositories
