@@ -88,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authApi.logout();
       setUser(null);
+      window.location.href = "/login";
     } catch (err) {
       console.error("Logout error:", err);
     } finally {

@@ -10,13 +10,15 @@ import {
   getGithubStarredRepositories,
 } from "@/lib/github";
 import { jsonResponse } from "@/lib/utils";
+import type { GitRepo } from "@/types/Repository";
 
 export const POST: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const userId = url.searchParams.get("userId");
 
-  if (!userId)
+  if (!userId) {
     return jsonResponse({ data: { error: "Missing userId" }, status: 400 });
+  }
 
   try {
     const [config] = await db
@@ -25,11 +27,12 @@ export const POST: APIRoute = async ({ request }) => {
       .where(eq(configs.userId, userId))
       .limit(1);
 
-    if (!config)
+    if (!config) {
       return jsonResponse({
         data: { error: "No configuration found for this user" },
         status: 404,
       });
+    }
 
     const token = config.githubConfig?.token;
 
@@ -42,131 +45,111 @@ export const POST: APIRoute = async ({ request }) => {
 
     const octokit = createGitHubClient(token);
 
+    // Fetch all GitHub data in parallel
     const [basicAndForkedRepos, starredRepos, gitOrgs] = await Promise.all([
       getGithubRepositories({ octokit, config }),
-      getGithubStarredRepositories({ octokit, config }),
+      config.githubConfig?.mirrorStarred
+        ? getGithubStarredRepositories({ octokit, config })
+        : Promise.resolve([]),
       getGithubOrganizations({ octokit, config }),
     ]);
 
+    // Combine all repositories and organizations after deduplication (if a repo is present in both starred and basic repos, take item from the starred array is ignored and is taken from the basic array)
+    // const repoMap = new Map<string, GitRepo>();
+
+    // [...basicAndForkedRepos, ...starredRepos].forEach((repo) => {
+    //   const normalizedRepo = {
+    //     ...repo,
+    //     status: repo.status as GitRepo["status"],
+    //   };
+    //   if (!repoMap.has(repo.fullName)) {
+    //     repoMap.set(repo.fullName, normalizedRepo);
+    //   }
+    // });
+
+    // const allGithubRepos = Array.from(repoMap.values());
+
     const allGithubRepos = [...basicAndForkedRepos, ...starredRepos];
 
-    const [existingRepos, existingOrgs] = await Promise.all([
-      db.select().from(repositories).where(eq(repositories.userId, userId)),
-      db.select().from(organizations).where(eq(organizations.userId, userId)),
-    ]);
+    // Prepare new repositories and organizations
+    const newRepos = allGithubRepos.map((repo) => ({
+      id: uuidv4(),
+      userId,
+      configId: config.id,
+      name: repo.name,
+      fullName: repo.fullName,
+      url: repo.url,
+      cloneUrl: repo.cloneUrl,
+      owner: repo.owner,
+      organization: repo.organization,
+      isPrivate: repo.isPrivate,
+      isForked: repo.isForked,
+      forkedFrom: repo.forkedFrom,
+      hasIssues: repo.hasIssues,
+      isStarred: repo.isStarred,
+      isArchived: repo.isArchived,
+      size: repo.size,
+      hasLFS: repo.hasLFS,
+      hasSubmodules: repo.hasSubmodules,
+      defaultBranch: repo.defaultBranch,
+      visibility: repo.visibility,
+      status: repo.status,
+      lastMirrored: repo.lastMirrored,
+      errorMessage: repo.errorMessage,
+      createdAt: repo.createdAt,
+      updatedAt: repo.updatedAt,
+    }));
 
-    const existingRepoMap = new Map(existingRepos.map((r) => [r.fullName, r]));
-    const existingOrgMap = new Map(existingOrgs.map((o) => [o.name, o]));
+    const newOrgs = gitOrgs.map((org) => ({
+      id: uuidv4(),
+      userId,
+      configId: config.id,
+      name: org.name,
+      avatarUrl: org.avatarUrl,
+      membershipRole: org.membershipRole,
+      isIncluded: false,
+      status: org.status,
+      repositoryCount: org.repositoryCount,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
 
-    const newRepos = [];
-    const updatedRepoIds: string[] = [];
-    const repoMirrorJobs = [];
+    // Perform everything in a single transaction
+    await db.transaction(async (tx) => {
+      // Clean old data
+      await Promise.all([
+        tx.delete(repositories).where(eq(repositories.userId, userId)),
+        tx.delete(organizations).where(eq(organizations.userId, userId)),
+      ]);
 
-    for (const repo of allGithubRepos) {
-      const existing = existingRepoMap.get(repo.fullName);
+      // Insert new data
+      if (newRepos.length > 0) await tx.insert(repositories).values(newRepos);
+      if (newOrgs.length > 0) await tx.insert(organizations).values(newOrgs);
+    });
 
-      if (!existing) {
-        const repoId = uuidv4();
-
-        newRepos.push({
-          id: repoId,
+    // Mirror jobs (can happen outside of transaction)
+    const mirrorJobs = [
+      ...newRepos.map((repo) =>
+        createMirrorJob({
           userId,
-          configId: config.id,
-          name: repo.name,
-          fullName: repo.fullName,
-          url: repo.url,
-          cloneUrl: repo.cloneUrl,
-          owner: repo.owner,
-          organization: repo.organization,
-          isPrivate: repo.isPrivate,
-          isForked: repo.isForked,
-          forkedFrom: repo.forkedFrom,
-          hasIssues: repo.hasIssues,
-          isStarred: repo.isStarred,
-          isArchived: repo.isArchived,
-          size: repo.size,
-          hasLFS: repo.hasLFS,
-          hasSubmodules: repo.hasSubmodules,
-          defaultBranch: repo.defaultBranch,
-          visibility: repo.visibility,
-          status: repo.status,
-          lastMirrored: repo.lastMirrored,
-          errorMessage: repo.errorMessage,
-          createdAt: repo.createdAt,
-          updatedAt: repo.updatedAt,
-        });
-
-        repoMirrorJobs.push(
-          createMirrorJob({
-            userId,
-            repositoryName: repo.name,
-            status: "imported",
-            message: `Repository ${repo.name} fetched successfully`,
-            details: `Repository ${repo.name} was fetched from GitHub`,
-          })
-        );
-      } else {
-        updatedRepoIds.push(existing.id);
-      }
-    }
-
-    if (newRepos.length > 0) await db.insert(repositories).values(newRepos);
-    if (updatedRepoIds.length > 0) {
-      await Promise.all(
-        updatedRepoIds.map((id) =>
-          db
-            .update(repositories)
-            .set({ updatedAt: new Date() })
-            .where(eq(repositories.id, id))
-        )
-      );
-    }
-
-    const newOrgs = [];
-    const updatedOrgOps = [];
-    const orgMirrorJobs = [];
-
-    for (const org of gitOrgs) {
-      const existing = existingOrgMap.get(org.name);
-
-      if (!existing) {
-        newOrgs.push({
-          id: uuidv4(),
+          repositoryName: repo.name,
+          status: "imported",
+          message: `Repository ${repo.name} fetched successfully`,
+          details: `Repository ${repo.name} was fetched from GitHub`,
+        })
+      ),
+      ...newOrgs.map((org) =>
+        createMirrorJob({
           userId,
-          configId: config.id,
-          name: org.name,
-          avatarUrl: org.avatarUrl,
-          membershipRole: org.membershipRole,
-          isIncluded: false,
-          status: org.status,
-          repositoryCount: org.repositoryCount,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+          organizationName: org.name,
+          status: "imported",
+          message: `Organization ${org.name} fetched successfully`,
+          details: `Organization ${org.name} was fetched from GitHub`,
+        })
+      ),
+    ];
 
-        orgMirrorJobs.push(
-          createMirrorJob({
-            userId,
-            organizationName: org.name,
-            status: "imported",
-            message: `Organization ${org.name} fetched successfully`,
-            details: `Organization ${org.name} was fetched from GitHub`,
-          })
-        );
-      } else {
-        updatedOrgOps.push(
-          db
-            .update(organizations)
-            .set({ ...org, updatedAt: new Date() })
-            .where(eq(organizations.id, existing.id))
-        );
-      }
-    }
-
-    if (newOrgs.length > 0) await db.insert(organizations).values(newOrgs);
-    if (updatedOrgOps.length > 0) await Promise.all(updatedOrgOps);
-
-    await Promise.all([...repoMirrorJobs, ...orgMirrorJobs]);
+    await Promise.all(mirrorJobs);
 
     return jsonResponse({
       data: {
