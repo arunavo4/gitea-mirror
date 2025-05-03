@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(user);
       } catch (err) {
         setUser(null);
+        window.location.href = "/login";
         console.error("Auth check failed", err);
       } finally {
         setIsLoading(false);
