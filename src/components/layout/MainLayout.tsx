@@ -58,13 +58,7 @@ function AppWithProviders({ page }: AppProps) {
       <div className="flex flex-1">
         <Sidebar />
         <section className="flex-1 p-6 overflow-y-auto h-[calc(100dvh-4.55rem)]">
-          {page === "dashboard" && (
-            <Dashboard
-              repositories={[]}
-              activities={[]}
-              isLoading={false} // Assuming you have activities data. will be replaced with actual data
-            />
-          )}
+          {page === "dashboard" && <Dashboard />}
           {page === "repositories" && <Repository />}
           {page === "organizations" && <Organization />}
           {page === "configuration" && <ConfigTabs />}

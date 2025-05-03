@@ -1,20 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate } from "@/lib/utils";
-
-interface ActivityItem {
-  id: string;
-  message: string;
-  timestamp: Date;
-  status: "success" | "error" | "info" | "warning";
-}
+import type { MirrorJob } from "@/lib/db/schema";
+import { formatDate, getStatusColor } from "@/lib/utils";
 
 interface RecentActivityProps {
-  activities: ActivityItem[];
+  activities: MirrorJob[];
 }
 
 export function RecentActivity({ activities }: RecentActivityProps) {
   return (
-    <Card className="col-span-2">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
@@ -47,18 +41,4 @@ export function RecentActivity({ activities }: RecentActivityProps) {
       </CardContent>
     </Card>
   );
-}
-
-function getStatusColor(status: ActivityItem["status"]): string {
-  switch (status) {
-    case "success":
-      return "bg-green-500";
-    case "error":
-      return "bg-red-500";
-    case "warning":
-      return "bg-yellow-500";
-    case "info":
-    default:
-      return "bg-blue-500";
-  }
 }
