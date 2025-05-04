@@ -1,10 +1,15 @@
-import type { GitRepo } from "@/types/Repository";
+import {
+  repoStatusEnum,
+  type RepositoryVisibility,
+  type RepoStatus,
+} from "@/types/Repository";
 import { Octokit } from "@octokit/rest";
 import type { Config } from "@/types/config";
-import type { Repository } from "./db/schema";
+import type { Organization, Repository } from "./db/schema";
 import superagent from "superagent";
-import { getGithubOrganizationRepositories } from "./github";
 import { createMirrorJob } from "./helpers";
+import { db, organizations, repositories } from "./db";
+import { eq } from "drizzle-orm";
 
 export const isRepoPresentInGitea = async ({
   config,
@@ -37,7 +42,7 @@ export const mirrorGithubRepoToGitea = async ({
   config: Partial<Config>;
 }): Promise<any> => {
   try {
-    if (!config.githubConfig || !config.giteaConfig) {
+    if (!config.userId || !config.githubConfig || !config.giteaConfig) {
       throw new Error("github config and gitea config are required.");
     }
 
@@ -57,6 +62,26 @@ export const mirrorGithubRepoToGitea = async ({
       );
       return;
     }
+
+    console.log(`Mirroring repository ${repository.name}`);
+
+    // Mark repos as "mirroring" in DB
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("mirroring"),
+        updatedAt: new Date(),
+      })
+      .where(eq(repositories.id, repositories.id));
+
+    // Append log for "mirroring" status
+    await createMirrorJob({
+      userId: config.userId,
+      repositoryName: repository.name,
+      message: `Started mirroring repository: ${repository.name}`,
+      details: `Repository ${repository.name} is now in the mirroring state.`,
+      status: "mirroring",
+    });
 
     let cloneAddress = repository.cloneUrl;
 
@@ -89,8 +114,56 @@ export const mirrorGithubRepoToGitea = async ({
         service: "git",
       });
 
+    console.log(`Repository ${repository.name} mirrored successfully`);
+
+    // Mark repos as "mirrored" in DB
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("mirrored"),
+        updatedAt: new Date(),
+        lastMirrored: new Date(),
+        errorMessage: null,
+      })
+      .where(eq(repositories.id, repositories.id));
+
+    // Append log for "mirrored" status
+    await createMirrorJob({
+      userId: config.userId,
+      repositoryName: repository.name,
+      message: `Successfully mirrored repository: ${repository.name}`,
+      details: `Repository ${repository.name} was mirrored to Gitea.`,
+      status: "mirrored",
+    });
+
     return response.body;
   } catch (error) {
+    console.error(
+      `Error while mirroring repository ${repository.name}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+
+    // Mark repos as "failed" in DB
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("failed"),
+        updatedAt: new Date(),
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      })
+      .where(eq(repositories.id, repositories.id));
+
+    // Append log for failure
+    await createMirrorJob({
+      userId: config.userId ?? "", // userId is going to be there anyways
+      repositoryName: repository.name,
+      message: `Failed to mirror repository: ${repository.name}`,
+      details: `Repository ${repository.name} failed to mirror. Error: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      status: "failed",
+    });
     if (error instanceof Error) {
       throw new Error(`Failed to mirror repository: ${error.message}`);
     }
@@ -188,11 +261,13 @@ export async function mirrorGitHubRepoToGiteaOrg({
   config,
   repository,
   giteaOrgId,
+  orgName,
 }: {
   octokit: Octokit;
   config: Partial<Config>;
-  repository: GitRepo;
+  repository: Repository;
   giteaOrgId: number;
+  orgName: string;
 }) {
   try {
     if (
@@ -217,6 +292,28 @@ export async function mirrorGitHubRepoToGiteaOrg({
         `https://${config.githubConfig.token}@`
       );
     }
+
+    console.log(
+      `Mirroring repository ${repository.name} to organization ${orgName}`
+    );
+
+    // Mark repos as "mirroring" in DB
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("mirroring"),
+        updatedAt: new Date(),
+      })
+      .where(eq(repositories.id, repository.id!));
+
+    // Append log for "mirroring" status
+    await createMirrorJob({
+      userId: config.userId,
+      repositoryName: repository.name,
+      message: `Started mirroring repository: ${repository.name}`,
+      details: `Repository ${repository.name} is now in the mirroring state.`,
+      status: "mirroring",
+    });
 
     const migrateRes = await fetch(
       `${config.giteaConfig.url}/api/v1/repos/migrate`,
@@ -244,6 +341,21 @@ export async function mirrorGitHubRepoToGiteaOrg({
       return;
     }
 
+    console.log(
+      `Repository ${repository.name} mirrored successfully to organization ${orgName}`
+    );
+
+    // Mark repos as "mirrored" in DB
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("mirrored"),
+        updatedAt: new Date(),
+        lastMirrored: new Date(),
+        errorMessage: null,
+      })
+      .where(eq(repositories.id, repository.id!));
+
     //create a mirror job
     await createMirrorJob({
       userId: config.userId,
@@ -261,6 +373,22 @@ export async function mirrorGitHubRepoToGiteaOrg({
     //   orgName,
     // });
   } catch (error) {
+    console.error(
+      `Error while mirroring repository ${repository.name}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+    // Mark repos as "failed" in DB
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("failed"),
+        updatedAt: new Date(),
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      })
+      .where(eq(repositories.id, repository.id!));
+
+    // Append log for failure
     await createMirrorJob({
       userId: config.userId || "", // userId is going to be there anyways
       repositoryName: repository.name,
@@ -270,6 +398,7 @@ export async function mirrorGitHubRepoToGiteaOrg({
       }`,
       status: "failed",
     });
+    console.log("issue in up func");
     if (error instanceof Error) {
       throw new Error(`Failed to mirror repository: ${error.message}`);
     }
@@ -285,7 +414,7 @@ export async function mirrorGitHubOrgRepoToGiteaOrg({
 }: {
   config: Partial<Config>;
   octokit: Octokit;
-  repository: GitRepo;
+  repository: Repository;
   orgName: string;
 }) {
   try {
@@ -303,6 +432,7 @@ export async function mirrorGitHubOrgRepoToGiteaOrg({
       config,
       repository,
       giteaOrgId,
+      orgName,
     });
   } catch (error) {
     if (error instanceof Error) {
@@ -313,38 +443,127 @@ export async function mirrorGitHubOrgRepoToGiteaOrg({
 }
 
 export async function mirrorGitHubOrgToGitea({
-  orgName,
+  organization,
   octokit,
   config,
 }: {
-  orgName: string;
+  organization: Organization;
   octokit: Octokit;
   config: Partial<Config>;
 }) {
   try {
-    if (!config.githubConfig?.token || !config.giteaConfig?.url) {
-      throw new Error("GitHub token and Gitea URL are required.");
+    if (
+      !config.userId ||
+      !config.id ||
+      !config.githubConfig?.token ||
+      !config.giteaConfig?.url
+    ) {
+      throw new Error("Config, GitHub token and Gitea URL are required.");
     }
 
+    console.log(`Mirroring organization ${organization.name}`);
+
+    //mark the org as "mirroring" in DB
+    await db
+      .update(organizations)
+      .set({
+        isIncluded: true,
+        status: repoStatusEnum.parse("mirroring"),
+        updatedAt: new Date(),
+      })
+      .where(eq(organizations.id, organization.id!));
+
+    // Append log for "mirroring" status
+    await createMirrorJob({
+      userId: config.userId,
+      organizationName: organization.name,
+      message: `Started mirroring organization: ${organization.name}`,
+      details: `Organization ${organization.name} is now in the mirroring state.`,
+      status: repoStatusEnum.parse("mirroring"),
+    });
+
     const giteaOrgId = await getOrCreateGiteaOrg({
-      orgName,
+      orgName: organization.name,
       config,
     });
 
-    const repos = await getGithubOrganizationRepositories({
-      octokit,
-      organizationName: orgName,
-    });
+    //query the db with the org name and get the repos
+    const orgRepos = await db
+      .select()
+      .from(repositories)
+      .where(eq(repositories.organization, organization.name));
 
-    for (const repository of repos) {
+    console.log(`Found ${orgRepos}`);
+
+    for (const repo of orgRepos) {
       await mirrorGitHubRepoToGiteaOrg({
         octokit,
         config,
-        repository,
+        repository: {
+          ...repo,
+          status: repo.status as RepoStatus,
+          visibility: repo.visibility as RepositoryVisibility,
+          lastMirrored: repo.lastMirrored ?? undefined,
+          errorMessage: repo.errorMessage ?? undefined,
+          organization: repo.organization ?? undefined,
+          forkedFrom: repo.forkedFrom ?? undefined,
+        },
         giteaOrgId,
+        orgName: organization.name,
       });
     }
+
+    console.log(`Organization ${organization.name} mirrored successfully`);
+
+    // Mark org as "mirrored" in DB
+    await db
+      .update(organizations)
+      .set({
+        status: repoStatusEnum.parse("mirrored"),
+        updatedAt: new Date(),
+        lastMirrored: new Date(),
+        errorMessage: null,
+      })
+      .where(eq(organizations.id, organization.id!));
+
+    // Append log for "mirrored" status
+    await createMirrorJob({
+      userId: config.userId,
+      organizationName: organization.name,
+      message: `Successfully mirrored organization: ${organization.name}`,
+      details: `Organization ${organization.name} was mirrored to Gitea.`,
+      status: repoStatusEnum.parse("mirrored"),
+    });
   } catch (error) {
+    console.error(
+      `Error while mirroring organization ${organization.name}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+
+    // Mark org as "failed" in DB
+    await db
+      .update(organizations)
+      .set({
+        status: repoStatusEnum.parse("failed"),
+        updatedAt: new Date(),
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+      })
+      .where(eq(organizations.id, organization.id!));
+
+    // Append log for failure
+    await createMirrorJob({
+      userId: config.userId || "", // userId is going to be there anyways
+      organizationName: organization.name,
+      message: `Failed to mirror organization: ${organization.name}`,
+      details: `Organization ${organization.name} failed to mirror. Error: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      status: repoStatusEnum.parse("failed"),
+    });
+
+    console.log("issue in down func");
+
     if (error instanceof Error) {
       throw new Error(`Failed to mirror repository: ${error.message}`);
     }

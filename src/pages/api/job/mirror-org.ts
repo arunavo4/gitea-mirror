@@ -4,9 +4,8 @@ import { db, configs, organizations } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
 import { createGitHubClient } from "@/lib/github";
 import { mirrorGitHubOrgToGitea } from "@/lib/gitea";
-import { createMirrorJob } from "@/lib/helpers";
 import { repoStatusEnum } from "@/types/Repository";
-import type { MembershipRole } from "@/types/organizations";
+import { type MembershipRole } from "@/types/organizations";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -62,88 +61,29 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const timestamp = new Date();
-
-    // Immediately mark organizations as "mirroring"
-    for (const org of orgs) {
-      await db
-        .update(organizations)
-        .set({
-          isIncluded: true,
-          status: repoStatusEnum.parse("mirroring"),
-          updatedAt: timestamp,
-        })
-        .where(eq(organizations.id, org.id));
-
-      await createMirrorJob({
-        userId,
-        organizationName: org.name,
-        message: `Started mirroring organization: ${org.name}`,
-        details: `Organization ${org.name} is now in the mirroring state.`,
-        status: repoStatusEnum.parse("mirroring"),
-      });
-    }
-
-    const updatedOrgs = await db
-      .select()
-      .from(organizations)
-      .where(inArray(organizations.id, organizationIds));
-
     // Fire async mirroring without blocking response
     setTimeout(async () => {
-      for (const org of updatedOrgs) {
+      for (const org of orgs) {
+        if (!config.githubConfig.token) {
+          throw new Error("GitHub token is missing in config.");
+        }
+
+        const octokit = createGitHubClient(config.githubConfig.token);
+
         try {
-          if (!config.githubConfig.token) {
-            throw new Error("GitHub token is missing in config.");
-          }
-
-          const octokit = createGitHubClient(config.githubConfig.token);
-
           await mirrorGitHubOrgToGitea({
             config,
             octokit,
-            orgName: org.name,
-          });
-
-          await db
-            .update(organizations)
-            .set({
-              status: repoStatusEnum.parse("mirrored"),
-              updatedAt: new Date(),
-              lastMirrored: new Date(),
-              errorMessage: null,
-            })
-            .where(eq(organizations.id, org.id));
-
-          await createMirrorJob({
-            userId,
-            organizationName: org.name,
-            message: `Successfully mirrored organization: ${org.name}`,
-            details: `Organization ${org.name} has been successfully mirrored.`,
-            status: repoStatusEnum.parse("mirrored"),
+            organization: {
+              ...org,
+              status: repoStatusEnum.parse("imported"),
+              membershipRole: org.membershipRole as MembershipRole,
+              lastMirrored: org.lastMirrored ?? undefined,
+              errorMessage: org.errorMessage ?? undefined,
+            },
           });
         } catch (error) {
           console.error(`Mirror failed for organization ${org.name}:`, error);
-
-          await db
-            .update(organizations)
-            .set({
-              status: repoStatusEnum.parse("failed"),
-              updatedAt: new Date(),
-              errorMessage:
-                error instanceof Error ? error.message : "Unknown error",
-            })
-            .where(eq(organizations.id, org.id));
-
-          await createMirrorJob({
-            userId,
-            organizationName: org.name,
-            message: `Failed to mirror organization: ${org.name}`,
-            details: `Organization ${org.name} failed to mirror. Error: ${
-              error instanceof Error ? error.message : "Unknown error"
-            }`,
-            status: repoStatusEnum.parse("failed"),
-          });
         }
       }
     }, 0);
@@ -151,7 +91,7 @@ export const POST: APIRoute = async ({ request }) => {
     const responsePayload: MirrorOrgResponse = {
       success: true,
       message: "Mirror job started.",
-      organizations: updatedOrgs.map((org) => ({
+      organizations: orgs.map((org) => ({
         ...org,
         status: repoStatusEnum.parse(org.status),
         membershipRole: org.membershipRole as MembershipRole,
