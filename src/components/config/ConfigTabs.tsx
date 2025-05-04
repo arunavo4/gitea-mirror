@@ -140,7 +140,8 @@ export function ConfigTabs() {
 
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
-        console.log("Config saved successfully:", result);
+        await handleSyncData();
+
         document.dispatchEvent(
           new CustomEvent("show-toast", {
             detail: {
@@ -151,7 +152,6 @@ export function ConfigTabs() {
         );
         // Configuration saved; form state is preserved without reload
       } else {
-        console.log("Config saved successfully:", result);
         document.dispatchEvent(
           new CustomEvent("show-toast", {
             detail: {
