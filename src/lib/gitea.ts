@@ -72,7 +72,7 @@ export const mirrorGithubRepoToGitea = async ({
         status: repoStatusEnum.parse("mirroring"),
         updatedAt: new Date(),
       })
-      .where(eq(repositories.id, repositories.id));
+      .where(eq(repositories.id, repository.id!));
 
     // Append log for "mirroring" status
     await createMirrorJob({
@@ -125,7 +125,7 @@ export const mirrorGithubRepoToGitea = async ({
         lastMirrored: new Date(),
         errorMessage: null,
       })
-      .where(eq(repositories.id, repositories.id));
+      .where(eq(repositories.id, repository.id!));
 
     // Append log for "mirrored" status
     await createMirrorJob({
@@ -152,7 +152,7 @@ export const mirrorGithubRepoToGitea = async ({
         updatedAt: new Date(),
         errorMessage: error instanceof Error ? error.message : "Unknown error",
       })
-      .where(eq(repositories.id, repositories.id));
+      .where(eq(repositories.id, repository.id!));
 
     // Append log for failure
     await createMirrorJob({
