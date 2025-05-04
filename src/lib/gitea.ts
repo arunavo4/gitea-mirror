@@ -126,6 +126,14 @@ export async function getOrCreateGiteaOrg({
 
     if (orgRes.ok) {
       const org = await orgRes.json();
+
+      await createMirrorJob({
+        userId: config.userId,
+        organizationName: orgName,
+        status: "imported",
+        message: `Organization ${orgName} fetched successfully`,
+        details: `Organization ${orgName} was fetched from GitHub`,
+      });
       return org.id;
     }
 
@@ -151,8 +159,8 @@ export async function getOrCreateGiteaOrg({
       userId: config.userId,
       organizationName: orgName,
       status: "imported",
-      message: `Organization ${orgName} fetched successfully`,
-      details: `Organization ${orgName} was fetched from GitHub`,
+      message: `Organization ${orgName} created successfully`,
+      details: `Organization ${orgName} was created in Gitea`,
     });
 
     const newOrg = await createRes.json();
@@ -166,7 +174,7 @@ export async function getOrCreateGiteaOrg({
     await createMirrorJob({
       userId: config.userId,
       organizationName: orgName,
-      message: `Failed to create Gitea organization: ${orgName}`,
+      message: `Failed to create or fetch Gitea organization: ${orgName}`,
       status: "failed",
       details: `Error: ${errorMessage}`,
     });
@@ -186,58 +194,87 @@ export async function mirrorGitHubRepoToGiteaOrg({
   repository: GitRepo;
   giteaOrgId: number;
 }) {
-  if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
-    throw new Error("Gitea config is required.");
-  }
+  try {
+    if (
+      !config.giteaConfig?.url ||
+      !config.giteaConfig?.token ||
+      !config.userId
+    ) {
+      throw new Error("Gitea config is required.");
+    }
 
-  let cloneAddress = repository.cloneUrl;
+    let cloneAddress = repository.cloneUrl;
 
-  if (repository.isPrivate) {
-    if (!config.githubConfig?.token) {
-      throw new Error(
-        "GitHub token is required to mirror private repositories."
+    if (repository.isPrivate) {
+      if (!config.githubConfig?.token) {
+        throw new Error(
+          "GitHub token is required to mirror private repositories."
+        );
+      }
+
+      cloneAddress = repository.cloneUrl.replace(
+        "https://",
+        `https://${config.githubConfig.token}@`
       );
     }
 
-    cloneAddress = repository.cloneUrl.replace(
-      "https://",
-      `https://${config.githubConfig.token}@`
+    const migrateRes = await fetch(
+      `${config.giteaConfig.url}/api/v1/repos/migrate`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `token ${config.giteaConfig.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clone_addr: cloneAddress,
+          uid: giteaOrgId,
+          repo_name: repository.name,
+          mirror: true,
+          private: repository.isPrivate,
+        }),
+      }
     );
-  }
 
-  const migrateRes = await fetch(
-    `${config.giteaConfig.url}/api/v1/repos/migrate`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `token ${config.giteaConfig.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        clone_addr: cloneAddress,
-        uid: giteaOrgId,
-        repo_name: repository.name,
-        mirror: true,
-        private: repository.isPrivate,
-      }),
+    if (!migrateRes.ok) {
+      const errorText = await migrateRes.text();
+      console.error(
+        `Failed to migrate repository "${repository.name}": ${errorText}`
+      );
+      return;
     }
-  );
 
-  if (!migrateRes.ok) {
-    const errorText = await migrateRes.text();
-    console.error(
-      `Failed to migrate repository "${repository.name}": ${errorText}`
-    );
-    return;
+    //create a mirror job
+    await createMirrorJob({
+      userId: config.userId,
+      repositoryName: repository.name,
+      message: `Repository ${repository.name} mirrored successfully`,
+      details: `Repository ${repository.name} was mirrored to Gitea`,
+      status: "mirrored",
+    });
+
+    // After migrating the repository, clone issues
+    // await mirrorGithubOrgRepoIssuesToGiteaOrg({
+    //   config,
+    //   octokit,
+    //   repository,
+    //   orgName,
+    // });
+  } catch (error) {
+    await createMirrorJob({
+      userId: config.userId || "", // userId is going to be there anyways
+      repositoryName: repository.name,
+      message: `Failed to mirror repository: ${repository.name}`,
+      details: `Repository ${repository.name} failed to mirror. Error: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+      status: "failed",
+    });
+    if (error instanceof Error) {
+      throw new Error(`Failed to mirror repository: ${error.message}`);
+    }
+    throw new Error("Failed to mirror repository: An unknown error occurred.");
   }
-
-  // After migrating the repository, clone issues
-  // await mirrorGithubOrgRepoIssuesToGiteaOrg({
-  //   config,
-  //   octokit,
-  //   repository,
-  //   orgName,
-  // });
 }
 
 export async function mirrorGitHubOrgRepoToGiteaOrg({
@@ -251,21 +288,28 @@ export async function mirrorGitHubOrgRepoToGiteaOrg({
   repository: GitRepo;
   orgName: string;
 }) {
-  if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
-    throw new Error("Gitea config is required.");
+  try {
+    if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
+      throw new Error("Gitea config is required.");
+    }
+
+    const giteaOrgId = await getOrCreateGiteaOrg({
+      orgName,
+      config,
+    });
+
+    await mirrorGitHubRepoToGiteaOrg({
+      octokit,
+      config,
+      repository,
+      giteaOrgId,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to mirror repository: ${error.message}`);
+    }
+    throw new Error("Failed to mirror repository: An unknown error occurred.");
   }
-
-  const giteaOrgId = await getOrCreateGiteaOrg({
-    orgName,
-    config,
-  });
-
-  await mirrorGitHubRepoToGiteaOrg({
-    octokit,
-    config,
-    repository,
-    giteaOrgId,
-  });
 }
 
 export async function mirrorGitHubOrgToGitea({
@@ -301,7 +345,10 @@ export async function mirrorGitHubOrgToGitea({
       });
     }
   } catch (error) {
-    console.error("Migration failed:", error);
+    if (error instanceof Error) {
+      throw new Error(`Failed to mirror repository: ${error.message}`);
+    }
+    throw new Error("Failed to mirror repository: An unknown error occurred.");
   }
 }
 

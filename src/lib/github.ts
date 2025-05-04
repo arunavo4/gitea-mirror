@@ -2,7 +2,6 @@ import type { GitOrg, MembershipRole } from "@/types/organizations";
 import type { GitRepo, RepoStatus } from "@/types/Repository";
 import { Octokit } from "@octokit/rest";
 import type { Config } from "@/types/config";
-import type { Repository } from "./db/schema";
 
 /**
  * Creates an authenticated Octokit instance

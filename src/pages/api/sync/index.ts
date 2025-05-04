@@ -10,7 +10,6 @@ import {
   getGithubStarredRepositories,
 } from "@/lib/github";
 import { jsonResponse } from "@/lib/utils";
-import type { GitRepo } from "@/types/Repository";
 
 export const POST: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
