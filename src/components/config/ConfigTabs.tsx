@@ -20,7 +20,7 @@ import type {
 import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
-import { Copy, CopyCheck } from "lucide-react";
+import { Copy, CopyCheck, RefreshCw } from "lucide-react";
 
 type ConfigState = {
   githubConfig: GitHubConfig;
@@ -46,6 +46,7 @@ export function ConfigTabs() {
     // Mock Gitea config
     giteaConfig: {
       url: "",
+      username: "",
       token: "",
       organization: "github-mirrors",
       visibility: "public",
@@ -62,6 +63,58 @@ export function ConfigTabs() {
   const [isLoading, setIsLoading] = useState(true);
   const [dockerCode, setDockerCode] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  const handleSyncData = async () => {
+    try {
+      if (!user?.id) return;
+
+      setIsSyncing(true);
+
+      const result = await apiRequest<{ success: boolean; message?: string }>(
+        `/sync?userId=${user.id}`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (result.success) {
+        console.log("Sync data successfully:", result);
+        document.dispatchEvent(
+          new CustomEvent("show-toast", {
+            detail: {
+              message: "Data synced successfully!",
+              type: "success",
+            },
+          })
+        );
+      } else {
+        console.log("Failed to sync data:", result);
+        document.dispatchEvent(
+          new CustomEvent("show-toast", {
+            detail: {
+              message: `Failed to sync data: ${result.message}`,
+              type: "error",
+            },
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Error syncing data:", error);
+      document.dispatchEvent(
+        new CustomEvent("show-toast", {
+          detail: {
+            message: `Error syncing data: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+            type: "error",
+          },
+        })
+      );
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleSaveConfig = async () => {
     try {
@@ -87,7 +140,8 @@ export function ConfigTabs() {
 
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
-        console.log("Config saved successfully:", result);
+        await handleSyncData();
+
         document.dispatchEvent(
           new CustomEvent("show-toast", {
             detail: {
@@ -98,7 +152,6 @@ export function ConfigTabs() {
         );
         // Configuration saved; form state is preserved without reload
       } else {
-        console.log("Config saved successfully:", result);
         document.dispatchEvent(
           new CustomEvent("show-toast", {
             detail: {
@@ -212,7 +265,23 @@ services:
               mirroring.
             </CardDescription>
           </div>
-          <Button onClick={handleSaveConfig}>Save Configuration</Button>
+
+          <div className="flex gap-x-4">
+            <Button onClick={handleSyncData} disabled={isSyncing}>
+              {isSyncing ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+                  Sync Data
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Sync Data
+                </>
+              )}
+            </Button>
+            <Button onClick={handleSaveConfig}>Save Configuration</Button>
+          </div>
         </CardHeader>
 
         <CardContent>

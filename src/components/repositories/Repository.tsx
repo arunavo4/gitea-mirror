@@ -42,12 +42,12 @@ export default function Repository() {
           }
         );
 
-        if (response.repositories) {
+        if (response.success) {
           console.log("Repositories:", response.repositories);
           setRepositories(response.repositories);
+        } else {
+          console.error("Error fetching repositories:", response.error);
         }
-
-        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching repositories:", error);
       } finally {
@@ -73,14 +73,14 @@ export default function Repository() {
         }
       );
 
-      if (response.repositories) {
+      if (response.success) {
         console.log("Repositories:", response.repositories);
         setRepositories(response.repositories);
+      } else {
+        console.error("Error fetching repositories:", response.error);
       }
-
-      setIsLoading(false);
     } catch (error) {
-      console.error("Error refreshing repositories:", error);
+      console.error("Error fetching repositories:", error);
     } finally {
       setIsLoading(false);
     }

@@ -39,6 +39,7 @@ export const configSchema = z.object({
     skipStarredIssues: z.boolean().default(false),
   }),
   giteaConfig: z.object({
+    username: z.string().min(1),
     url: z.string().url(),
     token: z.string().min(1),
     organization: z.string().optional(),

@@ -10,11 +10,21 @@ export const membershipRoleEnum = z.enum([
 
 export type MembershipRole = z.infer<typeof membershipRoleEnum>;
 
-export interface OrganizationsApiResponse {
-  success: boolean;
+export interface OrganizationsApiSuccessResponse {
+  success: true;
   message: string;
   organizations: Organization[];
 }
+
+export interface OrganizationsApiErrorResponse {
+  success: false;
+  error: string;
+  message?: string;
+}
+
+export type OrganizationsApiResponse =
+  | OrganizationsApiSuccessResponse
+  | OrganizationsApiErrorResponse;
 
 export interface GitOrg {
   name: string;

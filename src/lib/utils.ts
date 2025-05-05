@@ -83,3 +83,16 @@ export const getStatusColor = (status: RepoStatus): string => {
       return "bg-gray-400"; // Unknown/neutral
   }
 };
+
+export const jsonResponse = ({
+  data,
+  status = 200,
+}: {
+  data: unknown;
+  status?: number;
+}): Response => {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+};

@@ -5,15 +5,11 @@ import type { Repository } from "@/lib/db/schema";
 
 interface RepositoryListProps {
   repositories: Repository[];
-  onMirrorNow: (repositoryId: string) => void;
 }
 
-export function RepositoryList({
-  repositories,
-  onMirrorNow,
-}: RepositoryListProps) {
+export function RepositoryList({ repositories }: RepositoryListProps) {
   return (
-    <Card className="col-span-3">
+    <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Repositories</CardTitle>
         <Button variant="outline" asChild>
@@ -35,7 +31,7 @@ export function RepositoryList({
           </div>
         ) : (
           <div className="flex flex-col divide-y divide-border">
-            {repositories.slice(0, 5).map((repo, index) => (
+            {repositories.map((repo, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between gap-x-4 py-4"
@@ -71,11 +67,7 @@ export function RepositoryList({
                     {/* setting the minimum width to 3rem corresponding to the largest status (mirrored) so that all are left alligned */}
                     {repo.status}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onMirrorNow(repo.id || "")}
-                  >
+                  <Button variant="ghost" size="icon">
                     <GitFork className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" asChild>

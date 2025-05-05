@@ -2,7 +2,6 @@ import type { GitOrg, MembershipRole } from "@/types/organizations";
 import type { GitRepo, RepoStatus } from "@/types/Repository";
 import { Octokit } from "@octokit/rest";
 import type { Config } from "@/types/config";
-import type { Repository } from "./db/schema";
 
 /**
  * Creates an authenticated Octokit instance
@@ -53,7 +52,16 @@ export async function getGithubRepositories({
       { per_page: 100 }
     );
 
-    return repos.map((repo) => ({
+    const includePrivate = config.githubConfig?.privateRepositories ?? false;
+    const skipForks = config.githubConfig?.skipForks ?? false;
+
+    const filteredRepos = repos.filter((repo) => {
+      const isPrivateAllowed = includePrivate || !repo.private;
+      const isForkAllowed = !skipForks || !repo.fork;
+      return isPrivateAllowed && isForkAllowed;
+    });
+
+    return filteredRepos.map((repo) => ({
       name: repo.name,
       fullName: repo.full_name,
       url: repo.html_url,
@@ -69,7 +77,7 @@ export async function getGithubRepositories({
         .parent?.full_name,
 
       hasIssues: repo.has_issues,
-      isStarred: false, // if you need starred separately, it has to come from another API
+      isStarred: false,
       isArchived: repo.archived,
 
       size: repo.size,

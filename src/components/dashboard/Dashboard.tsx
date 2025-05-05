@@ -3,22 +3,59 @@ import { RecentActivity } from "./RecentActivity";
 import { RepositoryList } from "./RepositoryList";
 import { Button } from "@/components/ui/button";
 import { GitFork, Users, GitMerge, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { MirrorJob, Organization, Repository } from "@/lib/db/schema";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/utils";
+import type { DashboardApiResponse } from "@/types/dashboard";
 
-interface DashboardProps {
-  repositories: any[];
-  activities: any[];
-  isLoading: boolean;
-}
+export function Dashboard() {
+  const { user } = useAuth();
+  const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [activities, setActivities] = useState<MirrorJob[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [repoCount, setRepoCount] = useState<number>(0);
+  const [orgCount, setOrgCount] = useState<number>(0);
+  const [mirroredCount, setMirroredCount] = useState<number>(0);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
 
-export function Dashboard({
-  repositories,
-  activities,
-  isLoading,
-}: DashboardProps) {
-  const handleMirrorNow = (repositoryId: string) => {
-    console.log("Mirror now clicked for repository:", repositoryId);
-    // In a real implementation, this would call the API to start mirroring
-  };
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        if (!user || !user.id) {
+          return;
+        }
+
+        setIsLoading(false);
+
+        const response = await apiRequest<DashboardApiResponse>(
+          `/dashboard?userId=${user.id}`,
+          {
+            method: "GET",
+          }
+        );
+
+        if (response.success) {
+          setRepositories(response.repositories);
+          setOrganizations(response.organizations);
+          setActivities(response.activities);
+          setRepoCount(response.repoCount);
+          setOrgCount(response.orgCount);
+          setMirroredCount(response.mirroredCount);
+          setLastSync(response.lastSync);
+        } else {
+          console.error("Error fetching dashboard data:", response.error);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user]);
 
   return isLoading ? (
     <div>loading...</div>
@@ -35,36 +72,43 @@ export function Dashboard({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatusCard
           title="Total Repositories"
-          value={repositories.length}
+          value={repoCount}
           icon={<GitFork className="h-4 w-4" />}
           description="Repositories being mirrored"
         />
         <StatusCard
           title="Mirrored"
-          value={repositories.filter((r) => r.status === "mirrored").length}
+          value={mirroredCount}
           icon={<GitMerge className="h-4 w-4" />}
           description="Successfully mirrored"
           trend={{ value: 20, isPositive: true }}
         />
         <StatusCard
           title="Organizations"
-          value="2"
+          value={orgCount}
           icon={<Users className="h-4 w-4" />}
           description="GitHub organizations"
         />
         <StatusCard
           title="Last Sync"
-          value="2 hours ago"
+          value={
+            lastSync
+              ? new Date(lastSync).toLocaleString("en-US", {
+                  month: "2-digit",
+                  day: "2-digit",
+                  year: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "N/A"
+          }
           icon={<Clock className="h-4 w-4" />}
           description="Last successful sync"
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <RepositoryList
-          repositories={repositories}
-          onMirrorNow={handleMirrorNow}
-        />
+      <div className="flex gap-x-6 items-start">
+        <RepositoryList repositories={repositories} />
         <RecentActivity activities={activities} />
       </div>
     </div>

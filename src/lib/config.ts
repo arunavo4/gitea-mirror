@@ -192,6 +192,7 @@ export const MOCK_DATA: MockData = {
 
   // Mock Gitea config
   giteaConfig: {
+    username: "",
     url: "",
     token: "",
     organization: "github-mirrors",
