@@ -120,6 +120,7 @@ export const mirrorGithubRepoToGitea = async ({
         config,
         octokit,
         repository,
+        isRepoInOrg: false,
       });
     }
 
@@ -350,6 +351,16 @@ export async function mirrorGitHubRepoToGiteaOrg({
       return;
     }
 
+    // Clone issues
+    if (config.githubConfig?.mirrorIssues) {
+      await mirrorGitRepoIssuesToGitea({
+        config,
+        octokit,
+        repository,
+        isRepoInOrg: true,
+      });
+    }
+
     console.log(
       `Repository ${repository.name} mirrored successfully to organization ${orgName}`
     );
@@ -571,10 +582,12 @@ export const mirrorGitRepoIssuesToGitea = async ({
   config,
   octokit,
   repository,
+  isRepoInOrg,
 }: {
   config: Partial<Config>;
   octokit: Octokit;
   repository: Repository;
+  isRepoInOrg: boolean;
 }) => {
   //things covered here are- issue, title, body, labels, comments and assignees
   if (
@@ -585,6 +598,10 @@ export const mirrorGitRepoIssuesToGitea = async ({
   ) {
     throw new Error("Missing GitHub or Gitea configuration.");
   }
+
+  const repoOrigin = isRepoInOrg
+    ? repository.organization
+    : config.githubConfig.username;
 
   const [owner, repo] = repository.fullName.split("/");
 
@@ -605,7 +622,7 @@ export const mirrorGitRepoIssuesToGitea = async ({
   // Get existing labels from Gitea
   const giteaLabelsRes = await superagent
     .get(
-      `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/labels`
+      `${config.giteaConfig.url}/api/v1/repos/${repoOrigin}/${repository.name}/labels`
     )
     .set("Authorization", `token ${config.giteaConfig.token}`);
 
@@ -634,7 +651,7 @@ export const mirrorGitRepoIssuesToGitea = async ({
         try {
           const created = await superagent
             .post(
-              `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/labels`
+              `${config.giteaConfig.url}/api/v1/repos/${repoOrigin}/${repository.name}/labels`
             )
             .set("Authorization", `token ${config.giteaConfig.token}`)
             .send({ name, color: "#ededed" }); // Default color
@@ -668,7 +685,7 @@ export const mirrorGitRepoIssuesToGitea = async ({
     try {
       const createdIssue = await superagent
         .post(
-          `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/issues`
+          `${config.giteaConfig.url}/api/v1/repos/${repoOrigin}/${repository.name}/issues`
         )
         .set("Authorization", `token ${config.giteaConfig.token}`)
         .send(issuePayload);
@@ -689,7 +706,7 @@ export const mirrorGitRepoIssuesToGitea = async ({
         try {
           await superagent
             .post(
-              `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/issues/${createdIssue.body.number}/comments`
+              `${config.giteaConfig.url}/api/v1/repos/${repoOrigin}/${repository.name}/issues/${createdIssue.body.number}/comments`
             )
             .set("Authorization", `token ${config.giteaConfig.token}`)
             .send({

@@ -140,8 +140,6 @@ export function ConfigTabs() {
 
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
-        await handleSyncData();
-
         document.dispatchEvent(
           new CustomEvent("show-toast", {
             detail: {
