@@ -114,6 +114,15 @@ export const mirrorGithubRepoToGitea = async ({
         service: "git",
       });
 
+    // clone issues
+    if (config.githubConfig.mirrorIssues) {
+      await mirrorGitRepoIssuesToGitea({
+        config,
+        octokit,
+        repository,
+      });
+    }
+
     console.log(`Repository ${repository.name} mirrored successfully`);
 
     // Mark repos as "mirrored" in DB
@@ -364,14 +373,6 @@ export async function mirrorGitHubRepoToGiteaOrg({
       details: `Repository ${repository.name} was mirrored to Gitea`,
       status: "mirrored",
     });
-
-    // After migrating the repository, clone issues
-    // await mirrorGithubOrgRepoIssuesToGiteaOrg({
-    //   config,
-    //   octokit,
-    //   repository,
-    //   orgName,
-    // });
   } catch (error) {
     console.error(
       `Error while mirroring repository ${repository.name}: ${
@@ -398,7 +399,6 @@ export async function mirrorGitHubRepoToGiteaOrg({
       }`,
       status: "failed",
     });
-    console.log("issue in up func");
     if (error instanceof Error) {
       throw new Error(`Failed to mirror repository: ${error.message}`);
     }
@@ -493,8 +493,6 @@ export async function mirrorGitHubOrgToGitea({
       .from(repositories)
       .where(eq(repositories.organization, organization.name));
 
-    console.log(`Found ${orgRepos}`);
-
     for (const repo of orgRepos) {
       await mirrorGitHubRepoToGiteaOrg({
         octokit,
@@ -562,8 +560,6 @@ export async function mirrorGitHubOrgToGitea({
       status: repoStatusEnum.parse("failed"),
     });
 
-    console.log("issue in down func");
-
     if (error instanceof Error) {
       throw new Error(`Failed to mirror repository: ${error.message}`);
     }
@@ -571,124 +567,159 @@ export async function mirrorGitHubOrgToGitea({
   }
 }
 
-export async function mirrorGithubOrgRepoIssuesToGiteaOrg({
+export const mirrorGitRepoIssuesToGitea = async ({
   config,
   octokit,
   repository,
-  orgName,
 }: {
   config: Partial<Config>;
   octokit: Octokit;
-  repository: any;
-  orgName: string;
-}) {
-  if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
-    throw new Error("Gitea config is required.");
+  repository: Repository;
+}) => {
+  //things covered here are- issue, title, body, labels, comments and assignees
+  if (
+    !config.githubConfig?.token ||
+    !config.giteaConfig?.token ||
+    !config.giteaConfig?.url ||
+    !config.giteaConfig?.username
+  ) {
+    throw new Error("Missing GitHub or Gitea configuration.");
   }
 
-  const { data: issues } = await octokit.rest.issues.listForRepo({
-    owner: repository.owner.login,
-    repo: repository.name,
-    state: "all",
-    per_page: 100,
-  });
+  const [owner, repo] = repository.fullName.split("/");
 
-  if (issues.length === 0) {
-    return;
-  }
-
-  // Step 1: Get existing Gitea labels
-  const giteaLabelsRes = await fetch(
-    `${config.giteaConfig.url}/api/v1/repos/${orgName}/${repository.name}/labels`,
+  // Fetch GitHub issues
+  const issues = await octokit.paginate(
+    octokit.rest.issues.listForRepo,
     {
-      headers: {
-        Authorization: `token ${config.giteaConfig.token}`,
-        "Content-Type": "application/json",
-      },
-    }
+      owner,
+      repo,
+      state: "all",
+      per_page: 100,
+    },
+    (res) => res.data
   );
 
-  const giteaLabels = giteaLabelsRes.ok ? await giteaLabelsRes.json() : [];
+  console.log(`Mirroring ${issues.length} issues from ${repository.fullName}`);
 
-  // Step 2: Helper to find or create a label and get its ID
-  async function getLabelId(labelName: string): Promise<number> {
-    const existing = giteaLabels.find((l: any) => l.name === labelName);
-    if (existing) return existing.id;
+  // Get existing labels from Gitea
+  const giteaLabelsRes = await superagent
+    .get(
+      `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/labels`
+    )
+    .set("Authorization", `token ${config.giteaConfig.token}`);
 
-    // Create label if missing
-    const createRes = await fetch(
-      `${config.giteaConfig?.url}/api/v1/repos/${orgName}/${repository.name}/labels`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `token ${config.giteaConfig?.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: labelName,
-          color: "ffffff", // white default
-        }),
-      }
-    );
+  const giteaLabels = giteaLabelsRes.body;
+  const labelMap = new Map<string, number>(
+    giteaLabels.map((label: any) => [label.name, label.id])
+  );
 
-    if (!createRes.ok) {
-      console.error(
-        `Failed to create label "${labelName}": ${await createRes.text()}`
-      );
-      return 0;
-    }
-
-    const newLabel = await createRes.json();
-    giteaLabels.push(newLabel); // update local cache
-    return newLabel.id;
-  }
-
-  // Step 3: Create issues with correct label IDs
   for (const issue of issues) {
-    if (issue.pull_request) {
-      continue; // Skip PRs
+    if ((issue as any).pull_request) {
+      continue;
     }
 
-    const labelIds = [];
-    for (const label of issue.labels || []) {
-      if (typeof label === "string") {
-        const labelId = await getLabelId(label); // label is string directly
-        if (labelId) {
-          labelIds.push(labelId);
-        }
-      } else if (typeof label === "object" && label.name) {
-        const labelId = await getLabelId(label.name); // label.name exists
-        if (labelId) {
-          labelIds.push(labelId);
+    const githubLabelNames =
+      issue.labels
+        ?.map((l) => (typeof l === "string" ? l : l.name))
+        .filter((l): l is string => !!l) || [];
+
+    const giteaLabelIds: number[] = [];
+
+    // Resolve or create labels in Gitea
+    for (const name of githubLabelNames) {
+      if (labelMap.has(name)) {
+        giteaLabelIds.push(labelMap.get(name)!);
+      } else {
+        try {
+          const created = await superagent
+            .post(
+              `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/labels`
+            )
+            .set("Authorization", `token ${config.giteaConfig.token}`)
+            .send({ name, color: "#ededed" }); // Default color
+
+          labelMap.set(name, created.body.id);
+          giteaLabelIds.push(created.body.id);
+        } catch (labelErr) {
+          console.error(
+            `Failed to create label "${name}" in Gitea: ${labelErr}`
+          );
         }
       }
     }
 
-    const createIssueRes = await fetch(
-      `${config.giteaConfig.url}/api/v1/repos/${orgName}/${repository.name}/issues`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `token ${config.giteaConfig.token}`,
-          "Content-Type": "application/json",
+    const originalAssignees =
+      issue.assignees && issue.assignees.length > 0
+        ? `\n\nOriginally assigned to: ${issue.assignees
+            .map((a) => `@${a.login}`)
+            .join(", ")} on GitHub.`
+        : "";
+
+    const issuePayload: any = {
+      title: issue.title,
+      body: `Originally created by @${
+        issue.user?.login
+      } on GitHub.${originalAssignees}\n\n${issue.body || ""}`,
+      closed: issue.state === "closed",
+      labels: giteaLabelIds,
+    };
+
+    try {
+      const createdIssue = await superagent
+        .post(
+          `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/issues`
+        )
+        .set("Authorization", `token ${config.giteaConfig.token}`)
+        .send(issuePayload);
+
+      // Clone comments
+      const comments = await octokit.paginate(
+        octokit.rest.issues.listComments,
+        {
+          owner,
+          repo,
+          issue_number: issue.number,
+          per_page: 100,
         },
-        body: JSON.stringify({
-          title: issue.title,
-          body: issue.body || "",
-          labels: labelIds, // <-- send label IDs
-          closed: issue.state === "closed",
-        }),
-      }
-    );
-
-    if (!createIssueRes.ok) {
-      console.error(
-        `Failed to create issue "${
-          issue.title
-        }": ${await createIssueRes.text()}`
+        (res) => res.data
       );
-    } else {
-      console.log(`Created issue "${issue.title}"`);
+
+      for (const comment of comments) {
+        try {
+          await superagent
+            .post(
+              `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/issues/${createdIssue.body.number}/comments`
+            )
+            .set("Authorization", `token ${config.giteaConfig.token}`)
+            .send({
+              body: `@${comment.user?.login} commented on GitHub:\n\n${comment.body}`,
+            });
+        } catch (commentErr) {
+          console.error(
+            `Failed to copy comment to Gitea for issue "${issue.title}": ${
+              commentErr instanceof Error
+                ? commentErr.message
+                : String(commentErr)
+            }`
+          );
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && (err as any).response) {
+        console.error(
+          `Failed to create issue "${issue.title}" in Gitea: ${err.message}`
+        );
+        console.error(
+          `Response body: ${JSON.stringify((err as any).response.body)}`
+        );
+      } else {
+        console.error(
+          `Failed to create issue "${issue.title}" in Gitea: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+      }
     }
   }
-}
+};
