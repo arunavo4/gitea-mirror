@@ -66,7 +66,7 @@ export function ConfigTabs() {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  const handleSyncData = async () => {
+  const handleImportGitHubData = async () => {
     try {
       if (!user?.id) return;
 
@@ -80,13 +80,13 @@ export function ConfigTabs() {
       );
 
       if (result.success) {
-        toast.success("Data synced successfully!");
+        toast.success("GitHub data imported successfully! Head to the Dashboard to start mirroring repositories.");
       } else {
-        toast.error(`Failed to sync data: ${result.message || "Unknown error"}`);
+        toast.error(`Failed to import GitHub data: ${result.message || "Unknown error"}`);
       }
     } catch (error) {
       toast.error(
-        `Error syncing data: ${
+        `Error importing GitHub data: ${
           error instanceof Error ? error.message : String(error)
         }`
       );
@@ -117,7 +117,7 @@ export function ConfigTabs() {
 
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
-        toast.success("Configuration saved successfully!");
+        toast.success("Configuration saved successfully! Now import your GitHub data to begin.");
       } else {
         toast.error(
           `Failed to save configuration: ${result.message || "Unknown error"}`
@@ -225,16 +225,16 @@ services:
           </div>
 
           <div className="flex gap-x-4">
-            <Button onClick={handleSyncData} disabled={isSyncing}>
+            <Button onClick={handleImportGitHubData} disabled={isSyncing}>
               {isSyncing ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin mr-1" />
-                  Sync Data
+                  Import GitHub Data
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4 mr-1" />
-                  Sync Data
+                  Import GitHub Data
                 </>
               )}
             </Button>
