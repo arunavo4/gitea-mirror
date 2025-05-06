@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, RefreshCw, Filter } from "lucide-react";
+import { Search, RefreshCw, Filter, Users } from "lucide-react";
 import type { MirrorJob, Organization } from "@/lib/db/schema";
 import { OrganizationList } from "./OrganizationsList";
 import { useAuth } from "@/hooks/useAuth";
@@ -125,6 +125,93 @@ export function Organization() {
       });
     }
   };
+  
+  const handleMirrorAllOrgs = async () => {
+    try {
+      if (!user || !user.id || organizations.length === 0) {
+        return;
+      }
+
+      // Filter out organizations that are already mirrored to avoid duplicate operations
+      const eligibleOrgs = organizations.filter(org => 
+        org.status !== "mirroring" && 
+        org.status !== "mirrored" && 
+        org.id
+      );
+      
+      if (eligibleOrgs.length === 0) {
+        toast.info("No eligible organizations to mirror");
+        return;
+      }
+      
+      // Get all organization IDs
+      const orgIds = eligibleOrgs.map(org => org.id as string);
+      
+      // Set loading state for all organizations being mirrored
+      setLoadingOrgIds(prev => {
+        const newSet = new Set(prev);
+        orgIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+
+      const reqPayload: MirrorOrgRequest = {
+        userId: user.id,
+        organizationIds: orgIds,
+      };
+
+      const response = await apiRequest<MirrorOrgResponse>("/job/mirror-org", {
+        method: "POST",
+        data: reqPayload,
+      });
+
+      if (response.success) {
+        toast.success(`Mirroring started for ${orgIds.length} organizations`);
+        setOrganizations((prevOrgs) =>
+          prevOrgs.map((org) => {
+            const updated = response.organizations.find((o) => o.id === org.id);
+            return updated ? updated : org;
+          })
+        );
+      } else {
+        toast.error(response.error || "Error starting mirror jobs");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error starting mirror jobs");
+    } finally {
+      // Reset loading states - we'll let the SSE updates handle status changes
+      setLoadingOrgIds(new Set());
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      if (!user || !user.id) {
+        return;
+      }
+
+      setIsLoading(true);
+
+      const response = await apiRequest<OrganizationsApiResponse>(
+        `/github/organizations?userId=${user.id}`,
+        {
+          method: "GET",
+        }
+      );
+
+      if (response.success) {
+        setOrganizations(response.organizations);
+        toast.success("Organizations refreshed successfully.");
+      } else {
+        toast.error(response.error || "Error refreshing organizations");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error refreshing organizations"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-y-8">
@@ -169,9 +256,14 @@ export function Organization() {
             More Filters
           </Button>
 
-        <Button variant="default">
+        <Button variant="default" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
+          </Button>
+
+        <Button variant="default" onClick={handleMirrorAllOrgs} disabled={isLoading || loadingOrgIds.size > 0}>
+            <Users className="h-4 w-4 mr-2" />
+            Mirror All
           </Button>
       </div>
 
