@@ -3,8 +3,17 @@ import '../styles/global.css';
 import App from '@/components/layout/MainLayout';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { ENV, MOCK_DATA } from '@/lib/config';
-import { db, repositories, mirrorJobs } from '@/lib/db';
+import { db, repositories, mirrorJobs, client } from '@/lib/db';
 import ThemeScript from '@/components/theme/ThemeScript.astro';
+
+// Check if any users exist in the database
+const userCountResult = await client.execute(`SELECT COUNT(*) as count FROM users`);
+const userCount = userCountResult.rows[0].count;
+
+// Redirect to signup if no users exist
+if (userCount === 0) {
+  return Astro.redirect('/signup');
+}
 
 // In production mode, fetch real data from the database
 // In development mode, use mock data

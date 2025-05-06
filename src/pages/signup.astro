@@ -1,16 +1,16 @@
 ---
 import '../styles/global.css';
 import ThemeScript from '@/components/theme/ThemeScript.astro';
-import { LoginForm } from '@/components/auth/LoginForm';
+import { SignupForm } from '@/components/auth/SignupForm';
 import { client } from '../lib/db';
 
 // Check if any users exist in the database
 const userCountResult = await client.execute(`SELECT COUNT(*) as count FROM users`);
 const userCount = userCountResult.rows[0].count;
 
-// Redirect to signup if no users exist
-if (userCount === 0) {
-  return Astro.redirect('/signup');
+// Redirect to login if users already exist
+if (userCount > 0) {
+  return Astro.redirect('/login');
 }
 
 const generator = Astro.generator;
@@ -22,12 +22,16 @@ const generator = Astro.generator;
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={generator} />
-    <title>Login - Gitea Mirror</title>
+    <title>Setup Admin Account - Gitea Mirror</title>
     <ThemeScript />
   </head>
   <body>
-    <div class="h-dvh flex items-center justify-center bg-muted/30 p-4">
-      <LoginForm client:load />
+    <div class="h-dvh flex flex-col items-center justify-center bg-muted/30 p-4">
+      <div class="mb-8 text-center">
+        <h1 class="text-3xl font-bold mb-2">Welcome to Gitea Mirror</h1>
+        <p class="text-muted-foreground">Let's set up your administrator account to get started.</p>
+      </div>
+      <SignupForm client:load />
     </div>
   </body>
 </html>

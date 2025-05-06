@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { db, users } from "@/lib/db";
+import { db, users, client } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 
@@ -10,6 +10,17 @@ export const GET: APIRoute = async ({ request, cookies }) => {
   const token = authHeader?.split(" ")[1] || cookies.get("token")?.value;
 
   if (!token) {
+    // Check if any users exist in the database
+    const userCountResult = await client.execute(`SELECT COUNT(*) as count FROM users`);
+    const userCount = userCountResult.rows[0].count;
+    
+    if (userCount === 0) {
+      return new Response(JSON.stringify({ error: "No users found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

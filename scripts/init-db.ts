@@ -36,31 +36,7 @@ async function main() {
       )`
     );
 
-    // Create a default admin user
-    const userCountResult = await client.execute(
-      `SELECT COUNT(*) as count FROM users`
-    );
-    const userCount = userCountResult.rows[0].count;
-    if (userCount === 0) {
-      const userId = uuidv4();
-      await client.execute(
-        `
-        INSERT INTO users (id, username, password, email, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `,
-        [
-          userId,
-          "admin",
-          "$2a$10$ViIkUfO9IC58PgYNjnyekOLnr6W9lNstAVnFOyW3rEeQ5XQZ2LXNK", // 'password123'
-          "admin@example.com",
-          Date.now(),
-          Date.now(),
-        ]
-      );
-      console.log(
-        "Default admin user created (username: admin, password: password123)"
-      );
-    }
+    // NOTE: We no longer create a default admin user - user will create one via signup page
 
     await client.execute(
       `CREATE TABLE configs (

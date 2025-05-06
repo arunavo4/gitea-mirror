@@ -35,13 +35,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const user = await authApi.getCurrentUser();
-
-        console.log("Current user: ", user);
-
         setUser(user);
-      } catch (err) {
+      } catch (err: any) {
         setUser(null);
-        window.location.href = "/login";
+
+        // Check if the error is due to no users in the database
+        if (err?.message === "No users found") {
+          window.location.href = "/signup";
+        } else {
+          window.location.href = "/login";
+        }
         console.error("Auth check failed", err);
       } finally {
         setIsLoading(false);
