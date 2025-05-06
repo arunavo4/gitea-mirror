@@ -81,7 +81,6 @@ export function Dashboard() {
           value={mirroredCount}
           icon={<GitMerge className="h-4 w-4" />}
           description="Successfully mirrored"
-          trend={{ value: 20, isPositive: true }}
         />
         <StatusCard
           title="Organizations"
