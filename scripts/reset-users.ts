@@ -45,7 +45,7 @@ async function main() {
       `SELECT COUNT(*) as count FROM configs`
     );
     
-    if (configCount.rows[0].count > 0) {
+    if (configCount.rows && configCount.rows[0] && Number(configCount.rows[0].count) > 0) {
       await client.execute(`DELETE FROM configs`);
       console.log(`Deleted ${configCount.rows[0].count} configurations.`);
     }
@@ -55,7 +55,7 @@ async function main() {
       `SELECT COUNT(*) as count FROM repositories`
     );
     
-    if (repoCount.rows[0].count > 0) {
+    if (repoCount.rows && repoCount.rows[0] && Number(repoCount.rows[0].count) > 0) {
       await client.execute(`DELETE FROM repositories`);
       console.log(`Deleted ${repoCount.rows[0].count} repositories.`);
     }
@@ -65,7 +65,7 @@ async function main() {
       `SELECT COUNT(*) as count FROM organizations`
     );
     
-    if (orgCount.rows[0].count > 0) {
+    if (orgCount.rows && orgCount.rows[0] && Number(orgCount.rows[0].count) > 0) {
       await client.execute(`DELETE FROM organizations`);
       console.log(`Deleted ${orgCount.rows[0].count} organizations.`);
     }
@@ -75,7 +75,7 @@ async function main() {
       `SELECT COUNT(*) as count FROM mirror_jobs`
     );
     
-    if (jobCount.rows[0].count > 0) {
+    if (jobCount.rows && jobCount.rows[0] && Number(jobCount.rows[0].count) > 0) {
       await client.execute(`DELETE FROM mirror_jobs`);
       console.log(`Deleted ${jobCount.rows[0].count} mirror jobs.`);
     }
