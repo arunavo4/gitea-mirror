@@ -15,7 +15,7 @@ import {
 import type { RepoStatus } from "@/types/Repository";
 import ActivityList from "./ActivityList";
 import { useSSE } from "@/hooks/useSEE";
-import useFilterParams from "@/hooks/useFilterParams";
+import { useFilterParams } from "@/hooks/useFilterParams";
 import { toast } from "sonner";
 
 export function ActivityLog() {

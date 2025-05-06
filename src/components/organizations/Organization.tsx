@@ -18,7 +18,7 @@ import {
 } from "../ui/select";
 import type { MirrorOrgRequest, MirrorOrgResponse } from "@/types/mirror";
 import { useSSE } from "@/hooks/useSEE";
-import useFilterParams from "@/hooks/useFilterParams";
+import { useFilterParams } from "@/hooks/useFilterParams";
 import { toast } from "sonner";
 
 export function Organization() {

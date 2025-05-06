@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter, RefreshCw } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 import { useSSE } from "@/hooks/useSEE";
-import useFilterParams from "@/hooks/useFilterParams";
+import { useFilterParams } from "@/hooks/useFilterParams";
 import { toast } from "sonner";
 
 export default function Repository() {
