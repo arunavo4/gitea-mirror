@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { giteaApi } from "@/lib/api";
 import type { GiteaConfig, GiteaOrgVisibility } from "@/types/config";
+import { toast } from "sonner";
 
 interface GiteaConfigFormProps {
   config: GiteaConfig;
@@ -17,10 +18,6 @@ interface GiteaConfigFormProps {
 
 export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [testResult, setTestResult] = useState<{
-    success: boolean;
-    message: string;
-  } | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -34,30 +31,23 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
 
   const testConnection = async () => {
     if (!config.url || !config.token) {
-      setTestResult({
-        success: false,
-        message: "Gitea URL and token are required to test the connection",
-      });
+      toast.error("Gitea URL and token are required to test the connection");
       return;
     }
 
     setIsLoading(true);
-    setTestResult(null);
 
     try {
       const result = await giteaApi.testConnection(config.url, config.token);
-      setTestResult({
-        success: result.success,
-        message: result.success
-          ? "Successfully connected to Gitea!"
-          : "Failed to connect to Gitea. Please check your URL and token.",
-      });
+      if (result.success) {
+        toast.success("Successfully connected to Gitea!");
+      } else {
+        toast.error("Failed to connect to Gitea. Please check your URL and token.");
+      }
     } catch (error) {
-      setTestResult({
-        success: false,
-        message:
-          error instanceof Error ? error.message : "An unknown error occurred",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "An unknown error occurred"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -211,15 +201,7 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
       </CardContent>
 
       <CardFooter className="">
-        {testResult && (
-          <div
-            className={
-              testResult.success ? "text-green-500" : "text-red-500"
-            }
-          >
-            {testResult.message}
-          </div>
-        )}
+        {/* Footer content can be added here if needed */}
       </CardFooter>
     </Card>
   );

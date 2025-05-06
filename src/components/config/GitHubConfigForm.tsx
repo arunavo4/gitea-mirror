@@ -11,6 +11,7 @@ import { githubApi } from "@/lib/api";
 import type { GitHubConfig } from "@/types/config";
 import { Input } from "../ui/input";
 import { Checkbox } from "../ui/checkbox";
+import { toast } from "sonner";
 
 interface GitHubConfigFormProps {
   config: GitHubConfig;
@@ -19,10 +20,6 @@ interface GitHubConfigFormProps {
 
 export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [testResult, setTestResult] = useState<{
-    success: boolean;
-    message: string;
-  } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -35,30 +32,23 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
   const testConnection = async () => {
     if (!config.token) {
-      setTestResult({
-        success: false,
-        message: "GitHub token is required to test the connection",
-      });
+      toast.error("GitHub token is required to test the connection");
       return;
     }
 
     setIsLoading(true);
-    setTestResult(null);
 
     try {
       const result = await githubApi.testConnection(config.token);
-      setTestResult({
-        success: result.success,
-        message: result.success
-          ? "Successfully connected to GitHub!"
-          : "Failed to connect to GitHub. Please check your token.",
-      });
+      if (result.success) {
+        toast.success("Successfully connected to GitHub!");
+      } else {
+        toast.error("Failed to connect to GitHub. Please check your token.");
+      }
     } catch (error) {
-      setTestResult({
-        success: false,
-        message:
-          error instanceof Error ? error.message : "An unknown error occurred",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "An unknown error occurred"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -326,15 +316,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
       </CardContent>
 
       <CardFooter>
-        {testResult && (
-          <div
-            className={
-              testResult.success ? "text-green-500" : "text-red-500"
-            }
-          >
-            {testResult.message}
-          </div>
-        )}
+        {/* Footer content can be added here if needed */}
       </CardFooter>
     </Card>
   );
