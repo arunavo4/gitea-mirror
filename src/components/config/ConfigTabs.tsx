@@ -21,6 +21,7 @@ import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import { Copy, CopyCheck, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 type ConfigState = {
   githubConfig: GitHubConfig;
@@ -79,37 +80,15 @@ export function ConfigTabs() {
       );
 
       if (result.success) {
-        console.log("Sync data successfully:", result);
-        document.dispatchEvent(
-          new CustomEvent("show-toast", {
-            detail: {
-              message: "Data synced successfully!",
-              type: "success",
-            },
-          })
-        );
+        toast.success("Data synced successfully!");
       } else {
-        console.log("Failed to sync data:", result);
-        document.dispatchEvent(
-          new CustomEvent("show-toast", {
-            detail: {
-              message: `Failed to sync data: ${result.message}`,
-              type: "error",
-            },
-          })
-        );
+        toast.error(`Failed to sync data: ${result.message || "Unknown error"}`);
       }
     } catch (error) {
-      console.error("Error syncing data:", error);
-      document.dispatchEvent(
-        new CustomEvent("show-toast", {
-          detail: {
-            message: `Error syncing data: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-            type: "error",
-          },
-        })
+      toast.error(
+        `Error syncing data: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     } finally {
       setIsSyncing(false);
@@ -128,8 +107,6 @@ export function ConfigTabs() {
         giteaConfig: config.giteaConfig,
         scheduleConfig: config.scheduleConfig,
       };
-      console.log("Saving config:", reqPyload);
-      // Save the Schedule config to the database
       const response = await fetch("/api/config", {
         method: "POST",
         headers: {
@@ -140,35 +117,17 @@ export function ConfigTabs() {
 
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
-        document.dispatchEvent(
-          new CustomEvent("show-toast", {
-            detail: {
-              message: "Schedule configuration saved successfully!",
-              type: "success",
-            },
-          })
-        );
-        // Configuration saved; form state is preserved without reload
+        toast.success("Configuration saved successfully!");
       } else {
-        document.dispatchEvent(
-          new CustomEvent("show-toast", {
-            detail: {
-              message: `Failed to save Schedule configuration: ${result.message}`,
-              type: "error",
-            },
-          })
+        toast.error(
+          `Failed to save configuration: ${result.message || "Unknown error"}`
         );
       }
     } catch (error) {
-      console.error("Error saving Schedule config:", error);
-      document.dispatchEvent(
-        new CustomEvent("show-toast", {
-          detail: {
-            message:
-              "An error occurred while saving the Schedule configuration.",
-            type: "error",
-          },
-        })
+      toast.error(
+        `An error occurred while saving the configuration: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   };
@@ -190,7 +149,6 @@ export function ConfigTabs() {
         );
 
         if (!response.error) {
-          console.log("Fetched configuration:", response);
           setConfig({
             githubConfig: response.githubConfig,
             giteaConfig: response.giteaConfig,
@@ -198,11 +156,13 @@ export function ConfigTabs() {
           });
         }
 
-        console.log("Fetched configuration:", response);
-
         setIsLoading(false);
       } catch (error) {
-        console.error("Error fetching configuration:", error);
+        toast.error(
+          `Error fetching configuration: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
       } finally {
         setIsLoading(false);
       }
@@ -242,10 +202,11 @@ services:
     navigator.clipboard.writeText(text).then(
       () => {
         setIsCopied(true);
+        toast.success("Docker configuration copied to clipboard!");
         setTimeout(() => setIsCopied(false), 2000);
       },
       (err) => {
-        console.error("Could not copy text: ", err);
+        toast.error("Could not copy text to clipboard.");
       }
     );
   };

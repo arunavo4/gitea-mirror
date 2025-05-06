@@ -18,6 +18,7 @@ import {
 } from "../ui/select";
 import type { MirrorOrgRequest, MirrorOrgResponse } from "@/types/mirror";
 import useFilterParams from "@/hooks/useFilterParams";
+import { toast } from "sonner"; // Import toast
 
 export function Organization() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -46,13 +47,14 @@ export function Organization() {
         );
 
         if (response.success) {
-          console.log("Organizations:", response.organizations);
           setOrganizations(response.organizations);
         } else {
-          console.error("Error fetching organizations:", response.error);
+          toast.error(response.error || "Error fetching organizations");
         }
       } catch (error) {
-        console.error("Error fetching organizations:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Error fetching organizations"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -80,7 +82,7 @@ export function Organization() {
       });
 
       if (response.success) {
-        console.log("Mirror job started successfully:", response);
+        toast.success(`Mirroring started for organization ID: ${orgId}`);
 
         setOrganizations((prevOrgs) =>
           prevOrgs.map((org) => {
@@ -89,10 +91,10 @@ export function Organization() {
           })
         );
       } else {
-        console.error("Error mirroring repository:", response.error);
+        toast.error(response.error || "Error starting mirror job");
       }
     } catch (error) {
-      console.error("Error mirroring repository:", error);
+      toast.error(error instanceof Error ? error.message : "Error starting mirror job");
     } finally {
       setLoadingOrgIds((prev) => {
         const newSet = new Set(prev);

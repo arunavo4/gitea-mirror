@@ -15,6 +15,7 @@ import {
 import type { RepoStatus } from "@/types/Repository";
 import ActivityList from "./ActivityList";
 import useFilterParams from "@/hooks/useFilterParams";
+import { toast } from "sonner";
 
 export function ActivityLog() {
   const { user } = useAuth();
@@ -41,7 +42,7 @@ export function ActivityLog() {
       if (response.success) {
         setActivities(response.activities);
       } else {
-        console.error(response.message);
+        toast.error(response.message || "Failed to fetch activities.");
       }
 
       setIsLoading(false);

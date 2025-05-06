@@ -8,6 +8,7 @@ import type { MirrorJob, Organization, Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import type { DashboardApiResponse } from "@/types/dashboard";
+import { toast } from "sonner";
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -45,10 +46,12 @@ export function Dashboard() {
           setMirroredCount(response.mirroredCount);
           setLastSync(response.lastSync);
         } else {
-          console.error("Error fetching dashboard data:", response.error);
+          toast.error(response.error || "Error fetching dashboard data");
         }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Error fetching dashboard data"
+        );
       } finally {
         setIsLoading(false);
       }

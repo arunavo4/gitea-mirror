@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter, RefreshCw } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 import useFilterParams from "@/hooks/useFilterParams";
+import { toast } from "sonner"; // Import toast
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -43,13 +44,14 @@ export default function Repository() {
         );
 
         if (response.success) {
-          console.log("Repositories:", response.repositories);
           setRepositories(response.repositories);
         } else {
-          console.error("Error fetching repositories:", response.error);
+          toast.error(response.error || "Error fetching repositories");
         }
       } catch (error) {
-        console.error("Error fetching repositories:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Error fetching repositories"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -74,13 +76,15 @@ export default function Repository() {
       );
 
       if (response.success) {
-        console.log("Repositories:", response.repositories);
         setRepositories(response.repositories);
+        toast.success("Repositories refreshed successfully.");
       } else {
-        console.error("Error fetching repositories:", response.error);
+        toast.error(response.error || "Error refreshing repositories");
       }
     } catch (error) {
-      console.error("Error fetching repositories:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error refreshing repositories"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -108,7 +112,7 @@ export default function Repository() {
       );
 
       if (response.success) {
-        console.log("Mirror job started successfully:", response);
+        toast.success(`Mirroring started for repository ID: ${repoId}`);
         setRepositories((prevRepos) =>
           prevRepos.map((repo) => {
             const updated = response.repositories.find((r) => r.id === repo.id);
@@ -116,10 +120,10 @@ export default function Repository() {
           })
         );
       } else {
-        console.error("Error mirroring repository:", response.error);
+        toast.error(response.error || "Error starting mirror job");
       }
     } catch (error) {
-      console.error("Error mirroring repository:", error);
+      toast.error(error instanceof Error ? error.message : "Error starting mirror job");
     } finally {
       setLoadingRepoIds((prev) => {
         const newSet = new Set(prev);
