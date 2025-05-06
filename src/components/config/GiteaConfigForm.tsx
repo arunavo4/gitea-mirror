@@ -65,10 +65,18 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-4">
         <CardTitle className="text-lg font-semibold">
           Gitea Configuration
         </CardTitle>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={testConnection}
+          disabled={isLoading || !config.url || !config.token}
+        >
+          {isLoading ? "Testing..." : "Test Connection"}
+        </Button>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-y-6">
@@ -205,23 +213,13 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
       <CardFooter className="">
         {testResult && (
           <div
-            className={`${
+            className={
               testResult.success ? "text-green-500" : "text-red-500"
-            }`}
+            }
           >
             {testResult.message}
           </div>
         )}
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={testConnection}
-          disabled={isLoading || !config.url || !config.token}
-          className="ml-auto"
-        >
-          {isLoading ? "Testing..." : "Test Connection"}
-        </Button>
       </CardFooter>
     </Card>
   );
