@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, RefreshCw } from "lucide-react";
+import { Search, Filter, RefreshCw, GitFork } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 import { useSSE } from "@/hooks/useSEE";
 import { useFilterParams } from "@/hooks/useFilterParams";
@@ -155,6 +155,64 @@ export default function Repository() {
       });
     }
   };
+  
+  const handleMirrorAllRepos = async () => {
+    try {
+      if (!user || !user.id || repositories.length === 0) {
+        return;
+      }
+
+      // Filter out repositories that are already mirroring to avoid duplicate operations
+      const eligibleRepos = repositories.filter(repo => 
+        repo.status !== "mirroring" && repo.id
+      );
+      
+      if (eligibleRepos.length === 0) {
+        toast.info("No eligible repositories to mirror");
+        return;
+      }
+      
+      // Get all repository IDs
+      const repoIds = eligibleRepos.map(repo => repo.id as string);
+      
+      // Set loading state for all repositories being mirrored
+      setLoadingRepoIds(prev => {
+        const newSet = new Set(prev);
+        repoIds.forEach(id => newSet.add(id));
+        return newSet;
+      });
+
+      const reqPayload: MirrorRepoRequest = {
+        userId: user.id,
+        repositoryIds: repoIds,
+      };
+
+      const response = await apiRequest<MirrorRepoResponse>(
+        "/job/mirror-repo",
+        {
+          method: "POST",
+          data: reqPayload,
+        }
+      );
+
+      if (response.success) {
+        toast.success(`Mirroring started for ${repoIds.length} repositories`);
+        setRepositories((prevRepos) =>
+          prevRepos.map((repo) => {
+            const updated = response.repositories.find((r) => r.id === repo.id);
+            return updated ? updated : repo;
+          })
+        );
+      } else {
+        toast.error(response.error || "Error starting mirror jobs");
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error starting mirror jobs");
+    } finally {
+      // Reset loading states - we'll let the SSE updates handle status changes
+      setLoadingRepoIds(new Set());
+    }
+  };
 
   return (
     <div className="flex flex-col gap-y-6">
@@ -204,6 +262,11 @@ export default function Repository() {
         <Button variant="default" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
+          </Button>
+
+        <Button variant="default" onClick={handleMirrorAllRepos} disabled={isLoading || loadingRepoIds.size > 0}>
+            <GitFork className="h-4 w-4 mr-2" />
+            Mirror All
           </Button>
       </div>
 
