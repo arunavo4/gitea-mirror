@@ -131,7 +131,9 @@ export const mirrorJobs = sqliteTable("mirror_jobs", {
   userId: text("user_id")
     .notNull()
     .references(() => users.id),
+  repositoryId: text("repository_id"),
   repositoryName: text("repository_name"),
+  organizationId: text("organization_id"),
   organizationName: text("organization_name"),
   details: text("details"),
   status: text("status").notNull().default("imported"),

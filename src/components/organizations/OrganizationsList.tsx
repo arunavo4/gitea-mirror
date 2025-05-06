@@ -119,8 +119,11 @@ export function OrganizationList({
                   <Checkbox
                     id={`include-${org.id}`}
                     name={`include-${org.id}`}
-                    checked={org.isIncluded}
-                    disabled={loadingOrgIds.has(org.id ?? "")}
+                    checked={org.status === "mirrored"}
+                    disabled={
+                      loadingOrgIds.has(org.id ?? "") ||
+                      org.status === "mirrored"
+                    }
                     onCheckedChange={async (checked) => {
                       if (checked && !org.isIncluded && org.id) {
                         onMirror({ orgId: org.id });

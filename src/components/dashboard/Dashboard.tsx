@@ -21,6 +21,51 @@ export function Dashboard() {
   const [lastSync, setLastSync] = useState<Date | null>(null);
 
   useEffect(() => {
+    if (!user || !user.id) return;
+
+    const eventSource = new EventSource(`/api/sse?userId=${user.id}`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.repositoryId) {
+          setRepositories((prevRepos) =>
+            prevRepos.map((repo) =>
+              repo.id === data.repositoryId
+                ? { ...repo, status: data.status, details: data.details }
+                : repo
+            )
+          );
+        } else if (data.organizationId) {
+          setOrganizations((prevOrgs) =>
+            prevOrgs.map((org) =>
+              org.id === data.organizationId
+                ? { ...org, status: data.status, details: data.details }
+                : org
+            )
+          );
+        }
+
+        setActivities((prevActivities) => [data, ...prevActivities]);
+
+        console.log("Received new log:", data);
+      } catch (err) {
+        console.error("Failed to parse SSE data:", err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      console.error("SSE connection error");
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [user]);
+
+  useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         if (!user || !user.id) {

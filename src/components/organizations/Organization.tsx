@@ -30,6 +30,41 @@ export function Organization() {
   const [loadingOrgIds, setLoadingOrgIds] = useState<Set<string>>(new Set()); // this is used when the api actions are performed
 
   useEffect(() => {
+    if (!user || !user.id) return;
+
+    const eventSource = new EventSource(`/api/sse?userId=${user.id}`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.organizationId) {
+          setOrganizations((prevOrgs) =>
+            prevOrgs.map((org) =>
+              org.id === data.organizationId
+                ? { ...org, status: data.status, details: data.details }
+                : org
+            )
+          );
+        }
+
+        console.log("Received new log:", data);
+      } catch (err) {
+        console.error("Failed to parse SSE data:", err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      console.error("SSE connection error");
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [user]);
+
+  useEffect(() => {
     const fetchOrganizations = async () => {
       if (!user || !user.id) {
         return;

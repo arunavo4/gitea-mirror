@@ -24,7 +24,43 @@ export default function Repository() {
     searchTerm: "",
     status: "",
   });
+
   const [loadingRepoIds, setLoadingRepoIds] = useState<Set<string>>(new Set()); // this is used when the api actions are performed
+
+  useEffect(() => {
+    if (!user || !user.id) return;
+
+    const eventSource = new EventSource(`/api/sse?userId=${user.id}`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.repositoryId) {
+          setRepositories((prevRepos) =>
+            prevRepos.map((repo) =>
+              repo.id === data.repositoryId
+                ? { ...repo, status: data.status, details: data.details }
+                : repo
+            )
+          );
+        }
+
+        console.log("Received new log:", data);
+      } catch (err) {
+        console.error("Failed to parse SSE data:", err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      console.error("SSE connection error");
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [user]);
 
   useEffect(() => {
     const fetchRepositories = async () => {

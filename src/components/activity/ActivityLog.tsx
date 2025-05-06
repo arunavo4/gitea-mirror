@@ -26,6 +26,33 @@ export function ActivityLog() {
   });
 
   useEffect(() => {
+    if (!user || !user.id) return;
+
+    const eventSource = new EventSource(`/api/sse?userId=${user.id}`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        setActivities((prevActivities) => [data, ...prevActivities]);
+
+        console.log("Received new log:", data);
+      } catch (err) {
+        console.error("Failed to parse SSE data:", err);
+      }
+    };
+
+    eventSource.onerror = () => {
+      console.error("SSE connection error");
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [user]);
+
+  useEffect(() => {
     const fetchActivities = async () => {
       if (!user) return;
 

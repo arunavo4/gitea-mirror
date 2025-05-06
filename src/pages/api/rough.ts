@@ -43,7 +43,13 @@ export const GET: APIRoute = async ({ request }) => {
 
     await deleteAllOrgs({
       config,
-      orgs: ["Neucruit", "initify", "BitBustersx719"],
+      orgs: [
+        "Neucruit",
+        "initify",
+        "BitBustersx719",
+        "uiastra",
+        "conductor-oss",
+      ],
     });
 
     await deleteAllReposInGitea({

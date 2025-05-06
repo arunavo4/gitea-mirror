@@ -77,6 +77,7 @@ export const mirrorGithubRepoToGitea = async ({
     // Append log for "mirroring" status
     await createMirrorJob({
       userId: config.userId,
+      repositoryId: repository.id,
       repositoryName: repository.name,
       message: `Started mirroring repository: ${repository.name}`,
       details: `Repository ${repository.name} is now in the mirroring state.`,
@@ -140,6 +141,7 @@ export const mirrorGithubRepoToGitea = async ({
     // Append log for "mirrored" status
     await createMirrorJob({
       userId: config.userId,
+      repositoryId: repository.id,
       repositoryName: repository.name,
       message: `Successfully mirrored repository: ${repository.name}`,
       details: `Repository ${repository.name} was mirrored to Gitea.`,
@@ -167,6 +169,7 @@ export const mirrorGithubRepoToGitea = async ({
     // Append log for failure
     await createMirrorJob({
       userId: config.userId ?? "", // userId is going to be there anyways
+      repositoryId: repository.id,
       repositoryName: repository.name,
       message: `Failed to mirror repository: ${repository.name}`,
       details: `Repository ${repository.name} failed to mirror. Error: ${
@@ -183,8 +186,10 @@ export const mirrorGithubRepoToGitea = async ({
 
 export async function getOrCreateGiteaOrg({
   orgName,
+  orgId,
   config,
 }: {
+  orgId?: string; //db id
   orgName: string;
   config: Partial<Config>;
 }): Promise<number> {
@@ -212,6 +217,7 @@ export async function getOrCreateGiteaOrg({
 
       await createMirrorJob({
         userId: config.userId,
+        organizationId: org.id,
         organizationName: orgName,
         status: "imported",
         message: `Organization ${orgName} fetched successfully`,
@@ -256,6 +262,7 @@ export async function getOrCreateGiteaOrg({
 
     await createMirrorJob({
       userId: config.userId,
+      organizationId: orgId,
       organizationName: orgName,
       message: `Failed to create or fetch Gitea organization: ${orgName}`,
       status: "failed",
@@ -319,6 +326,7 @@ export async function mirrorGitHubRepoToGiteaOrg({
     // Append log for "mirroring" status
     await createMirrorJob({
       userId: config.userId,
+      repositoryId: repository.id,
       repositoryName: repository.name,
       message: `Started mirroring repository: ${repository.name}`,
       details: `Repository ${repository.name} is now in the mirroring state.`,
@@ -379,6 +387,7 @@ export async function mirrorGitHubRepoToGiteaOrg({
     //create a mirror job
     await createMirrorJob({
       userId: config.userId,
+      repositoryId: repository.id,
       repositoryName: repository.name,
       message: `Repository ${repository.name} mirrored successfully`,
       details: `Repository ${repository.name} was mirrored to Gitea`,
@@ -403,6 +412,7 @@ export async function mirrorGitHubRepoToGiteaOrg({
     // Append log for failure
     await createMirrorJob({
       userId: config.userId || "", // userId is going to be there anyways
+      repositoryId: repository.id,
       repositoryName: repository.name,
       message: `Failed to mirror repository: ${repository.name}`,
       details: `Repository ${repository.name} failed to mirror. Error: ${
@@ -487,6 +497,7 @@ export async function mirrorGitHubOrgToGitea({
     // Append log for "mirroring" status
     await createMirrorJob({
       userId: config.userId,
+      organizationId: organization.id,
       organizationName: organization.name,
       message: `Started mirroring organization: ${organization.name}`,
       details: `Organization ${organization.name} is now in the mirroring state.`,
@@ -494,6 +505,7 @@ export async function mirrorGitHubOrgToGitea({
     });
 
     const giteaOrgId = await getOrCreateGiteaOrg({
+      orgId: organization.id,
       orgName: organization.name,
       config,
     });
@@ -538,6 +550,7 @@ export async function mirrorGitHubOrgToGitea({
     // Append log for "mirrored" status
     await createMirrorJob({
       userId: config.userId,
+      organizationId: organization.id,
       organizationName: organization.name,
       message: `Successfully mirrored organization: ${organization.name}`,
       details: `Organization ${organization.name} was mirrored to Gitea.`,
@@ -563,6 +576,7 @@ export async function mirrorGitHubOrgToGitea({
     // Append log for failure
     await createMirrorJob({
       userId: config.userId || "", // userId is going to be there anyways
+      organizationId: organization.id,
       organizationName: organization.name,
       message: `Failed to mirror organization: ${organization.name}`,
       details: `Organization ${organization.name} failed to mirror. Error: ${

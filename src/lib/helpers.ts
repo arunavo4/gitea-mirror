@@ -1,17 +1,22 @@
 import type { RepoStatus } from "@/types/Repository";
 import { db, mirrorJobs } from "./db";
 import { v4 as uuidv4 } from "uuid";
+import { redisPublisher } from "./redis";
 
 export async function createMirrorJob({
   userId,
+  organizationId,
   organizationName,
+  repositoryId,
   repositoryName,
   message,
   status,
   details,
 }: {
   userId: string;
+  organizationId?: string;
   organizationName?: string;
+  repositoryId?: string;
   repositoryName?: string;
   details?: string;
   message: string;
@@ -23,7 +28,9 @@ export async function createMirrorJob({
   const job = {
     id: jobId,
     userId,
+    repositoryId,
     repositoryName,
+    organizationId,
     organizationName,
     configId: uuidv4(),
     details,
@@ -34,6 +41,12 @@ export async function createMirrorJob({
 
   try {
     await db.insert(mirrorJobs).values(job);
+
+    const channel = `mirror-status:${userId}`;
+    await redisPublisher.publish(channel, JSON.stringify(job));
+
+    console.log("Mirror job created:");
+
     return jobId;
   } catch (error) {
     console.error("Error creating mirror job:", error);
