@@ -131,8 +131,9 @@ export default function Repository() {
 
   return (
     <div className="flex flex-col gap-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative w-full sm:w-md">
+      {/* Combine search and actions into a single flex row */}
+      <div className="flex flex-row items-center gap-4 w-full">
+        <div className="relative flex-grow"> {/* Use flex-grow for search */}
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
@@ -145,8 +146,7 @@ export default function Repository() {
           />
         </div>
 
-        <div className="flex gap-x-4">
-          <Select
+        <Select
             value={filter.status || "all"}
             onValueChange={(value) =>
               setFilter((prev) => ({
@@ -169,16 +169,15 @@ export default function Repository() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline">
+        <Button variant="outline">
             <Filter className="h-4 w-4 mr-2" />
             More Filters
           </Button>
 
-          <Button variant="default" onClick={handleRefresh}>
+        <Button variant="default" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-        </div>
       </div>
 
       <RepositoryTable
