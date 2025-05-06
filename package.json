@@ -3,20 +3,20 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
+    "setup": "pnpm install && pnpm init-db",
     "dev": "astro dev",
     "dev:clean": "pnpm cleanup-db && pnpm init-db && astro dev",
     "build": "astro build",
-    "preview": "astro preview",
-    "start": "node dist/server/entry.mjs",
-    "start:fresh": "pnpm cleanup-db && pnpm init-db && node dist/server/entry.mjs",
-    "astro": "astro",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "cleanup-db": "rm -f gitea-mirror.db data/gitea-mirror.db",
     "init-db": "tsx scripts/init-db.ts",
     "check-db": "tsx scripts/check-db.ts",
     "reset-users": "tsx scripts/reset-users.ts",
-    "cleanup-db": "rm -f gitea-mirror.db data/gitea-mirror.db",
-    "setup": "pnpm install && pnpm init-db"
+    "preview": "astro preview",
+    "start": "node dist/server/entry.mjs",
+    "start:fresh": "pnpm cleanup-db && pnpm init-db && node dist/server/entry.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "astro": "astro"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.6",
