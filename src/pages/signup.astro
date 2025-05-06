@@ -6,10 +6,10 @@ import { client } from '../lib/db';
 
 // Check if any users exist in the database
 const userCountResult = await client.execute(`SELECT COUNT(*) as count FROM users`);
-const userCount = userCountResult.rows[0].count;
+const userCount = userCountResult.rows[0]?.count;
 
 // Redirect to login if users already exist
-if (userCount > 0) {
+if (userCount !== null && Number(userCount) > 0) {
   return Astro.redirect('/login');
 }
 

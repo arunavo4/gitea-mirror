@@ -3,23 +3,39 @@
 This folder contains utility scripts for database management. Each script is described below to help developers understand its purpose and usage.
 
 ### init-db.ts
-Initializes the SQLite database specified by `DATABASE_URL` or `./data/gitea-mirror.db`. Creates necessary tables, a default admin user, and a default configuration if none exist. Use this script to set up a new production or staging database.
-
-### create-dev-db.ts
-Creates a development database at `./data/gitea-mirror-dev.db` with sample or mock data for local testing. Useful for running the frontend and backend in development mode without affecting production data.
+Initializes the SQLite database in the `./data/gitea-mirror.db` location. Creates necessary tables but no longer creates a default admin user. When the application starts with an empty users table, it will automatically redirect to the signup page.
 
 ### check-db.ts
-Validates the existence and integrity of the database at `DATABASE_URL` or `./data/gitea-mirror.db`. Checks table schemas and reports any missing tables or mismatches. Use this script to quickly verify the database state before running migrations or the application.
+Validates the existence and integrity of the database. Checks for user accounts and configurations, providing helpful information about what to expect when starting the application.
+
+### reset-users.ts
+Removes all users from the database and their associated data (configurations, repositories, organizations, and jobs). This is useful for testing the first-time user experience or resetting the application to a clean state without recreating the entire database.
+
+### fix-db-issues.ts
+Utility script that checks for database files in the wrong locations and moves them to the correct ones. This helps ensure database files are stored in the expected `./data` directory.
 
 ## Running the Scripts
 You can execute these utility scripts using your package manager. From the project root, run:
 
-// ❗ Using pnpm:
-pnpm run init-db       # initialize the main database
-pnpm run create-dev-db  # create a development database with sample data
-pnpm run check-db       # validate database schema and integrity
+```bash
+# Initialize the database
+pnpm run init-db
 
-// ❗ Or with npm:
-npm run init-db
-npm run create-dev-db
-npm run check-db
+# Check database status
+pnpm run check-db
+
+# Reset all users (for testing signup flow)
+pnpm run reset-users
+
+# Remove database files from root directory
+pnpm run cleanup-db
+
+# Complete setup (install dependencies and initialize database)
+pnpm run setup
+
+# Start development server with a fresh database
+pnpm run dev:clean
+
+# Start production server with a fresh database
+pnpm run start:fresh
+```
