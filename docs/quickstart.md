@@ -58,9 +58,9 @@ Before you begin, make sure you have:
 
 ## Initial Configuration
 
-1. Log in with the default credentials:
-   - Username: `admin`
-   - Password: `password`
+1. Upon first access, you'll be prompted to create an admin account:
+   - Create your username and password
+   - This will be your administrator account
 
 2. Go to the Configuration page
 
@@ -83,11 +83,12 @@ Before you begin, make sure you have:
 
 ## First Mirror
 
-1. Go to the Repositories page
-2. Click "Sync Repositories" to fetch repositories from GitHub
+1. After saving your configuration, click "Import GitHub Data" to fetch repositories from GitHub
+2. Go to the Repositories page to view your imported repositories
 3. Select the repositories you want to mirror
 4. Click "Mirror Selected" to start the mirroring process
 5. Monitor the progress on the Activity page
+6. You'll receive toast notifications about the success or failure of operations
 
 ## Next Steps
 

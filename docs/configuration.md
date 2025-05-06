@@ -4,7 +4,25 @@ This guide provides detailed information on how to configure Gitea Mirror for yo
 
 ## Configuration Methods
 
-Gitea Mirror can be configured in two ways:
+Gitea Mirror can be conf### Troubleshooting
+
+### Common Issues
+
+1. **Authentication Failures**:
+   - Ensure your GitHub and Gitea tokens have the correct permissions
+   - Check that the tokens haven't expired
+   - Look for error messages in toast notifications
+
+2. **Database Issues**:
+   - Ensure the database directory is writable
+   - Check that the database URL is correctly formatted
+   - For first-time setup issues, try using the `reset-users` script
+
+3. **Mirroring Failures**:
+   - Check GitHub API rate limits
+   - Ensure Gitea server is accessible
+   - Verify repository permissions
+   - Review toast notification error messagesys:
 
 1. **Environment Variables**: Set configuration options through environment variables
 2. **Web UI**: Configure the application through the web interface after installation
@@ -31,8 +49,9 @@ In production environments, you should always set a strong, unique `JWT_SECRET` 
 After installing and starting Gitea Mirror, you can configure it through the web interface:
 
 1. Navigate to `http://your-server:port/`
-2. Log in with the default credentials (username: `admin`, password: `password`)
-3. Go to the Configuration page
+2. If this is your first time, you'll be guided through creating an admin account
+3. Log in with your credentials
+4. Go to the Configuration page
 
 ### GitHub Configuration
 

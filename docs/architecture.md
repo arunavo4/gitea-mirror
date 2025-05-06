@@ -129,6 +129,9 @@ gitea-mirror/
 ├── src/                       # Source code
 │   ├── components/            # UI components
 │   │   ├── activity/          # Activity log components
+│   │   ├── auth/              # Authentication components
+│   │   │   ├── LoginForm.tsx  # Login component
+│   │   │   └── SignupForm.tsx # Signup component for first-time users 
 │   │   ├── config/            # Configuration components
 │   │   ├── dashboard/         # Dashboard components
 │   │   ├── layout/            # Layout components
@@ -144,14 +147,20 @@ gitea-mirror/
 │   │   └── mirror.ts          # Mirroring utilities
 │   ├── pages/                 # Astro pages
 │   │   ├── api/               # API endpoints
-│   │   │   ├── auth.ts        # Authentication endpoints
-│   │   │   ├── config.ts      # Configuration endpoints
-│   │   │   ├── github.ts      # GitHub integration endpoints
-│   │   │   ├── gitea.ts       # Gitea integration endpoints
-│   │   │   └── mirror.ts      # Mirroring endpoints
+│   │   │   ├── auth/          # Authentication endpoints
+│   │   │   │   ├── index.ts   # User verification endpoints
+│   │   │   │   ├── login.ts   # Login endpoint
+│   │   │   │   ├── logout.ts  # Logout endpoint
+│   │   │   │   └── register.ts # Registration endpoint
+│   │   │   ├── config/        # Configuration endpoints
+│   │   │   ├── github/        # GitHub integration endpoints
+│   │   │   ├── gitea/         # Gitea integration endpoints
+│   │   │   └── sync/          # Data synchronization endpoints
 │   │   ├── activity.astro     # Activity log page
 │   │   ├── config.astro       # Configuration page
 │   │   ├── index.astro        # Dashboard page
+│   │   ├── login.astro        # Login page
+│   │   ├── signup.astro       # Signup page for first-time users
 │   │   ├── organizations.astro # Organizations page
 │   │   └── repositories.astro  # Repositories page
 │   └── styles/                # Global styles
@@ -167,6 +176,13 @@ gitea-mirror/
 ## Key Components
 
 ### Frontend Components
+
+#### Toast Notifications (`src/components/ui/sonner.tsx`)
+The application uses toast notifications to provide feedback to users:
+- Success notifications for completed operations
+- Error notifications for failed operations
+- Information notifications for ongoing processes
+- Consistent UI across all components
 
 #### Dashboard (`src/components/dashboard/Dashboard.tsx`)
 The dashboard provides an overview of the mirroring status, including:
@@ -240,11 +256,12 @@ Defines the database schema using Drizzle ORM:
 
 ### API Endpoints
 
-#### Authentication API (`src/pages/api/auth.ts`)
+#### Authentication API (`src/pages/api/auth/`)
 Handles user authentication:
+- `GET /api/auth`: Checks if any users exist and returns current user status
 - `POST /api/auth/login`: Authenticates a user
-- `POST /api/auth/register`: Registers a new user
-- `GET /api/auth/user`: Gets the current user
+- `POST /api/auth/register`: Registers a new user (first-time setup)
+- `POST /api/auth/logout`: Logs out current user
 
 #### Configuration API (`src/pages/api/config.ts`)
 Handles configuration management:
@@ -327,6 +344,16 @@ Handles mirroring operations:
                                                                       │
                                                                       │
 ```
+
+## First-Time User Experience
+
+The application includes a streamlined first-time user experience:
+
+1. **Database Check**: When the application starts, it checks if any users exist in the database
+2. **Signup Flow**: If no users exist, new visitors are redirected to the signup page
+3. **Admin Creation**: The first user created becomes the admin user
+4. **Default Configuration**: Empty configurations are handled gracefully with sensible defaults
+5. **Guided Setup**: Toast notifications and clear UI guide users through the setup process
 
 ## Development and Production Environments
 

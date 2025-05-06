@@ -8,9 +8,10 @@
 - 🏢 Mirror entire organizations with structure preservation
 - 🐞 Optional mirroring of issues and labels
 - 🌟 Mirror your starred repositories
-- 🕹️ User-friendly web interface to manage and trigger mirror jobs
+- 🕹️ Modern user interface with toast notifications and smooth experience
 - 🧠 Smart filtering and job queue with detailed logs
 - 🛠️ Works with personal access tokens (GitHub + Gitea)
+- 🔒 First-time user signup experience with secure authentication
 - 🐳 Fully Dockerized + can be self-hosted in minutes
 - 📊 Dashboard with real-time status updates
 - ⏱️ Scheduled automatic mirroring
@@ -73,7 +74,7 @@ Before running the application in production mode for the first time, you need t
 pnpm init-db
 ```
 
-This will create the necessary tables and a default admin user (username: `admin`, password: `password123`).
+This will create the necessary tables. On first launch, you'll be guided through creating your admin account with a secure password.
 
 ### Installation
 
@@ -166,6 +167,9 @@ pnpm dev
 # Run in development mode with real data (requires configuration)
 pnpm dev:real
 
+# Run in development mode with clean database (removes existing DB first)
+pnpm dev:clean
+
 # Production Mode Options
 
 # Build the application
@@ -180,8 +184,8 @@ pnpm preview:real
 # Start the production server with real data (default)
 pnpm start
 
-# Start the production server with mock data
-pnpm start:mock
+# Start the production server with a clean setup
+pnpm start:fresh
 
 # Database Management
 
@@ -190,6 +194,12 @@ pnpm create-dev-db
 
 # Initialize the database for production mode
 pnpm init-db
+
+# Reset users for testing first-time signup
+pnpm reset-users
+
+# Check database status
+pnpm check-db
 ```
 
 ### Configuration
@@ -369,6 +379,9 @@ This project is now complete with the following features implemented:
 - ✅ Scheduling and automation
 - ✅ Activity logging and monitoring
 - ✅ Responsive design for all screen sizes
+- ✅ Modern toast notifications for better user feedback
+- ✅ First-time user signup experience
+- ✅ Better error handling and user guidance
 - ✅ Comprehensive error handling
 - ✅ Unit tests for components and API
 - ✅ Direct GitHub to Gitea mirroring (no external dependencies)

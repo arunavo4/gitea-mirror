@@ -21,4 +21,14 @@ To initialize the database for real data mode, run:
 pnpm init-db
 ```
 
-This will create the necessary tables and a default admin user (username: admin, password: password123).
+This will create the necessary tables. On first launch, you'll be guided through creating an admin account with your chosen credentials.
+
+## User Management
+
+To reset users (for testing the first-time setup flow), run:
+
+```bash
+pnpm reset-users
+```
+
+This will remove all users and their associated data from the database, allowing you to test the signup flow.
