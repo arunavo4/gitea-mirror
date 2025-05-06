@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { db, repositories, organizations, mirrorJobs, configs } from "@/lib/db";
-import { eq, count, and } from "drizzle-orm";
+import { eq, count, and, sql } from "drizzle-orm";
 import { jsonResponse } from "@/lib/utils";
 import type { DashboardApiResponse } from "@/types/dashboard";
 import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
@@ -34,17 +34,19 @@ export const GET: APIRoute = async ({ request }) => {
         .select()
         .from(repositories)
         .where(eq(repositories.userId, userId))
+        .orderBy(sql`${repositories.updatedAt} DESC`)
         .limit(5),
       db
         .select()
         .from(organizations)
         .where(eq(organizations.userId, userId))
+        .orderBy(sql`${organizations.updatedAt} DESC`)
         .limit(5),
       db
         .select()
         .from(mirrorJobs)
         .where(eq(mirrorJobs.userId, userId))
-        .orderBy(mirrorJobs.timestamp)
+        .orderBy(sql`${mirrorJobs.timestamp} DESC`)
         .limit(5),
       db.select().from(configs).where(eq(configs.userId, userId)).limit(1),
       db
