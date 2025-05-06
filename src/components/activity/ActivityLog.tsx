@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, Download, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/utils";
@@ -14,6 +14,7 @@ import {
 } from "../ui/select";
 import type { RepoStatus } from "@/types/Repository";
 import ActivityList from "./ActivityList";
+import { useSSE } from "@/hooks/useSEE";
 import useFilterParams from "@/hooks/useFilterParams";
 import { toast } from "sonner";
 
@@ -24,6 +25,18 @@ export function ActivityLog() {
   const { filter, setFilter } = useFilterParams({
     searchTerm: "",
     status: "",
+  });
+
+  const handleNewMessage = useCallback((data: MirrorJob) => {
+    setActivities((prevActivities) => [data, ...prevActivities]);
+
+    console.log("Received new log:", data);
+  }, []);
+
+  // Use the SSE hook
+  const { connected } = useSSE({
+    userId: user?.id,
+    onMessage: handleNewMessage,
   });
 
   useEffect(() => {
@@ -104,7 +117,7 @@ export function ActivityLog() {
       <div className="flex flex-col gap-y-6">
         <ActivityList
           activities={activities}
-          isLoading={isLoading}
+          isLoading={isLoading || !connected}
           filter={filter}
           setFilter={setFilter}
         />

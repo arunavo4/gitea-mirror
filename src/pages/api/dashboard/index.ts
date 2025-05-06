@@ -59,9 +59,12 @@ export const GET: APIRoute = async ({ request }) => {
         .where(eq(organizations.userId, userId)),
       db
         .select({ value: count() })
-        .from(mirrorJobs)
+        .from(repositories)
         .where(
-          and(eq(mirrorJobs.userId, userId), eq(mirrorJobs.status, "mirrored"))
+          and(
+            eq(repositories.userId, userId),
+            eq(repositories.status, "mirrored")
+          )
         ),
     ]);
 

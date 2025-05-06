@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Search, RefreshCw, Filter } from "lucide-react";
-import type { Organization } from "@/lib/db/schema";
+import type { MirrorJob, Organization } from "@/lib/db/schema";
 import { OrganizationList } from "./OrganizationsList";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
@@ -17,8 +17,9 @@ import {
   SelectValue,
 } from "../ui/select";
 import type { MirrorOrgRequest, MirrorOrgResponse } from "@/types/mirror";
+import { useSSE } from "@/hooks/useSEE";
 import useFilterParams from "@/hooks/useFilterParams";
-import { toast } from "sonner"; // Import toast
+import { toast } from "sonner";
 
 export function Organization() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -29,6 +30,27 @@ export function Organization() {
     membershipRole: "",
   });
   const [loadingOrgIds, setLoadingOrgIds] = useState<Set<string>>(new Set()); // this is used when the api actions are performed
+
+  // Create a stable callback using useCallback
+  const handleNewMessage = useCallback((data: MirrorJob) => {
+    if (data.organizationId) {
+      setOrganizations((prevOrgs) =>
+        prevOrgs.map((org) =>
+          org.id === data.organizationId
+            ? { ...org, status: data.status, details: data.details }
+            : org
+        )
+      );
+    }
+
+    console.log("Received new log:", data);
+  }, []);
+
+  // Use the SSE hook
+  const { connected } = useSSE({
+    userId: user?.id,
+    onMessage: handleNewMessage,
+  });
 
   useEffect(() => {
     const fetchOrganizations = async () => {
@@ -155,7 +177,7 @@ export function Organization() {
 
       <OrganizationList
         organizations={organizations}
-        isLoading={isLoading}
+        isLoading={isLoading || !connected}
         filter={filter}
         setFilter={setFilter}
         loadingOrgIds={loadingOrgIds}

@@ -127,13 +127,14 @@ async function main() {
       `CREATE TABLE mirror_jobs (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
+  repository_id TEXT,
   repository_name TEXT,
+  organization_id TEXT,
   organization_name TEXT,
   details TEXT,
   status TEXT NOT NULL DEFAULT 'imported',
   message TEXT NOT NULL,
-  timestamp INTEGER NOT NULL DEFAULT (strftime('%s','now')),
-
+  timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 `

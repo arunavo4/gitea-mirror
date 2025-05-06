@@ -103,7 +103,9 @@ export type Repository = z.infer<typeof repositorySchema>;
 export const mirrorJobSchema = z.object({
   id: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
+  repositoryId: z.string().uuid().optional(),
   repositoryName: z.string().optional(),
+  organizationId: z.string().uuid().optional(),
   organizationName: z.string().optional(),
   details: z.string().optional(),
   status: repoStatusEnum.default("imported"),

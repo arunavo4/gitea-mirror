@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GitFork, ExternalLink } from "lucide-react";
 import type { Repository } from "@/lib/db/schema";
+import { getStatusColor } from "@/lib/utils";
 
 interface RepositoryListProps {
   repositories: Repository[];
@@ -87,16 +88,4 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
       </CardContent>
     </Card>
   );
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case "mirrored":
-      return "bg-green-500";
-    case "failed":
-      return "bg-red-500";
-    case "pending":
-    default:
-      return "bg-yellow-500";
-  }
 }

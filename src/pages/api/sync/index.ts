@@ -131,6 +131,7 @@ export const POST: APIRoute = async ({ request }) => {
       ...newRepos.map((repo) =>
         createMirrorJob({
           userId,
+          repositoryId: repo.id,
           repositoryName: repo.name,
           status: "imported",
           message: `Repository ${repo.name} fetched successfully`,
@@ -140,6 +141,7 @@ export const POST: APIRoute = async ({ request }) => {
       ...newOrgs.map((org) =>
         createMirrorJob({
           userId,
+          organizationId: org.id,
           organizationName: org.name,
           status: "imported",
           message: `Organization ${org.name} fetched successfully`,
