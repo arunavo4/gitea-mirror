@@ -1,4 +1,4 @@
-import { db, client } from '../src/lib/db';
+import { db } from '../src/lib/db';
 import { configs } from '../src/lib/db';
 import fs from 'fs';
 import path from 'path';

@@ -1,41 +1,58 @@
 # Scripts Directory
 
-This folder contains utility scripts for database management. Each script is described below to help developers understand its purpose and usage.
+This folder contains utility scripts for database management.
 
-### init-db.ts
-Initializes the SQLite database in the `./data/gitea-mirror.db` location. Creates necessary tables but no longer creates a default admin user. When the application starts with an empty users table, it will automatically redirect to the signup page.
+## Database Management Tool (manage-db.ts)
 
-### check-db.ts
-Validates the existence and integrity of the database. Checks for user accounts and configurations, providing helpful information about what to expect when starting the application.
+This is a consolidated database management tool that handles all database-related operations. It combines the functionality of the previous separate scripts into a single, more intelligent script that can check, fix, and initialize the database as needed.
 
-### reset-users.ts
-Removes all users from the database and their associated data (configurations, repositories, organizations, and jobs). This is useful for testing the first-time user experience or resetting the application to a clean state without recreating the entire database.
+### Features
 
-### fix-db-issues.ts
-Utility script that checks for database files in the wrong locations and moves them to the correct ones. This helps ensure database files are stored in the expected `./data` directory.
+- **Check Mode**: Validates the existence and integrity of the database
+- **Init Mode**: Creates the database only if it doesn't already exist
+- **Fix Mode**: Corrects database file location issues
+- **Reset Users Mode**: Removes all users and their data
+- **Auto Mode**: Automatically checks, fixes, and initializes the database if needed
 
-## Running the Scripts
-You can execute these utility scripts using your package manager. From the project root, run:
+## Running the Database Management Tool
+
+You can execute the database management tool using your package manager with various commands:
 
 ```bash
-# Initialize the database
-pnpm run init-db
+# General database management (shows available commands)
+pnpm manage-db
 
 # Check database status
-pnpm run check-db
+pnpm check-db
+
+# Initialize the database (only if it doesn't exist)
+pnpm init-db
+
+# Fix database location issues
+pnpm fix-db
+
+# Automatic check, fix, and initialize if needed
+pnpm db-auto
 
 # Reset all users (for testing signup flow)
-pnpm run reset-users
+pnpm reset-users
 
-# Remove database files from root directory
-pnpm run cleanup-db
+# Update the database schema to the latest version
+pnpm update-schema
+
+# Remove database files completely
+pnpm cleanup-db
 
 # Complete setup (install dependencies and initialize database)
-pnpm run setup
+pnpm setup
 
 # Start development server with a fresh database
-pnpm run dev:clean
+pnpm dev:clean
 
 # Start production server with a fresh database
-pnpm run start:fresh
+pnpm start:fresh
 ```
+
+## Database File Location
+
+The database file should be located in the `./data/gitea-mirror.db` directory. If the file is found in the root directory, the fix mode will move it to the correct location.
