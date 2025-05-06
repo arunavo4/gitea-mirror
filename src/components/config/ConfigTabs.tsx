@@ -148,21 +148,20 @@ export function ConfigTabs() {
           }
         );
 
-        if (!response.error) {
+        // Check if we have a valid config response
+        if (response && !response.error) {
           setConfig({
-            githubConfig: response.githubConfig,
-            giteaConfig: response.giteaConfig,
-            scheduleConfig: response.scheduleConfig,
+            githubConfig: response.githubConfig || config.githubConfig,
+            giteaConfig: response.giteaConfig || config.giteaConfig,
+            scheduleConfig: response.scheduleConfig || config.scheduleConfig,
           });
         }
+        // If there's an error, we'll just use the default config defined in state
 
         setIsLoading(false);
       } catch (error) {
-        toast.error(
-          `Error fetching configuration: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
+        // Don't show error for first-time users, just use the default config
+        console.warn("Could not fetch configuration, using defaults:", error);
       } finally {
         setIsLoading(false);
       }
