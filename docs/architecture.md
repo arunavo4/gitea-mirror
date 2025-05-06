@@ -118,7 +118,7 @@ The application integrates with:
 ```
 gitea-mirror/
 ├── data/                      # Database files
-│   └── gitea-mirror-dev.db    # Development database with mock data
+│   └── gitea-mirror.db        # SQLite database file
 ├── docs/                      # Documentation
 │   ├── architecture.md        # This document
 │   ├── configuration.md       # Configuration guide
@@ -129,6 +129,9 @@ gitea-mirror/
 ├── src/                       # Source code
 │   ├── components/            # UI components
 │   │   ├── activity/          # Activity log components
+│   │   ├── auth/              # Authentication components
+│   │   │   ├── LoginForm.tsx  # Login component
+│   │   │   └── SignupForm.tsx # Signup component for first-time users 
 │   │   ├── config/            # Configuration components
 │   │   ├── dashboard/         # Dashboard components
 │   │   ├── layout/            # Layout components
@@ -144,14 +147,20 @@ gitea-mirror/
 │   │   └── mirror.ts          # Mirroring utilities
 │   ├── pages/                 # Astro pages
 │   │   ├── api/               # API endpoints
-│   │   │   ├── auth.ts        # Authentication endpoints
-│   │   │   ├── config.ts      # Configuration endpoints
-│   │   │   ├── github.ts      # GitHub integration endpoints
-│   │   │   ├── gitea.ts       # Gitea integration endpoints
-│   │   │   └── mirror.ts      # Mirroring endpoints
+│   │   │   ├── auth/          # Authentication endpoints
+│   │   │   │   ├── index.ts   # User verification endpoints
+│   │   │   │   ├── login.ts   # Login endpoint
+│   │   │   │   ├── logout.ts  # Logout endpoint
+│   │   │   │   └── register.ts # Registration endpoint
+│   │   │   ├── config/        # Configuration endpoints
+│   │   │   ├── github/        # GitHub integration endpoints
+│   │   │   ├── gitea/         # Gitea integration endpoints
+│   │   │   └── sync/          # Data synchronization endpoints
 │   │   ├── activity.astro     # Activity log page
 │   │   ├── config.astro       # Configuration page
 │   │   ├── index.astro        # Dashboard page
+│   │   ├── login.astro        # Login page
+│   │   ├── signup.astro       # Signup page for first-time users
 │   │   ├── organizations.astro # Organizations page
 │   │   └── repositories.astro  # Repositories page
 │   └── styles/                # Global styles
@@ -167,6 +176,13 @@ gitea-mirror/
 ## Key Components
 
 ### Frontend Components
+
+#### Toast Notifications (`src/components/ui/sonner.tsx`)
+The application uses toast notifications to provide feedback to users:
+- Success notifications for completed operations
+- Error notifications for failed operations
+- Information notifications for ongoing processes
+- Consistent UI across all components
 
 #### Dashboard (`src/components/dashboard/Dashboard.tsx`)
 The dashboard provides an overview of the mirroring status, including:
@@ -240,11 +256,12 @@ Defines the database schema using Drizzle ORM:
 
 ### API Endpoints
 
-#### Authentication API (`src/pages/api/auth.ts`)
+#### Authentication API (`src/pages/api/auth/`)
 Handles user authentication:
+- `GET /api/auth`: Checks if any users exist and returns current user status
 - `POST /api/auth/login`: Authenticates a user
-- `POST /api/auth/register`: Registers a new user
-- `GET /api/auth/user`: Gets the current user
+- `POST /api/auth/register`: Registers a new user (first-time setup)
+- `POST /api/auth/logout`: Logs out current user
 
 #### Configuration API (`src/pages/api/config.ts`)
 Handles configuration management:
@@ -328,20 +345,29 @@ Handles mirroring operations:
                                                                       │
 ```
 
+## First-Time User Experience
+
+The application includes a streamlined first-time user experience:
+
+1. **Database Check**: When the application starts, it checks if any users exist in the database
+2. **Signup Flow**: If no users exist, new visitors are redirected to the signup page
+3. **Admin Creation**: The first user created becomes the admin user
+4. **Default Configuration**: Empty configurations are handled gracefully with sensible defaults
+5. **Guided Setup**: Toast notifications and clear UI guide users through the setup process
+
 ## Development and Production Environments
 
 The application supports two environments:
 
 ### Development Environment
-- Uses a pre-populated SQLite database with mock data
-- Controlled by setting `USE_MOCK_DATA=true`
-- Database file: `data/gitea-mirror-dev.db`
-- Ideal for UI development without requiring GitHub/Gitea setup
+- Uses SQLite database for local development and testing
+- Database file: `data/gitea-mirror.db`
+- Configured with `NODE_ENV=development`
 
 ### Production Environment
-- Uses a separate SQLite database for real data
-- Controlled by setting `USE_MOCK_DATA=false`
+- Uses the same SQLite database structure for production use
 - Database file: `data/gitea-mirror.db`
+- Configured with `NODE_ENV=production`
 - Requires proper configuration with GitHub and Gitea credentials
 
 ## Deployment
@@ -360,9 +386,9 @@ docker build -t gitea-mirror:latest .
 # Run in production mode with database persistence
 docker run -d \
   -p 3000:3000 \
-  -v gitea-mirror-prod-data:/app/data \
+  -v gitea-mirror-data:/app/data \
   -e DATABASE_URL=sqlite://data/gitea-mirror.db \
-  -e USE_MOCK_DATA=false \
+  -e NODE_ENV=production \
   --name gitea-mirror \
   gitea-mirror:latest
 ```
@@ -375,9 +401,7 @@ For more complex deployments, Docker Compose is recommended. The docker-compose.
 
 ```yaml
 volumes:
-  gitea-mirror-prod-data:    # Production database volume
-  gitea-mirror-dev-data:     # Development database volume with mock data
-  gitea-mirror-dev-real-data: # Development database volume with real data
+  gitea-mirror-data:    # Database volume
 ```
 
 To start the application with Docker Compose:
@@ -386,11 +410,8 @@ To start the application with Docker Compose:
 # Production mode with database persistence
 docker-compose --profile production up -d
 
-# Development mode with mock data and database persistence
-docker-compose --profile development up -d
-
-# Development mode with real data and database persistence
-docker-compose --profile development-real up -d
+# Development mode with database persistence
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
 Each environment uses its own named volume, ensuring data isolation between different modes while maintaining persistence.

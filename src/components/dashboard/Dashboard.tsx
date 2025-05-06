@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import type { DashboardApiResponse } from "@/types/dashboard";
 import { useSSE } from "@/hooks/useSEE";
+import { toast } from "sonner";
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -77,10 +78,12 @@ export function Dashboard() {
           setMirroredCount(response.mirroredCount);
           setLastSync(response.lastSync);
         } else {
-          console.error("Error fetching dashboard data:", response.error);
+          toast.error(response.error || "Error fetching dashboard data");
         }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Error fetching dashboard data"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -93,14 +96,6 @@ export function Dashboard() {
     <div>loading...</div>
   ) : (
     <div className="flex flex-col gap-y-6">
-      <div className="flex items-center justify-end">
-        {/* <h1 className="text-3xl font-bold">Dashboard</h1> */}
-        <Button>
-          <GitMerge className="mr-2 h-4 w-4" />
-          Start Mirroring
-        </Button>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatusCard
           title="Total Repositories"
@@ -113,7 +108,6 @@ export function Dashboard() {
           value={mirroredCount}
           icon={<GitMerge className="h-4 w-4" />}
           description="Successfully mirrored"
-          trend={{ value: 20, isPositive: true }}
         />
         <StatusCard
           title="Organizations"

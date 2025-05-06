@@ -165,10 +165,43 @@ export const GET: APIRoute = async ({ request }) => {
       .limit(1);
 
     if (config.length === 0) {
+      // Return a default empty configuration instead of a 404 error
       return new Response(
-        JSON.stringify({ error: "Configuration not found" }),
+        JSON.stringify({
+          id: null,
+          userId: userId,
+          name: "Default Configuration",
+          isActive: true,
+          githubConfig: {
+            username: "",
+            token: "",
+            skipForks: false,
+            privateRepositories: false,
+            mirrorIssues: false,
+            mirrorStarred: true,
+            mirrorOrganizations: true,
+            onlyMirrorOrgs: false,
+            useSpecificUser: false,
+            preserveOrgStructure: true,
+            skipStarredIssues: false,
+          },
+          giteaConfig: {
+            url: "",
+            token: "",
+            username: "",
+            organization: "github-mirrors",
+            visibility: "public",
+            starredReposOrg: "github",
+          },
+          scheduleConfig: {
+            enabled: false,
+            interval: 3600,
+            lastRun: null,
+            nextRun: null,
+          },
+        }),
         {
-          status: 404,
+          status: 200,
           headers: { "Content-Type": "application/json" },
         }
       );

@@ -14,8 +14,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Search, Filter, RefreshCw } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
-import { useFilterParams } from "@/hooks/useFilterParams";
 import { useSSE } from "@/hooks/useSEE";
+import useFilterParams from "@/hooks/useFilterParams";
+import { toast } from "sonner";
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -66,13 +67,14 @@ export default function Repository() {
         );
 
         if (response.success) {
-          console.log("Repositories:", response.repositories);
           setRepositories(response.repositories);
         } else {
-          console.error("Error fetching repositories:", response.error);
+          toast.error(response.error || "Error fetching repositories");
         }
       } catch (error) {
-        console.error("Error fetching repositories:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Error fetching repositories"
+        );
       } finally {
         setIsLoading(false);
       }
@@ -97,13 +99,15 @@ export default function Repository() {
       );
 
       if (response.success) {
-        console.log("Repositories:", response.repositories);
         setRepositories(response.repositories);
+        toast.success("Repositories refreshed successfully.");
       } else {
-        console.error("Error fetching repositories:", response.error);
+        toast.error(response.error || "Error refreshing repositories");
       }
     } catch (error) {
-      console.error("Error fetching repositories:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Error refreshing repositories"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +135,7 @@ export default function Repository() {
       );
 
       if (response.success) {
-        console.log("Mirror job started successfully:", response);
+        toast.success(`Mirroring started for repository ID: ${repoId}`);
         setRepositories((prevRepos) =>
           prevRepos.map((repo) => {
             const updated = response.repositories.find((r) => r.id === repo.id);
@@ -139,10 +143,10 @@ export default function Repository() {
           })
         );
       } else {
-        console.error("Error mirroring repository:", response.error);
+        toast.error(response.error || "Error starting mirror job");
       }
     } catch (error) {
-      console.error("Error mirroring repository:", error);
+      toast.error(error instanceof Error ? error.message : "Error starting mirror job");
     } finally {
       setLoadingRepoIds((prev) => {
         const newSet = new Set(prev);
@@ -154,8 +158,9 @@ export default function Repository() {
 
   return (
     <div className="flex flex-col gap-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative w-full sm:w-md">
+      {/* Combine search and actions into a single flex row */}
+      <div className="flex flex-row items-center gap-4 w-full">
+        <div className="relative flex-grow"> {/* Use flex-grow for search */}
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
@@ -168,8 +173,7 @@ export default function Repository() {
           />
         </div>
 
-        <div className="flex gap-x-4">
-          <Select
+        <Select
             value={filter.status || "all"}
             onValueChange={(value) =>
               setFilter((prev) => ({
@@ -192,16 +196,15 @@ export default function Repository() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline">
+        <Button variant="outline">
             <Filter className="h-4 w-4 mr-2" />
             More Filters
           </Button>
 
-          <Button variant="default" onClick={handleRefresh}>
+        <Button variant="default" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-        </div>
       </div>
 
       <RepositoryTable

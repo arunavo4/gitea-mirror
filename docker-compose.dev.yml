@@ -36,24 +36,7 @@ services:
       retries: 3
       start_period: 10s
 
-  # Development database setup
-  gitea-mirror-db-setup:
-    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE:-arunavo4/gitea-mirror}:${DOCKER_TAG:-latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      platforms:
-        - linux/amd64
-        - linux/arm64
-    container_name: gitea-mirror-db-setup
-    volumes:
-      - gitea-mirror-dev-data:/app/data
-    command: pnpm create-dev-db
-    networks:
-      - gitea-network
-    profiles: ["with-mock-data"]
-
-  # Development service with mock data
+  # Development service connected to local Gitea
   gitea-mirror-dev:
     image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE:-arunavo4/gitea-mirror}:${DOCKER_TAG:-latest}
     build:
@@ -67,48 +50,13 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - gitea-mirror-dev-data:/app/data
-    environment:
-      - NODE_ENV=development
-      - DATABASE_URL=sqlite://data/gitea-mirror-dev.db
-      - HOST=0.0.0.0
-      - PORT=3000
-      - JWT_SECRET=dev-secret-key
-      - USE_MOCK_DATA=true
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-    depends_on:
-      - gitea-mirror-db-setup
-    networks:
-      - gitea-network
-    profiles: ["with-mock-data"]
-
-  # Development service with real data connected to local Gitea
-  gitea-mirror-dev-real:
-    image: ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE:-arunavo4/gitea-mirror}:${DOCKER_TAG:-latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      platforms:
-        - linux/amd64
-        - linux/arm64
-    container_name: gitea-mirror-dev-real
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - gitea-mirror-dev-real-data:/app/data
+      - gitea-mirror-data:/app/data
     environment:
       - NODE_ENV=development
       - DATABASE_URL=sqlite://data/gitea-mirror.db
       - HOST=0.0.0.0
       - PORT=3000
       - JWT_SECRET=dev-secret-key
-      - USE_MOCK_DATA=false
       - GITHUB_TOKEN=${GITHUB_TOKEN:-your-github-token}
       - GITHUB_USERNAME=${GITHUB_USERNAME:-your-github-username}
       - GITEA_URL=http://gitea:3000
@@ -125,18 +73,12 @@ services:
         condition: service_healthy
     networks:
       - gitea-network
-    profiles: ["with-real-data"]
 
 # Define named volumes for data persistence
 volumes:
-  gitea-data:
-    # Gitea data volume
-  gitea-config:
-    # Gitea config volume
-  gitea-mirror-dev-data:
-    # Development database volume with mock data
-  gitea-mirror-dev-real-data:
-    # Development database volume with real data
+  gitea-data:    # Gitea data volume
+  gitea-config:  # Gitea config volume
+  gitea-mirror-data:  # Gitea Mirror database volume
 
 # Define networks
 networks:

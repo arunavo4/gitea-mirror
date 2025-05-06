@@ -31,15 +31,6 @@ export interface GitHubConfig {
   skipStarredIssues: boolean;
 }
 
-export interface MockData {
-  repositories: any[];
-  activities: any[];
-  organizations: any[];
-  githubConfig: GitHubConfig;
-  giteaConfig: GiteaConfig;
-  scheduleConfig: ScheduleConfig;
-}
-
 export interface SaveConfigApiRequest {
   userId: string;
   githubConfig: GitHubConfig;

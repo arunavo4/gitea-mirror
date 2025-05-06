@@ -21,6 +21,7 @@ import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import { Copy, CopyCheck, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 type ConfigState = {
   githubConfig: GitHubConfig;
@@ -43,7 +44,6 @@ export function ConfigTabs() {
       skipStarredIssues: false,
     },
 
-    // Mock Gitea config
     giteaConfig: {
       url: "",
       username: "",
@@ -53,7 +53,6 @@ export function ConfigTabs() {
       starredReposOrg: "github",
     },
 
-    // Mock schedule config
     scheduleConfig: {
       enabled: false,
       interval: 3600,
@@ -65,7 +64,7 @@ export function ConfigTabs() {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  const handleSyncData = async () => {
+  const handleImportGitHubData = async () => {
     try {
       if (!user?.id) return;
 
@@ -79,37 +78,15 @@ export function ConfigTabs() {
       );
 
       if (result.success) {
-        console.log("Sync data successfully:", result);
-        document.dispatchEvent(
-          new CustomEvent("show-toast", {
-            detail: {
-              message: "Data synced successfully!",
-              type: "success",
-            },
-          })
-        );
+        toast.success("GitHub data imported successfully! Head to the Dashboard to start mirroring repositories.");
       } else {
-        console.log("Failed to sync data:", result);
-        document.dispatchEvent(
-          new CustomEvent("show-toast", {
-            detail: {
-              message: `Failed to sync data: ${result.message}`,
-              type: "error",
-            },
-          })
-        );
+        toast.error(`Failed to import GitHub data: ${result.message || "Unknown error"}`);
       }
     } catch (error) {
-      console.error("Error syncing data:", error);
-      document.dispatchEvent(
-        new CustomEvent("show-toast", {
-          detail: {
-            message: `Error syncing data: ${
-              error instanceof Error ? error.message : String(error)
-            }`,
-            type: "error",
-          },
-        })
+      toast.error(
+        `Error importing GitHub data: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     } finally {
       setIsSyncing(false);
@@ -128,8 +105,6 @@ export function ConfigTabs() {
         giteaConfig: config.giteaConfig,
         scheduleConfig: config.scheduleConfig,
       };
-      console.log("Saving config:", reqPyload);
-      // Save the Schedule config to the database
       const response = await fetch("/api/config", {
         method: "POST",
         headers: {
@@ -140,35 +115,17 @@ export function ConfigTabs() {
 
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
-        document.dispatchEvent(
-          new CustomEvent("show-toast", {
-            detail: {
-              message: "Schedule configuration saved successfully!",
-              type: "success",
-            },
-          })
-        );
-        // Configuration saved; form state is preserved without reload
+        toast.success("Configuration saved successfully! Now import your GitHub data to begin.");
       } else {
-        document.dispatchEvent(
-          new CustomEvent("show-toast", {
-            detail: {
-              message: `Failed to save Schedule configuration: ${result.message}`,
-              type: "error",
-            },
-          })
+        toast.error(
+          `Failed to save configuration: ${result.message || "Unknown error"}`
         );
       }
     } catch (error) {
-      console.error("Error saving Schedule config:", error);
-      document.dispatchEvent(
-        new CustomEvent("show-toast", {
-          detail: {
-            message:
-              "An error occurred while saving the Schedule configuration.",
-            type: "error",
-          },
-        })
+      toast.error(
+        `An error occurred while saving the configuration: ${
+          error instanceof Error ? error.message : String(error)
+        }`
       );
     }
   };
@@ -189,20 +146,20 @@ export function ConfigTabs() {
           }
         );
 
-        if (!response.error) {
-          console.log("Fetched configuration:", response);
+        // Check if we have a valid config response
+        if (response && !response.error) {
           setConfig({
-            githubConfig: response.githubConfig,
-            giteaConfig: response.giteaConfig,
-            scheduleConfig: response.scheduleConfig,
+            githubConfig: response.githubConfig || config.githubConfig,
+            giteaConfig: response.giteaConfig || config.giteaConfig,
+            scheduleConfig: response.scheduleConfig || config.scheduleConfig,
           });
         }
-
-        console.log("Fetched configuration:", response);
+        // If there's an error, we'll just use the default config defined in state
 
         setIsLoading(false);
       } catch (error) {
-        console.error("Error fetching configuration:", error);
+        // Don't show error for first-time users, just use the default config
+        console.warn("Could not fetch configuration, using defaults:", error);
       } finally {
         setIsLoading(false);
       }
@@ -242,10 +199,11 @@ services:
     navigator.clipboard.writeText(text).then(
       () => {
         setIsCopied(true);
+        toast.success("Docker configuration copied to clipboard!");
         setTimeout(() => setIsCopied(false), 2000);
       },
       (err) => {
-        console.error("Could not copy text: ", err);
+        toast.error("Could not copy text to clipboard.");
       }
     );
   };
@@ -265,16 +223,16 @@ services:
           </div>
 
           <div className="flex gap-x-4">
-            <Button onClick={handleSyncData} disabled={isSyncing}>
+            <Button onClick={handleImportGitHubData} disabled={isSyncing}>
               {isSyncing ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin mr-1" />
-                  Sync Data
+                  Import GitHub Data
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4 mr-1" />
-                  Sync Data
+                  Import GitHub Data
                 </>
               )}
             </Button>
