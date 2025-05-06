@@ -1,58 +1,54 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { MirrorJob } from "@/lib/db/schema";
 
 interface UseSSEOptions {
   userId?: string;
-  onMessage: (message: MirrorJob) => void;
+  onMessage: (data: MirrorJob) => void;
 }
 
 export const useSSE = ({ userId, onMessage }: UseSSEOptions) => {
   const [connected, setConnected] = useState<boolean>(false);
+  const onMessageRef = useRef(onMessage);
 
-  // Memoize the message handler to prevent effect re-runs
-  const handleMessage = useCallback(
-    (event: MessageEvent) => {
-      try {
-        const parsedMessage: MirrorJob = JSON.parse(event.data);
-        onMessage(parsedMessage);
-      } catch (error) {
-        console.error("Error parsing message:", error);
-      }
-    },
-    [onMessage]
-  );
+  // Update the ref when onMessage changes
+  useEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
 
   useEffect(() => {
     if (!userId) return;
 
-    const createEventSource = () => {
-      const eventSource = new EventSource(`/api/sse?userId=${userId}`);
+    const eventSource = new EventSource(`/api/sse?userId=${userId}`);
 
-      eventSource.onopen = () => {
-        setConnected(true);
-        console.log(`Connected to SSE for user: ${userId}`);
-      };
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const parsedMessage: MirrorJob = JSON.parse(event.data);
 
-      eventSource.onmessage = handleMessage; // Use the memoized handler
+        // console.log("Received new log:", parsedMessage);
 
-      eventSource.onerror = () => {
-        console.error("SSE connection error");
-        setConnected(false);
-        eventSource.close();
-        // Retry connection after 5 seconds if there's an error
-        setTimeout(createEventSource, 5000);
-      };
-
-      return eventSource;
+        onMessageRef.current(parsedMessage); // Use ref instead of prop directly
+      } catch (error) {
+        console.error("Error parsing message:", error);
+      }
     };
 
-    const eventSource = createEventSource();
+    eventSource.onmessage = handleMessage;
 
-    // Cleanup on unmount
+    eventSource.onopen = () => {
+      setConnected(true);
+      console.log(`Connected to SSE for user: ${userId}`);
+    };
+
+    eventSource.onerror = () => {
+      console.error("SSE connection error");
+      setConnected(false);
+      eventSource.close();
+    };
+
     return () => {
       eventSource.close();
     };
-  }, [userId, handleMessage]); // Now depends on the memoized handler
+  }, [userId]); // Only depends on userId now
 
   return { connected };
 };

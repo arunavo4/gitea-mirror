@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Search, Filter, Download, RefreshCw } from "lucide-react";
 import { apiRequest } from "@/lib/utils";
@@ -14,7 +14,8 @@ import {
 } from "../ui/select";
 import type { RepoStatus } from "@/types/Repository";
 import ActivityList from "./ActivityList";
-import useFilterParams from "@/hooks/useFilterParams";
+import { useFilterParams } from "@/hooks/useFilterParams";
+import { useSSE } from "@/hooks/useSEE";
 
 export function ActivityLog() {
   const { user } = useAuth();
@@ -25,32 +26,17 @@ export function ActivityLog() {
     status: "",
   });
 
-  useEffect(() => {
-    if (!user || !user.id) return;
+  const handleNewMessage = useCallback((data: MirrorJob) => {
+    setActivities((prevActivities) => [data, ...prevActivities]);
 
-    const eventSource = new EventSource(`/api/sse?userId=${user.id}`);
+    console.log("Received new log:", data);
+  }, []);
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        setActivities((prevActivities) => [data, ...prevActivities]);
-
-        console.log("Received new log:", data);
-      } catch (err) {
-        console.error("Failed to parse SSE data:", err);
-      }
-    };
-
-    eventSource.onerror = () => {
-      console.error("SSE connection error");
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [user]);
+  // Use the SSE hook
+  const { connected } = useSSE({
+    userId: user?.id,
+    onMessage: handleNewMessage,
+  });
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -140,7 +126,7 @@ export function ActivityLog() {
 
         <ActivityList
           activities={activities}
-          isLoading={isLoading}
+          isLoading={isLoading || !connected}
           filter={filter}
           setFilter={setFilter}
         />

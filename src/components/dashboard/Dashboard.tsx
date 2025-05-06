@@ -3,11 +3,12 @@ import { RecentActivity } from "./RecentActivity";
 import { RepositoryList } from "./RepositoryList";
 import { Button } from "@/components/ui/button";
 import { GitFork, Users, GitMerge, Clock } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { MirrorJob, Organization, Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import type { DashboardApiResponse } from "@/types/dashboard";
+import { useSSE } from "@/hooks/useSEE";
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -20,50 +21,36 @@ export function Dashboard() {
   const [mirroredCount, setMirroredCount] = useState<number>(0);
   const [lastSync, setLastSync] = useState<Date | null>(null);
 
-  useEffect(() => {
-    if (!user || !user.id) return;
+  // Create a stable callback using useCallback
+  const handleNewMessage = useCallback((data: MirrorJob) => {
+    if (data.repositoryId) {
+      setRepositories((prevRepos) =>
+        prevRepos.map((repo) =>
+          repo.id === data.repositoryId
+            ? { ...repo, status: data.status, details: data.details }
+            : repo
+        )
+      );
+    } else if (data.organizationId) {
+      setOrganizations((prevOrgs) =>
+        prevOrgs.map((org) =>
+          org.id === data.organizationId
+            ? { ...org, status: data.status, details: data.details }
+            : org
+        )
+      );
+    }
 
-    const eventSource = new EventSource(`/api/sse?userId=${user.id}`);
+    setActivities((prevActivities) => [data, ...prevActivities]);
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
+    console.log("Received new log:", data);
+  }, []);
 
-        if (data.repositoryId) {
-          setRepositories((prevRepos) =>
-            prevRepos.map((repo) =>
-              repo.id === data.repositoryId
-                ? { ...repo, status: data.status, details: data.details }
-                : repo
-            )
-          );
-        } else if (data.organizationId) {
-          setOrganizations((prevOrgs) =>
-            prevOrgs.map((org) =>
-              org.id === data.organizationId
-                ? { ...org, status: data.status, details: data.details }
-                : org
-            )
-          );
-        }
-
-        setActivities((prevActivities) => [data, ...prevActivities]);
-
-        console.log("Received new log:", data);
-      } catch (err) {
-        console.error("Failed to parse SSE data:", err);
-      }
-    };
-
-    eventSource.onerror = () => {
-      console.error("SSE connection error");
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [user]);
+  // Use the SSE hook
+  const { connected } = useSSE({
+    userId: user?.id,
+    onMessage: handleNewMessage,
+  });
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -102,7 +89,7 @@ export function Dashboard() {
     fetchDashboardData();
   }, [user]);
 
-  return isLoading ? (
+  return isLoading || !connected ? (
     <div>loading...</div>
   ) : (
     <div className="flex flex-col gap-y-6">

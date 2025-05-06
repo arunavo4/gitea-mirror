@@ -3,7 +3,7 @@ import type { MembershipRole } from "@/types/organizations";
 import type { RepoStatus } from "@/types/Repository";
 import type { FilterParams } from "@/types/filter";
 
-const useFilterParams = (defaultFilters: FilterParams) => {
+export const useFilterParams = (defaultFilters: FilterParams) => {
   // Helper function to get the initial filter state from URL parameters
   const getInitialFilter = (): FilterParams => {
     if (typeof window === "undefined") {
@@ -49,5 +49,3 @@ const useFilterParams = (defaultFilters: FilterParams) => {
     setFilter,
   };
 };
-
-export default useFilterParams;

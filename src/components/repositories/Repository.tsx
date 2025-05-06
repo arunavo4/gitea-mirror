@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RepositoryTable } from "./RepositoryTable";
-import type { Repository } from "@/lib/db/schema";
+import type { MirrorJob, Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
 import type { RepositoryApiResponse, RepoStatus } from "@/types/Repository";
 import { apiRequest } from "@/lib/utils";
@@ -14,7 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Search, Filter, RefreshCw } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
-import useFilterParams from "@/hooks/useFilterParams";
+import { useFilterParams } from "@/hooks/useFilterParams";
+import { useSSE } from "@/hooks/useSEE";
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -27,40 +28,26 @@ export default function Repository() {
 
   const [loadingRepoIds, setLoadingRepoIds] = useState<Set<string>>(new Set()); // this is used when the api actions are performed
 
-  useEffect(() => {
-    if (!user || !user.id) return;
+  // Create a stable callback using useCallback
+  const handleNewMessage = useCallback((data: MirrorJob) => {
+    if (data.repositoryId) {
+      setRepositories((prevRepos) =>
+        prevRepos.map((repo) =>
+          repo.id === data.repositoryId
+            ? { ...repo, status: data.status, details: data.details }
+            : repo
+        )
+      );
+    }
 
-    const eventSource = new EventSource(`/api/sse?userId=${user.id}`);
+    console.log("Received new log:", data);
+  }, []);
 
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.repositoryId) {
-          setRepositories((prevRepos) =>
-            prevRepos.map((repo) =>
-              repo.id === data.repositoryId
-                ? { ...repo, status: data.status, details: data.details }
-                : repo
-            )
-          );
-        }
-
-        console.log("Received new log:", data);
-      } catch (err) {
-        console.error("Failed to parse SSE data:", err);
-      }
-    };
-
-    eventSource.onerror = () => {
-      console.error("SSE connection error");
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [user]);
+  // Use the SSE hook
+  const { connected } = useSSE({
+    userId: user?.id,
+    onMessage: handleNewMessage,
+  });
 
   useEffect(() => {
     const fetchRepositories = async () => {
@@ -219,7 +206,7 @@ export default function Repository() {
 
       <RepositoryTable
         repositories={repositories}
-        isLoading={isLoading}
+        isLoading={isLoading || !connected}
         filter={filter}
         setFilter={setFilter}
         onMirror={handleMirrorRepo}
