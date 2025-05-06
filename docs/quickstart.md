@@ -35,15 +35,15 @@ Before you begin, make sure you have:
    cd gitea-mirror
    ```
 
-2. Quick setup for development:
+2. Quick setup:
    ```bash
-   pnpm setup:dev
+   pnpm setup
    ```
-   This installs dependencies and creates the development database.
+   This installs dependencies and initializes the database.
 
 3. Choose how to run the application:
 
-   **Development Mode (with mock data):**
+   **Development Mode:**
    ```bash
    pnpm dev
    ```

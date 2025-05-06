@@ -34,11 +34,10 @@ The following environment variables can be used to configure Gitea Mirror:
 | Variable | Description | Default Value | Example |
 |----------|-------------|---------------|---------|
 | `NODE_ENV` | Node environment (development, production, test) | `development` | `production` |
-| `DATABASE_URL` | SQLite database URL | `sqlite://data/gitea-mirror.db` or `sqlite://data/gitea-mirror-dev.db` | `sqlite://path/to/your/database.db` |
+| `DATABASE_URL` | SQLite database URL | `sqlite://data/gitea-mirror.db` | `sqlite://path/to/your/database.db` |
 | `JWT_SECRET` | Secret key for JWT authentication | `your-secret-key-change-this-in-production` | `your-secure-random-string` |
 | `HOST` | Server host | `localhost` | `0.0.0.0` |
 | `PORT` | Server port | `3000` | `8080` |
-| `USE_MOCK_DATA` | Whether to use mock data (development mode) | `true` in development, `false` in production | `false` |
 
 ### Important Security Note
 
@@ -116,43 +115,26 @@ Patterns support wildcards:
 
 ### Development Mode
 
-In development mode (`USE_MOCK_DATA=true`), Gitea Mirror uses a pre-populated database with mock data:
-
-- Sample repositories
-- Sample organizations
-- Sample mirror jobs and activity logs
-- Default configuration
-- Test user account (username: `admin`, password: `password`)
-
-This allows developers to work on the UI without setting up GitHub and Gitea accounts.
+In development mode, Gitea Mirror runs with hot reloading for easier development:
 
 **Available Scripts:**
 
 ```bash
-# Run in development mode with mock data
+# Run in development mode
 pnpm dev
-
-# Preview production build with mock data
-pnpm preview:mock
-
-# Start production server with mock data
-pnpm start:mock
 ```
 
 ### Production Mode
 
-In production mode (`USE_MOCK_DATA=false`), Gitea Mirror requires proper configuration:
+In production mode, Gitea Mirror runs optimized code:
 
 **Available Scripts:**
 
 ```bash
-# Run in development mode with real data
-pnpm dev:real
+# Preview production build
+pnpm preview
 
-# Preview production build with real data
-pnpm preview:real
-
-# Start production server with real data
+# Start production server
 pnpm start
 ```
 
@@ -171,32 +153,29 @@ services:
   gitea-mirror:
     # ...
     volumes:
-      - gitea-mirror-prod-data:/app/data  # For database persistence
+      - gitea-mirror-data:/app/data  # For database persistence
     environment:
       - NODE_ENV=production
       - DATABASE_URL=sqlite://data/gitea-mirror.db
       - HOST=0.0.0.0
       - PORT=3000
       - JWT_SECRET=your-secure-random-string
-      - USE_MOCK_DATA=false
 
 # Define named volumes for database persistence
 volumes:
-  gitea-mirror-prod-data:  # Production database volume
+  gitea-mirror-data:  # Database volume
 ```
 
 ### Database Persistence
 
-To ensure your data persists across container restarts and updates, Gitea Mirror uses Docker volumes:
+To ensure your data persists across container restarts and updates, Gitea Mirror uses a Docker volume:
 
-- **Production Mode**: Uses the `gitea-mirror-prod-data` volume
-- **Development Mode**: Uses the `gitea-mirror-dev-data` volume
-- **Development-Real Mode**: Uses the `gitea-mirror-dev-real-data` volume
+- Uses the `gitea-mirror-data` volume for database persistence
 
 These volumes are automatically created when you use docker-compose. If you're using Docker CLI directly, you need to create the volumes manually:
 
 ```bash
-docker volume create gitea-mirror-prod-data
+docker volume create gitea-mirror-data
 ```
 
 ## Troubleshooting

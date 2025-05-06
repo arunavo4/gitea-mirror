@@ -44,7 +44,6 @@ export function ConfigTabs() {
       skipStarredIssues: false,
     },
 
-    // Mock Gitea config
     giteaConfig: {
       url: "",
       username: "",
@@ -54,7 +53,6 @@ export function ConfigTabs() {
       starredReposOrg: "github",
     },
 
-    // Mock schedule config
     scheduleConfig: {
       enabled: false,
       interval: 3600,

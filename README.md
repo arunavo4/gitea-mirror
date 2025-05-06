@@ -37,27 +37,20 @@ See the [Quick Start Guide](docs/quickstart.md) for detailed instructions on get
 - A GitHub account with a personal access token
 - A Gitea instance with an access token
 
-### Development vs Production Mode
+### Development and Production Mode
 
 The application can run in two modes:
 
-- **Development Mode**: Uses a pre-populated development database with mock data for UI development without requiring actual GitHub/Gitea setup
-- **Production Mode**: Uses a separate production database and requires proper configuration to connect to real GitHub/Gitea instances
+- **Development Mode**: For local development and testing (`NODE_ENV=development`)
+- **Production Mode**: For real-world deployment (`NODE_ENV=production`)
 
-The mode is controlled by the `USE_MOCK_DATA` environment variable:
-- Set to `true` for development mode with the mock database
-- Set to `false` for production mode with the real database
+The application uses the same database structure for both modes.
 
-#### Development Database
+#### Database
 
-The development database (`data/gitea-mirror-dev.db`) is pre-populated with mock data including:
-- Sample repositories
-- Sample organizations
-- Sample mirror jobs and activity logs
-- Default configuration
-- Test user account (username: `admin`, password: `password`)
+The database (`data/gitea-mirror.db`) is created when the application first runs. It starts empty and is populated as you configure and use the application.
 
-This allows developers to immediately start working on the UI without setting up GitHub and Gitea accounts.
+**Note**: On first launch, you'll be guided through creating an admin account with your chosen credentials.
 
 #### Production Database
 
@@ -88,36 +81,24 @@ Gitea Mirror provides multi-architecture Docker images that work on both ARM64 (
 # Pull the latest multi-architecture image
 docker pull ghcr.io/arunavo4/gitea-mirror:latest
 
-# Run in production mode (real data)
+# Run the application
 docker run -d \
   -p 3000:3000 \
-  -v gitea-mirror-prod-data:/app/data \
+  -v gitea-mirror-data:/app/data \
   -e DATABASE_URL=sqlite://data/gitea-mirror.db \
-  -e USE_MOCK_DATA=false \
+  -e NODE_ENV=production \
   --name gitea-mirror \
-  ghcr.io/arunavo4/gitea-mirror:latest
-
-# Or run in development mode (mock data)
-docker run -d \
-  -p 3000:3000 \
-  -v gitea-mirror-dev-data:/app/data \
-  -e USE_MOCK_DATA=true \
-  --name gitea-mirror-dev \
   ghcr.io/arunavo4/gitea-mirror:latest
 ```
 
 ##### Using Docker Compose (Recommended)
 
 ```bash
-# For production mode with real data
+# Start the application using Docker Compose
 docker-compose --profile production up -d
 
-# For development mode with mock data
-# This will automatically create and populate the development database
-docker-compose --profile development up -d
-
-# For development mode with real data (requires configuration)
-docker-compose --profile development-real up -d
+# For development mode (requires configuration)
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
 ##### Building Your Own Image
@@ -130,9 +111,8 @@ docker build -t gitea-mirror:latest .
 docker buildx create --name multiarch --driver docker-container --use
 docker buildx build --platform linux/amd64,linux/arm64 -t gitea-mirror:latest .
 
-# Create named volumes for database persistence
-docker volume create gitea-mirror-prod-data
-docker volume create gitea-mirror-dev-data
+# Create a named volume for database persistence
+docker volume create gitea-mirror-data
 ```
 
 ##### Environment Variables
@@ -141,7 +121,6 @@ The Docker container can be configured with the following environment variables:
 
 - `NODE_ENV`: Set to `production` or `development`
 - `DATABASE_URL`: SQLite database URL (default: `sqlite://data/gitea-mirror.db`)
-- `USE_MOCK_DATA`: Set to `true` for development mode with mock data, `false` for production
 - `HOST`: Host to bind to (default: `0.0.0.0`)
 - `PORT`: Port to listen on (default: `3000`)
 - `JWT_SECRET`: Secret for JWT token generation (required in production)
@@ -153,19 +132,13 @@ The Docker container can be configured with the following environment variables:
 git clone https://github.com/arunavo4/gitea-mirror.git
 cd gitea-mirror
 
-# Quick setup for development (installs dependencies and creates dev database)
-pnpm setup:dev
-
-# Quick setup for production (installs dependencies and initializes the database)
-pnpm setup:real
+# Quick setup (installs dependencies and initializes the database)
+pnpm setup
 
 # Development Mode Options
 
-# Run in development mode with mock data (default)
+# Run in development mode
 pnpm dev
-
-# Run in development mode with real data (requires configuration)
-pnpm dev:real
 
 # Run in development mode with clean database (removes existing DB first)
 pnpm dev:clean
@@ -175,13 +148,10 @@ pnpm dev:clean
 # Build the application
 pnpm build
 
-# Preview the production build with mock data
-pnpm preview:mock
+# Preview the production build
+pnpm preview
 
-# Preview the production build with real data
-pnpm preview:real
-
-# Start the production server with real data (default)
+# Start the production server (default)
 pnpm start
 
 # Start the production server with a clean setup
@@ -189,10 +159,7 @@ pnpm start:fresh
 
 # Database Management
 
-# Create/regenerate the development database with mock data
-pnpm create-dev-db
-
-# Initialize the database for production mode
+# Initialize the database
 pnpm init-db
 
 # Reset users for testing first-time signup
@@ -261,11 +228,8 @@ Gitea Mirror follows a modular architecture with clear separation of concerns. S
 # Install dependencies
 pnpm install
 
-# Start the development server with mock data
+# Start the development server
 pnpm dev
-
-# Or start with real data (requires configuration)
-pnpm dev:real
 ```
 
 ### Setting Up a Local Gitea Instance for Testing
@@ -312,12 +276,11 @@ After Gitea is running:
 ```bash
 # Run Gitea Mirror connected to the local Gitea instance
 docker run -d \
-  --name gitea-mirror-dev-real \
+  --name gitea-mirror-dev \
   --network gitea-network \
   -p 3000:3000 \
-  -v gitea-mirror-dev-real-data:/app/data \
+  -v gitea-mirror-data:/app/data \
   -e NODE_ENV=development \
-  -e USE_MOCK_DATA=false \
   -e JWT_SECRET=dev-secret-key \
   -e GITHUB_TOKEN=your-github-token \
   -e GITHUB_USERNAME=your-github-username \
@@ -334,11 +297,8 @@ This setup allows you to test the full mirroring functionality with a local Gite
 For convenience, a dedicated development docker-compose file is provided that sets up both Gitea Mirror and a local Gitea instance:
 
 ```bash
-# Start with mock data (no Gitea instance)
-docker-compose -f docker-compose.dev.yml --profile with-mock-data up -d
-
-# Start with real data and local Gitea instance
-docker-compose -f docker-compose.dev.yml --profile with-real-data up -d
+# Start with development environment and local Gitea instance
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
 You can also create a `.env` file with your GitHub and Gitea credentials:
