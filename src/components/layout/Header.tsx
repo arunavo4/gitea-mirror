@@ -3,9 +3,17 @@ import { Button } from "@/components/ui/button";
 import { GitMerge } from "lucide-react";
 import { ModeToggle } from "@/components/theme/ModeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { toast } from "sonner";
 
 export function Header() {
   const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    toast.success("Logged out successfully");
+    // Small delay to show the toast before redirecting
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    logout();
+  };
 
   return (
     <header className="border-b bg-background">
@@ -26,7 +34,7 @@ export function Header() {
                   {user.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <Button variant="outline" size="lg" onClick={() => logout()}>
+              <Button variant="outline" size="lg" onClick={handleLogout}>
                 Logout
               </Button>
             </>
