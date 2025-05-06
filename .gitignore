@@ -19,8 +19,6 @@ pnpm-debug.log*
 
 # database files
 data/gitea-mirror.db
-# Keep the development database
-!data/gitea-mirror-dev.db
 
 # macOS-specific files
 .DS_Store
