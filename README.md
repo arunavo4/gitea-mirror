@@ -87,6 +87,7 @@ docker run -d \
   -v gitea-mirror-data:/app/data \
   -e DATABASE_URL=sqlite://data/gitea-mirror.db \
   -e NODE_ENV=production \
+  -e JWT_SECRET=your-secret-key-change-this-in-production \
   --name gitea-mirror \
   ghcr.io/arunavo4/gitea-mirror:latest
 ```
@@ -101,7 +102,32 @@ docker-compose --profile production up -d
 docker-compose -f docker-compose.dev.yml up -d
 ```
 
+##### Building Docker Images Manually
+
+The project includes a build script to create and manage multi-architecture Docker images:
+
+```bash
+# Copy example environment file if you don't have one
+cp .env.example .env
+
+# Edit .env file with your preferred settings
+# DOCKER_REGISTRY, DOCKER_IMAGE, DOCKER_TAG, etc.
+
+# Build and load into local Docker
+./scripts/build-docker.sh --load
+
+# OR: Build and push to a registry (requires authentication)
+./scripts/build-docker.sh --push
+
+# Then run with Docker Compose
+docker-compose --profile production up -d
+```
+
+See [Docker build documentation](./scripts/README-docker.md) for more details.
+
 ##### Building Your Own Image
+
+For manual Docker builds (without the helper script):
 
 ```bash
 # Build the Docker image for your current architecture
@@ -109,7 +135,15 @@ docker build -t gitea-mirror:latest .
 
 # Build multi-architecture images (requires Docker Buildx)
 docker buildx create --name multiarch --driver docker-container --use
-docker buildx build --platform linux/amd64,linux/arm64 -t gitea-mirror:latest .
+docker buildx build --platform linux/amd64,linux/arm64 -t gitea-mirror:latest --load .
+
+# If you encounter issues with Buildx, you can try these workarounds:
+# 1. Retry with network settings
+docker buildx build --platform linux/amd64,linux/arm64 -t gitea-mirror:latest --network=host --load .
+
+# 2. Build one platform at a time if you're having resource issues
+docker buildx build --platform linux/amd64 -t gitea-mirror:amd64 --load .
+docker buildx build --platform linux/arm64 -t gitea-mirror:arm64 --load .
 
 # Create a named volume for database persistence
 docker volume create gitea-mirror-data
@@ -123,6 +157,18 @@ The Docker container can be configured with the following environment variables:
 - `DATABASE_URL`: SQLite database URL (default: `sqlite://data/gitea-mirror.db`)
 - `HOST`: Host to bind to (default: `0.0.0.0`)
 - `PORT`: Port to listen on (default: `3000`)
+- `JWT_SECRET`: Secret key for JWT token generation (important for security)
+
+##### Troubleshooting Docker Builds
+
+If you encounter Docker build issues (especially in GitHub Actions):
+
+1. **Network Issues**: Try using `--network=host` flag
+2. **Memory Issues**: Build one platform at a time
+3. **GitHub 502 Errors**: Use the stable workflow with retry options
+4. **Local Build Issues**: Check Docker Desktop resources (increase memory/CPU)
+
+See [Troubleshooting Documentation](./.github/workflows/TROUBLESHOOTING.md) for more details.
 - `JWT_SECRET`: Secret for JWT token generation (required in production)
 
 #### Manual Installation

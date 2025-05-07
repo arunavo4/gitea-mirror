@@ -1,0 +1,217 @@
+name: Build and Push Docker Images (Stable)
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      retry_mode:
+        description: 'Retry Mode (for troubleshooting)'
+        type: choice
+        required: true
+        default: 'normal'
+        options:
+          - normal
+          - safe
+          - aggressive
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Determine Retry Mode
+        id: retry
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ github.event.inputs.retry_mode }}" >> $GITHUB_OUTPUT
+          else
+            echo "mode=normal" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Safe mode: Use version 2 actions instead of newest
+      - name: Set up QEMU (Safe Mode)
+        if: steps.retry.outputs.mode == 'safe'
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: 'arm64,amd64'
+
+      - name: Set up Docker Buildx (Safe Mode)
+        if: steps.retry.outputs.mode == 'safe'
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
+
+      # Normal mode: Use version 3 actions with retry
+      - name: Set up QEMU (Normal Mode)
+        id: qemu_normal
+        if: steps.retry.outputs.mode == 'normal'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: 'arm64,amd64'
+        continue-on-error: true
+      
+      - name: Retry QEMU setup (Normal Mode)
+        if: steps.retry.outputs.mode == 'normal' && steps.qemu_normal.outcome == 'failure'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: 'arm64,amd64'
+
+      - name: Set up Docker Buildx (Normal Mode)
+        id: buildx_normal
+        if: steps.retry.outputs.mode == 'normal'
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+        continue-on-error: true
+      
+      - name: Retry Buildx setup (Normal Mode)
+        if: steps.retry.outputs.mode == 'normal' && steps.buildx_normal.outcome == 'failure'
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      # Aggressive mode: Use direct commands instead of actions
+      - name: Set up QEMU and Buildx (Aggressive Mode)
+        if: steps.retry.outputs.mode == 'aggressive'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu qemu-user-static
+          docker buildx create --use
+          docker buildx inspect --bootstrap
+      
+      # Cache setup is the same for all modes
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      # Docker login with retry
+      - name: Log in to GitHub Container Registry
+        id: login
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+      
+      - name: Retry GitHub login
+        if: github.event_name != 'pull_request' && steps.login.outcome == 'failure'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      # Extract metadata for all modes
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=long
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+
+      # Build with different strategies based on mode
+      - name: Build and push (Safe Mode)
+        if: steps.retry.outputs.mode == 'safe'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          provenance: false
+
+      - name: Build and push (Normal Mode)
+        id: docker_build_normal
+        if: steps.retry.outputs.mode == 'normal'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: |
+            type=local,src=/tmp/.buildx-cache
+            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          provenance: false
+        continue-on-error: true
+
+      - name: Retry build (Normal Mode)
+        if: steps.retry.outputs.mode == 'normal' && steps.docker_build_normal.outcome == 'failure'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          provenance: false
+
+      # Aggressive mode uses direct commands
+      - name: Build and push (Aggressive Mode)
+        if: steps.retry.outputs.mode == 'aggressive'
+        run: |
+          set -x
+          TAGS=""
+          for tag in $(echo "${{ steps.meta.outputs.tags }}" | tr '\n' ' '); do
+            TAGS="$TAGS -t $tag"
+          done
+          
+          DOCKER_BUILDKIT=1 docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            $TAGS \
+            --output=type=registry,push=${{ github.event_name != 'pull_request' }} \
+            .
+
+      # Move cache for all modes
+      - name: Move cache
+        if: always()
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
+          
+      # Add summary
+      - name: Job Summary
+        if: always()
+        run: |
+          echo "# Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Platforms: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
+          echo "- Push status: ${{ github.event_name != 'pull_request' && 'Pushed to registry' || 'Not pushed (PR build)' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Mode: ${{ steps.retry.outputs.mode }}" >> $GITHUB_STEP_SUMMARY

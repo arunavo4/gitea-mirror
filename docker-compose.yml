@@ -11,6 +11,8 @@ services:
       platforms:
         - linux/amd64
         - linux/arm64
+      cache_from:
+        - ${DOCKER_REGISTRY:-ghcr.io}/${DOCKER_IMAGE:-gitea-mirror}:${DOCKER_TAG:-latest}
     container_name: gitea-mirror
     restart: unless-stopped
     ports:
@@ -22,13 +24,13 @@ services:
       - DATABASE_URL=sqlite://data/gitea-mirror.db
       - HOST=0.0.0.0
       - PORT=3000
-      - JWT_SECRET=your-secret-key-change-this-in-production
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key-change-this-in-production}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=3", "--spider", "http://localhost:3000/"]
       interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
     profiles: ["production"]
 
 # Define named volumes for database persistence
