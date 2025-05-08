@@ -1,3 +1,5 @@
+//this is a rough api route that will delete all the orgs and repos in gitea. can be used for some other testing purposes as well
+
 import { configs, db } from "@/lib/db";
 import { deleteAllOrgs, deleteAllReposInGitea } from "@/lib/rough";
 import type { APIRoute } from "astro";
@@ -41,6 +43,7 @@ export const GET: APIRoute = async ({ request }) => {
       );
     }
 
+    //adjust this based on the orgs you you want to delete
     await deleteAllOrgs({
       config,
       orgs: [
@@ -49,6 +52,7 @@ export const GET: APIRoute = async ({ request }) => {
         "BitBustersx719",
         "uiastra",
         "conductor-oss",
+        "HackForge-JUSL",
       ],
     });
 

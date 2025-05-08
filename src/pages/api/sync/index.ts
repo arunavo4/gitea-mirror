@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { db, organizations, repositories, configs } from "@/lib/db";
+import { db, organizations, repositories, configs, mirrorJobs } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { createMirrorJob } from "@/lib/helpers";
@@ -116,10 +116,9 @@ export const POST: APIRoute = async ({ request }) => {
     // Perform everything in a single transaction
     await db.transaction(async (tx) => {
       // Clean old data
-      await Promise.all([
-        tx.delete(repositories).where(eq(repositories.userId, userId)),
-        tx.delete(organizations).where(eq(organizations.userId, userId)),
-      ]);
+      await tx.delete(repositories).where(eq(repositories.userId, userId));
+      await tx.delete(organizations).where(eq(organizations.userId, userId));
+      await tx.delete(mirrorJobs).where(eq(mirrorJobs.userId, userId));
 
       // Insert new data
       if (newRepos.length > 0) await tx.insert(repositories).values(newRepos);
@@ -127,7 +126,7 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     // Mirror jobs (can happen outside of transaction)
-    const mirrorJobs = [
+    const mirrorJobPromises = [
       ...newRepos.map((repo) =>
         createMirrorJob({
           userId,
@@ -150,7 +149,7 @@ export const POST: APIRoute = async ({ request }) => {
       ),
     ];
 
-    await Promise.all(mirrorJobs);
+    await Promise.all(mirrorJobPromises);
 
     return jsonResponse({
       data: {
