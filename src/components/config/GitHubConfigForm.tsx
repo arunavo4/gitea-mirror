@@ -54,10 +54,6 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
     }
   };
 
-  useEffect(() => {
-    console.log("GitHub Config:", config);
-  }, [config]);
-
   return (
     <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between gap-4">

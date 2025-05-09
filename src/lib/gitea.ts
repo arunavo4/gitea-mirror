@@ -592,6 +592,110 @@ export async function mirrorGitHubOrgToGitea({
   }
 }
 
+export const syncGiteaRepo = async ({
+  config,
+  repository,
+}: {
+  config: Partial<Config>;
+  repository: Repository;
+}) => {
+  try {
+    if (
+      !config.userId ||
+      !config.giteaConfig?.url ||
+      !config.giteaConfig?.token ||
+      !config.giteaConfig?.username
+    ) {
+      throw new Error("Gitea config is required.");
+    }
+
+    console.log(`Syncing repository ${repository.name}`);
+
+    // Mark repo as "syncing" in DB
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("syncing"),
+        updatedAt: new Date(),
+      })
+      .where(eq(repositories.id, repository.id!));
+
+    // Append log for "syncing" status
+    await createMirrorJob({
+      userId: config.userId,
+      repositoryId: repository.id,
+      repositoryName: repository.name,
+      message: `Started syncing repository: ${repository.name}`,
+      details: `Repository ${repository.name} is now in the syncing state.`,
+      status: repoStatusEnum.parse("syncing"),
+    });
+
+    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${config.giteaConfig.username}/${repository.name}/mirror-sync`;
+
+    const response = await superagent
+      .post(apiUrl)
+      .set("Authorization", `token ${config.giteaConfig.token}`);
+
+    // Mark repo as "synced" in DB
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("synced"),
+        updatedAt: new Date(),
+        lastMirrored: new Date(),
+        errorMessage: null,
+      })
+      .where(eq(repositories.id, repository.id!));
+
+    // Append log for "synced" status
+    await createMirrorJob({
+      userId: config.userId,
+      repositoryId: repository.id,
+      repositoryName: repository.name,
+      message: `Successfully synced repository: ${repository.name}`,
+      details: `Repository ${repository.name} was synced with Gitea.`,
+      status: repoStatusEnum.parse("synced"),
+    });
+
+    console.log(`Repository ${repository.name} synced successfully`);
+
+    return response.body;
+  } catch (error) {
+    console.error(
+      `Error while syncing repository ${repository.name}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+
+    // Optional: update repo with error status
+    await db
+      .update(repositories)
+      .set({
+        status: repoStatusEnum.parse("failed"),
+        updatedAt: new Date(),
+        errorMessage: (error as Error).message,
+      })
+      .where(eq(repositories.id, repository.id!));
+
+    // Append log for "error" status
+    if (config.userId && repository.id && repository.name) {
+      await createMirrorJob({
+        userId: config.userId,
+        repositoryId: repository.id,
+        repositoryName: repository.name,
+        message: `Failed to sync repository: ${repository.name}`,
+        details: (error as Error).message,
+        status: repoStatusEnum.parse("failed"),
+      });
+    }
+
+    if (error instanceof Error) {
+      throw new Error(`Failed to sync repository: ${error.message}`);
+    }
+    throw new Error("Failed to sync repository: An unknown error occurred.");
+  }
+};
+
 export const mirrorGitRepoIssuesToGitea = async ({
   config,
   octokit,

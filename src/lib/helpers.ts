@@ -45,8 +45,6 @@ export async function createMirrorJob({
     const channel = `mirror-status:${userId}`;
     await redisPublisher.publish(channel, JSON.stringify(job));
 
-    console.log("Mirror job created:");
-
     return jobId;
   } catch (error) {
     console.error("Error creating mirror job:", error);

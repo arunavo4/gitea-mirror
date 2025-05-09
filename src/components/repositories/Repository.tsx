@@ -17,6 +17,7 @@ import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 import { useSSE } from "@/hooks/useSEE";
 import { useFilterParams } from "@/hooks/useFilterParams";
 import { toast } from "sonner";
+import type { SyncRepoRequest, SyncRepoResponse } from "@/types/sync";
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -146,7 +147,9 @@ export default function Repository() {
         toast.error(response.error || "Error starting mirror job");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error starting mirror job");
+      toast.error(
+        error instanceof Error ? error.message : "Error starting mirror job"
+      );
     } finally {
       setLoadingRepoIds((prev) => {
         const newSet = new Set(prev);
@@ -155,30 +158,31 @@ export default function Repository() {
       });
     }
   };
-  
+
   const handleMirrorAllRepos = async () => {
     try {
       if (!user || !user.id || repositories.length === 0) {
         return;
       }
 
-      // Filter out repositories that are already mirroring to avoid duplicate operations
-      const eligibleRepos = repositories.filter(repo => 
-        repo.status !== "mirroring" && repo.id
+      // Filter out repositories that are already mirroring to avoid duplicate operations. also filter out mirrored (mirrored can be synced and not mirrored again)
+      const eligibleRepos = repositories.filter(
+        (repo) =>
+          repo.status !== "mirroring" && repo.status !== "mirrored" && repo.id
       );
-      
+
       if (eligibleRepos.length === 0) {
         toast.info("No eligible repositories to mirror");
         return;
       }
-      
+
       // Get all repository IDs
-      const repoIds = eligibleRepos.map(repo => repo.id as string);
-      
+      const repoIds = eligibleRepos.map((repo) => repo.id as string);
+
       // Set loading state for all repositories being mirrored
-      setLoadingRepoIds(prev => {
+      setLoadingRepoIds((prev) => {
         const newSet = new Set(prev);
-        repoIds.forEach(id => newSet.add(id));
+        repoIds.forEach((id) => newSet.add(id));
         return newSet;
       });
 
@@ -207,10 +211,54 @@ export default function Repository() {
         toast.error(response.error || "Error starting mirror jobs");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error starting mirror jobs");
+      toast.error(
+        error instanceof Error ? error.message : "Error starting mirror jobs"
+      );
     } finally {
       // Reset loading states - we'll let the SSE updates handle status changes
       setLoadingRepoIds(new Set());
+    }
+  };
+
+  const handleSyncRepo = async ({ repoId }: { repoId: string }) => {
+    try {
+      if (!user || !user.id) {
+        return;
+      }
+
+      setLoadingRepoIds((prev) => new Set(prev).add(repoId));
+
+      const reqPayload: SyncRepoRequest = {
+        userId: user.id,
+        repositoryIds: [repoId],
+      };
+
+      const response = await apiRequest<SyncRepoResponse>("/job/sync-repo", {
+        method: "POST",
+        data: reqPayload,
+      });
+
+      if (response.success) {
+        toast.success(`Syncing started for repository ID: ${repoId}`);
+        setRepositories((prevRepos) =>
+          prevRepos.map((repo) => {
+            const updated = response.repositories.find((r) => r.id === repo.id);
+            return updated ? updated : repo;
+          })
+        );
+      } else {
+        toast.error(response.error || "Error starting sync job");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error starting sync job"
+      );
+    } finally {
+      setLoadingRepoIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(repoId);
+        return newSet;
+      });
     }
   };
 
@@ -218,7 +266,9 @@ export default function Repository() {
     <div className="flex flex-col gap-y-6">
       {/* Combine search and actions into a single flex row */}
       <div className="flex flex-row items-center gap-4 w-full">
-        <div className="relative flex-grow"> {/* Use flex-grow for search */}
+        <div className="relative flex-grow">
+          {" "}
+          {/* Use flex-grow for search */}
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
@@ -232,42 +282,46 @@ export default function Repository() {
         </div>
 
         <Select
-            value={filter.status || "all"}
-            onValueChange={(value) =>
-              setFilter((prev) => ({
-                ...prev,
-                status: value === "all" ? "" : (value as RepoStatus),
-              }))
-            }
-          >
-            <SelectTrigger className="w-[140px] h-9 max-h-9">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="imported">Imported</SelectItem>
-              <SelectItem value="mirroring">Mirroring</SelectItem>
-              <SelectItem value="mirrored">Mirrored</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-              <SelectItem value="syncing">Syncing</SelectItem>
-              <SelectItem value="synced">Synced</SelectItem>
-            </SelectContent>
-          </Select>
+          value={filter.status || "all"}
+          onValueChange={(value) =>
+            setFilter((prev) => ({
+              ...prev,
+              status: value === "all" ? "" : (value as RepoStatus),
+            }))
+          }
+        >
+          <SelectTrigger className="w-[140px] h-9 max-h-9">
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="imported">Imported</SelectItem>
+            <SelectItem value="mirroring">Mirroring</SelectItem>
+            <SelectItem value="mirrored">Mirrored</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="syncing">Syncing</SelectItem>
+            <SelectItem value="synced">Synced</SelectItem>
+          </SelectContent>
+        </Select>
 
         <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            More Filters
-          </Button>
+          <Filter className="h-4 w-4 mr-2" />
+          More Filters
+        </Button>
 
         <Button variant="default" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
 
-        <Button variant="default" onClick={handleMirrorAllRepos} disabled={isLoading || loadingRepoIds.size > 0}>
-            <GitFork className="h-4 w-4 mr-2" />
-            Mirror All
-          </Button>
+        <Button
+          variant="default"
+          onClick={handleMirrorAllRepos}
+          disabled={isLoading || loadingRepoIds.size > 0}
+        >
+          <GitFork className="h-4 w-4 mr-2" />
+          Mirror All
+        </Button>
       </div>
 
       <RepositoryTable
@@ -276,6 +330,7 @@ export default function Repository() {
         filter={filter}
         setFilter={setFilter}
         onMirror={handleMirrorRepo}
+        onSync={handleSyncRepo}
         loadingRepoIds={loadingRepoIds}
       />
     </div>
