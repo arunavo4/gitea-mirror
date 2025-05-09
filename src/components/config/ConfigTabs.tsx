@@ -58,7 +58,7 @@ export function ConfigTabs() {
       interval: 3600,
     },
   });
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [dockerCode, setDockerCode] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
@@ -118,7 +118,10 @@ export function ConfigTabs() {
       });
 
       const result: SaveConfigApiResponse = await response.json();
+
       if (result.success) {
+        await refreshUser();
+
         toast.success(
           "Configuration saved successfully! Now import your GitHub data to begin."
         );

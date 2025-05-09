@@ -1,4 +1,4 @@
-import { client } from "../src/lib/db";
+import { client } from "@/lib/db";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";

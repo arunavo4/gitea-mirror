@@ -1,4 +1,4 @@
-import type { Organization, Repository } from "@/lib/db/schema";
+import type { Repository } from "@/lib/db/schema";
 
 export interface SyncRepoRequest {
   userId: string;
@@ -6,6 +6,17 @@ export interface SyncRepoRequest {
 }
 
 export interface SyncRepoResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  repositories: Repository[];
+}
+
+export interface ScheduleSyncRepoRequest {
+  userId: string;
+}
+
+export interface ScheduleSyncRepoResponse {
   success: boolean;
   error?: string;
   message?: string;

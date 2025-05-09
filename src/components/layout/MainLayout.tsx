@@ -7,6 +7,8 @@ import { ConfigTabs } from "../config/ConfigTabs";
 import { ActivityLog } from "../activity/ActivityLog";
 import { Organization } from "../organizations/Organization";
 import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useRepoSync } from "@/hooks/useSyncRepo";
 
 interface AppProps {
   page:
@@ -15,11 +17,11 @@ interface AppProps {
     | "organizations"
     | "configuration"
     | "activity-log";
-  'client:load'?: boolean;
-  'client:idle'?: boolean;
-  'client:visible'?: boolean;
-  'client:media'?: string;
-  'client:only'?: boolean | string;
+  "client:load"?: boolean;
+  "client:idle"?: boolean;
+  "client:visible"?: boolean;
+  "client:media"?: string;
+  "client:only"?: boolean | string;
 }
 
 export default function App({ page }: AppProps) {
@@ -31,6 +33,15 @@ export default function App({ page }: AppProps) {
 }
 
 function AppWithProviders({ page }: AppProps) {
+  const { user } = useAuth();
+  useRepoSync({
+    userId: user?.id,
+    enabled: user?.syncEnabled,
+    interval: user?.syncInterval,
+    lastSync: user?.lastSync,
+    nextSync: user?.nextSync,
+  });
+
   return (
     <main className="flex min-h-screen flex-col">
       <Header />
