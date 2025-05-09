@@ -78,9 +78,13 @@ export function ConfigTabs() {
       );
 
       if (result.success) {
-        toast.success("GitHub data imported successfully! Head to the Dashboard to start mirroring repositories.");
+        toast.success(
+          "GitHub data imported successfully! Head to the Dashboard to start mirroring repositories."
+        );
       } else {
-        toast.error(`Failed to import GitHub data: ${result.message || "Unknown error"}`);
+        toast.error(
+          `Failed to import GitHub data: ${result.message || "Unknown error"}`
+        );
       }
     } catch (error) {
       toast.error(
@@ -115,7 +119,9 @@ export function ConfigTabs() {
 
       const result: SaveConfigApiResponse = await response.json();
       if (result.success) {
-        toast.success("Configuration saved successfully! Now import your GitHub data to begin.");
+        toast.success(
+          "Configuration saved successfully! Now import your GitHub data to begin."
+        );
       } else {
         toast.error(
           `Failed to save configuration: ${result.message || "Unknown error"}`
