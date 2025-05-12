@@ -630,9 +630,7 @@ export const syncGiteaRepo = async ({
       status: repoStatusEnum.parse("syncing"),
     });
 
-    const repoOwner = repository.owner ?? config.giteaConfig.username;
-
-    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${repoOwner}/${repository.name}/mirror-sync`;
+    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${repository.owner}/${repository.name}/mirror-sync`;
 
     const response = await superagent
       .post(apiUrl)
