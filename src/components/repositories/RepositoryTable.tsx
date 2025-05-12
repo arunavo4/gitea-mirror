@@ -151,7 +151,7 @@ export default function RepositoryTable({
       {/* table body wrapper (for a parent in virtualization) */}
       <div
         ref={tableParentRef}
-        className="flex flex-col max-h-[calc(100dvh-228px)] overflow-y-auto" //the height is set according to the other contents
+        className="flex flex-col max-h-[calc(100dvh-236px)] overflow-y-auto" //the height is set according to the other contents
       >
         <div
           style={{

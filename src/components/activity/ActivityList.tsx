@@ -77,7 +77,7 @@ export default function ActivityList({
       )}
     </div>
   ) : (
-    <Card className="border rounded-md divide-y">
+    <Card className="border rounded-md divide-y max-h-[calc(100dvh-191px)] overflow-y-auto">
       {filteredActivities.map((activity, index) => (
         <div key={index} className="p-4">
           <div className="flex items-start gap-4">

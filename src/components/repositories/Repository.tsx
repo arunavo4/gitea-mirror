@@ -263,7 +263,7 @@ export default function Repository() {
   };
 
   return (
-    <div className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-8">
       {/* Combine search and actions into a single flex row */}
       <div className="flex flex-row items-center gap-4 w-full">
         <div className="relative flex-grow">
