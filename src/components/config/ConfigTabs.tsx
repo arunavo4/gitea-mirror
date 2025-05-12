@@ -64,6 +64,27 @@ export function ConfigTabs() {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
+  useEffect(() => {
+    const updateLastAndNextRun = () => {
+      const lastRun = config.scheduleConfig.lastRun
+        ? new Date(config.scheduleConfig.lastRun)
+        : new Date(); // fallback to now if lastRun is null
+      const intervalInSeconds = config.scheduleConfig.interval;
+      const nextRun = new Date(lastRun.getTime() + intervalInSeconds * 1000);
+
+      setConfig((prev) => ({
+        ...prev,
+        scheduleConfig: {
+          ...prev.scheduleConfig,
+          lastRun,
+          nextRun,
+        },
+      }));
+    };
+
+    updateLastAndNextRun();
+  }, [config.scheduleConfig.interval]);
+
   const handleImportGitHubData = async () => {
     try {
       if (!user?.id) return;
