@@ -7,6 +7,7 @@ import type { FilterParams } from "@/types/filter";
 import Fuse from "fuse.js";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getStatusColor } from "@/lib/utils";
 
 interface OrganizationListProps {
   organizations: Organization[];
@@ -90,68 +91,75 @@ export function OrganizationList({
         const isLoading = loadingOrgIds.has(org.id ?? "");
 
         return (
-          <Card key={index} className="overflow-hidden">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-muted-foreground" />
-                  <h3 className="font-medium">{org.name}</h3>
-                </div>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full capitalize ${
-                    org.membershipRole === "member"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-purple-100 text-purple-800"
-                  }`}
-                >
-                  {org.membershipRole}
-                  {/* needs to be updated  */}
-                </span>
+          <Card key={index} className="overflow-hidden p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <h3 className="font-medium">{org.name}</h3>
               </div>
+              <span
+                className={`text-xs px-2 py-1 rounded-full capitalize ${
+                  org.membershipRole === "member"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-purple-100 text-purple-800"
+                }`}
+              >
+                {org.membershipRole}
+                {/* needs to be updated  */}
+              </span>
+            </div>
 
-              <p className="text-sm text-muted-foreground mb-4">
-                {org.repositoryCount}{" "}
-                {org.repositoryCount === 1 ? "repository" : "repositories"}
-              </p>
+            <p className="text-sm text-muted-foreground mb-4">
+              {org.repositoryCount}{" "}
+              {org.repositoryCount === 1 ? "repository" : "repositories"}
+            </p>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Checkbox
-                    id={`include-${org.id}`}
-                    name={`include-${org.id}`}
-                    checked={org.status === "mirrored"}
-                    disabled={
-                      loadingOrgIds.has(org.id ?? "") ||
-                      org.status === "mirrored"
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Checkbox
+                  id={`include-${org.id}`}
+                  name={`include-${org.id}`}
+                  checked={org.status === "mirrored"}
+                  disabled={
+                    loadingOrgIds.has(org.id ?? "") ||
+                    org.status === "mirrored" ||
+                    org.status === "mirroring"
+                  }
+                  onCheckedChange={async (checked) => {
+                    if (checked && !org.isIncluded && org.id) {
+                      onMirror({ orgId: org.id });
                     }
-                    onCheckedChange={async (checked) => {
-                      if (checked && !org.isIncluded && org.id) {
-                        onMirror({ orgId: org.id });
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor={`include-${org.id}`}
-                    className="ml-2 text-sm select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Include in mirroring
-                  </label>
+                  }}
+                />
+                <label
+                  htmlFor={`include-${org.id}`}
+                  className="ml-2 text-sm select-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Include in mirroring
+                </label>
 
-                  {isLoading && (
-                    <RefreshCw className="opacity-50 h-4 w-4 animate-spin ml-4" />
-                  )}
-                </div>
-
-                <Button variant="ghost" size="icon" asChild>
-                  <a
-                    href={`https://github.com/${org.name}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
+                {isLoading && (
+                  <RefreshCw className="opacity-50 h-4 w-4 animate-spin ml-4" />
+                )}
               </div>
+
+              <Button variant="ghost" size="icon" asChild>
+                <a
+                  href={`https://github.com/${org.name}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+
+            {/* dont know if this looks good. maybe revised  */}
+            <div className="flex items-center gap-2 justify-end mt-4">
+              <div
+                className={`h-2 w-2 rounded-full ${getStatusColor(org.status)}`}
+              />
+              <span className="text-sm capitalize">{org.status}</span>
             </div>
           </Card>
         );

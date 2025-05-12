@@ -106,7 +106,7 @@ export const POST: APIRoute = async ({ request }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error in /api/job/mirror-org:", error);
+    console.error("Error in mirroring organization:", error);
     return new Response(
       JSON.stringify({
         error:

@@ -13,6 +13,7 @@ interface RepositoryTableProps {
   filter: FilterParams;
   setFilter: (filter: FilterParams) => void;
   onMirror: ({ repoId }: { repoId: string }) => Promise<void>;
+  onSync: ({ repoId }: { repoId: string }) => Promise<void>;
   loadingRepoIds: Set<string>;
 }
 
@@ -22,6 +23,7 @@ export function RepositoryTable({
   filter,
   setFilter,
   onMirror,
+  onSync,
   loadingRepoIds,
 }: RepositoryTableProps) {
   const hasAnyFilter = Object.values(filter).some(
@@ -160,6 +162,7 @@ export function RepositoryTable({
                       <Button
                         variant="ghost"
                         disabled={repo.status === "syncing" || isLoading}
+                        onClick={() => onSync({ repoId: repo.id ?? "" })}
                       >
                         {isLoading ? (
                           <>

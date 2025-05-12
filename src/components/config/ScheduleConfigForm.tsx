@@ -1,7 +1,7 @@
-import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "../ui/checkbox";
 import type { ScheduleConfig } from "@/types/config";
+import { formatDate } from "@/lib/utils";
 
 interface ScheduleConfigFormProps {
   config: ScheduleConfig;
@@ -102,14 +102,14 @@ export function ScheduleConfigForm({
           {config.lastRun && (
             <div>
               <label className="block text-sm font-medium mb-1">Last Run</label>
-              <div className="text-sm">{config.lastRun.toLocaleString()}</div>
+              <div className="text-sm">{formatDate(config.lastRun)}</div>
             </div>
           )}
 
           {config.nextRun && config.enabled && (
             <div>
               <label className="block text-sm font-medium mb-1">Next Run</label>
-              <div className="text-sm">{config.nextRun.toLocaleString()}</div>
+              <div className="text-sm">{formatDate(config.nextRun)}</div>
             </div>
           )}
         </div>

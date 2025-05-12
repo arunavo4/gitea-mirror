@@ -7,10 +7,10 @@ import {
   type Context,
 } from "react";
 import { authApi } from "@/lib/api";
-import type { User } from "@/lib/db/schema";
+import type { ExtendedUser } from "@/types/user";
 
 interface AuthContextType {
-  user: User | null;
+  user: ExtendedUser | null;
   isLoading: boolean;
   error: string | null;
   login: (username: string, password: string) => Promise<void>;
@@ -20,6 +20,7 @@ interface AuthContextType {
     password: string
   ) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>; // Added refreshUser function
 }
 
 const AuthContext: Context<AuthContextType | undefined> = createContext<
@@ -27,19 +28,40 @@ const AuthContext: Context<AuthContextType | undefined> = createContext<
 >(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Function to refetch the user data
+  const refreshUser = async () => {
+    setIsLoading(true);
+    try {
+      const user = await authApi.getCurrentUser();
+
+      console.log("User data refreshed:", user);
+
+      setUser(user);
+    } catch (err: any) {
+      setUser(null);
+      console.error("Failed to refresh user data", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Automatically check the user status when the app loads
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const user = await authApi.getCurrentUser();
+
+        console.log("User data fetched:", user);
+
         setUser(user);
       } catch (err: any) {
         setUser(null);
 
-        // Check if the error is due to no users in the database
+        // Redirect user based on error
         if (err?.message === "No users found") {
           window.location.href = "/signup";
         } else {
@@ -99,8 +121,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Create the context value
-  const contextValue = { user, isLoading, error, login, register, logout };
+  // Create the context value with the added refreshUser function
+  const contextValue = {
+    user,
+    isLoading,
+    error,
+    login,
+    register,
+    logout,
+    refreshUser,
+  };
 
   // Return the provider with the context value
   return React.createElement(

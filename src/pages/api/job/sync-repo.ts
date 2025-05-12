@@ -1,13 +1,10 @@
 import type { APIRoute } from "astro";
-import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
+import type { MirrorRepoRequest } from "@/types/mirror";
 import { db, configs, repositories } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
 import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
-import {
-  mirrorGithubRepoToGitea,
-  mirrorGitHubOrgRepoToGiteaOrg,
-} from "@/lib/gitea";
-import { createGitHubClient } from "@/lib/github";
+import { syncGiteaRepo } from "@/lib/gitea";
+import type { SyncRepoResponse } from "@/types/sync";
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -66,52 +63,28 @@ export const POST: APIRoute = async ({ request }) => {
     // Start async mirroring in background
     setTimeout(async () => {
       for (const repo of repos) {
-        if (!config.githubConfig.token) {
-          throw new Error("GitHub token is missing.");
-        }
-
-        const octokit = createGitHubClient(config.githubConfig.token);
-
         try {
-          if (repo.organization && config.githubConfig.preserveOrgStructure) {
-            await mirrorGitHubOrgRepoToGiteaOrg({
-              config,
-              octokit,
-              orgName: repo.organization,
-              repository: {
-                ...repo,
-                status: repoStatusEnum.parse("imported"),
-                organization: repo.organization ?? undefined,
-                lastMirrored: repo.lastMirrored ?? undefined,
-                errorMessage: repo.errorMessage ?? undefined,
-                forkedFrom: repo.forkedFrom ?? undefined,
-                visibility: repositoryVisibilityEnum.parse(repo.visibility),
-              },
-            });
-          } else {
-            await mirrorGithubRepoToGitea({
-              octokit,
-              repository: {
-                ...repo,
-                status: repoStatusEnum.parse("imported"),
-                organization: repo.organization ?? undefined,
-                lastMirrored: repo.lastMirrored ?? undefined,
-                errorMessage: repo.errorMessage ?? undefined,
-                forkedFrom: repo.forkedFrom ?? undefined,
-                visibility: repositoryVisibilityEnum.parse(repo.visibility),
-              },
-              config,
-            });
-          }
+          await syncGiteaRepo({
+            config,
+            repository: {
+              ...repo,
+              status: repoStatusEnum.parse(repo.status),
+              organization: repo.organization ?? undefined,
+              lastMirrored: repo.lastMirrored ?? undefined,
+              errorMessage: repo.errorMessage ?? undefined,
+              forkedFrom: repo.forkedFrom ?? undefined,
+              visibility: repositoryVisibilityEnum.parse(repo.visibility),
+            },
+          });
         } catch (error) {
-          console.error(`Mirror failed for repo ${repo.name}:`, error);
+          console.error(`Sync failed for repo ${repo.name}:`, error);
         }
       }
     }, 0);
 
-    const responsePayload: MirrorRepoResponse = {
+    const responsePayload: SyncRepoResponse = {
       success: true,
-      message: "Mirror job started.",
+      message: "Sync job started.",
       repositories: repos.map((repo) => ({
         ...repo,
         status: repoStatusEnum.parse(repo.status),
@@ -129,7 +102,7 @@ export const POST: APIRoute = async ({ request }) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Error mirroring repositories:", error);
+    console.error("Error in syncing repositories:", error);
     return new Response(
       JSON.stringify({
         error:
