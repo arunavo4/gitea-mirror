@@ -79,7 +79,10 @@ export default function RepositoryTable({
       </div>
 
       {Array.from({ length: 5 }).map((_, i) => (
-        <div className="h-[65px] flex items-center justify-between border-b bg-transparent">
+        <div
+          key={i}
+          className="h-[65px] flex items-center justify-between border-b bg-transparent"
+        >
           <div className="h-full p-3 text-sm font-medium flex-[2.5]">
             <Skeleton className="h-full w-full" />
           </div>
@@ -174,6 +177,7 @@ export default function RepositoryTable({
                   transform: `translateY(${virtualRow.start}px)`,
                   width: "100%",
                 }}
+                data-index={virtualRow.index}
                 className="h-[65px] flex items-center justify-between bg-transparent border-b hover:bg-muted/50" //the height is set according to the row content. right now the highest row is in the repo column which is arround 64.99px
               >
                 {/* Repository  */}

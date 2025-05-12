@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useAuth } from "./useAuth";
 
 interface UseRepoSyncOptions {
   userId?: string;
@@ -16,6 +17,7 @@ export function useRepoSync({
   nextSync,
 }: UseRepoSyncOptions) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
     if (!enabled || !userId) {
@@ -57,6 +59,8 @@ export function useRepoSync({
           console.error("Sync failed:", await response.text());
           return;
         }
+
+        await refreshUser(); // refreshing user data to get lastest sync times. this could be dont using the schedule-sync-repo endpoint but wont be reliable in case of failure. maybe we need t think of some other better way to do this
 
         const result = await response.json();
         console.log("Sync successful:", result);
