@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { db, repositories, organizations, mirrorJobs, configs } from "@/lib/db";
-import { eq, count, and, sql } from "drizzle-orm";
+import { eq, count, and, sql, or } from "drizzle-orm";
 import { jsonResponse } from "@/lib/utils";
 import type { DashboardApiResponse } from "@/types/dashboard";
 import { repositoryVisibilityEnum, repoStatusEnum } from "@/types/Repository";
@@ -63,7 +63,10 @@ export const GET: APIRoute = async ({ request }) => {
         .where(
           and(
             eq(repositories.userId, userId),
-            eq(repositories.status, "mirrored")
+            or(
+              eq(repositories.status, "mirrored"),
+              eq(repositories.status, "synced")
+            )
           )
         ),
     ]);
