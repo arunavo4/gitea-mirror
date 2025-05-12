@@ -35,7 +35,7 @@ export default function ActivityList({
 
     if (filter.searchTerm) {
       const fuse = new Fuse(result, {
-        keys: ["message", "repositoryName"],
+        keys: ["message", "details", "organizationName", "repositoryName"],
         threshold: 0.3,
       });
       result = fuse.search(filter.searchTerm).map((res) => res.item);
