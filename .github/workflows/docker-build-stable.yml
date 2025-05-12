@@ -10,11 +10,14 @@ env:
   REGISTRY: ghcr.io
   IMAGE: ${{ github.repository }}
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   docker:
     runs-on: ubuntu-latest
 
-    # Spin up Redis for integration tests; SQLite lives in-container
     services:
       redis:
         image: redis:7-alpine
@@ -30,12 +33,12 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }} # Replace with secrets.GHCR_PAT if using PAT
 
       - uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: linux/amd64,linux/arm64   # drop this line if you don’t need multi-arch
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE }}:latest
