@@ -51,47 +51,11 @@ export default function Repository() {
     onMessage: handleNewMessage,
   });
 
-  useEffect(() => {
-    const fetchRepositories = async () => {
-      try {
-        if (!user) {
-          return;
-        }
+  const fetchRepositories = useCallback(async () => {
+    if (!user) return;
 
-        setIsLoading(true);
-
-        const response = await apiRequest<RepositoryApiResponse>(
-          `/github/repositories?userId=${user.id}`,
-          {
-            method: "GET",
-          }
-        );
-
-        if (response.success) {
-          setRepositories(response.repositories);
-        } else {
-          toast.error(response.error || "Error fetching repositories");
-        }
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Error fetching repositories"
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRepositories();
-  }, [user]);
-
-  const handleRefresh = async () => {
+    setIsLoading(true);
     try {
-      if (!user) {
-        return;
-      }
-
-      setIsLoading(true);
-
       const response = await apiRequest<RepositoryApiResponse>(
         `/github/repositories?userId=${user.id}`,
         {
@@ -101,16 +65,29 @@ export default function Repository() {
 
       if (response.success) {
         setRepositories(response.repositories);
-        toast.success("Repositories refreshed successfully.");
+        return true;
       } else {
-        toast.error(response.error || "Error refreshing repositories");
+        toast.error(response.error || "Error fetching repositories");
+        return false;
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Error refreshing repositories"
+        error instanceof Error ? error.message : "Error fetching repositories"
       );
+      return false;
     } finally {
       setIsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchRepositories();
+  }, [fetchRepositories]);
+
+  const handleRefresh = async () => {
+    const success = await fetchRepositories();
+    if (success) {
+      toast.success("Repositories refreshed successfully.");
     }
   };
 

@@ -39,10 +39,10 @@ export function ActivityLog() {
     onMessage: handleNewMessage,
   });
 
-  useEffect(() => {
-    const fetchActivities = async () => {
-      if (!user) return;
+  const fetchActivities = useCallback(async () => {
+    if (!user) return false;
 
+    try {
       setIsLoading(true);
 
       const response = await apiRequest<ActivityApiResponse>(
@@ -54,15 +54,31 @@ export function ActivityLog() {
 
       if (response.success) {
         setActivities(response.activities);
+        return true;
       } else {
         toast.error(response.message || "Failed to fetch activities.");
+        return false;
       }
-
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to fetch activities."
+      );
+      return false;
+    } finally {
       setIsLoading(false);
-    };
-
-    fetchActivities();
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+
+  const handleRefreshActivities = async () => {
+    const success = await fetchActivities();
+    if (success) {
+      toast.success("Activities refreshed successfully.");
+    }
+  };
 
   return (
     <div className="flex flex-col gap-y-8">
@@ -109,7 +125,7 @@ export function ActivityLog() {
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
-        <Button>
+        <Button onClick={handleRefreshActivities}>
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh
         </Button>

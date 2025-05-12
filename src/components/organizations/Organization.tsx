@@ -52,38 +52,48 @@ export function Organization() {
     onMessage: handleNewMessage,
   });
 
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      if (!user || !user.id) {
-        return;
-      }
+  const fetchOrganizations = useCallback(async () => {
+    if (!user || !user.id) {
+      return false;
+    }
 
-      try {
-        setIsLoading(true);
+    try {
+      setIsLoading(true);
 
-        const response = await apiRequest<OrganizationsApiResponse>(
-          `/github/organizations?userId=${user.id}`,
-          {
-            method: "GET",
-          }
-        );
-
-        if (response.success) {
-          setOrganizations(response.organizations);
-        } else {
-          toast.error(response.error || "Error fetching organizations");
+      const response = await apiRequest<OrganizationsApiResponse>(
+        `/github/organizations?userId=${user.id}`,
+        {
+          method: "GET",
         }
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Error fetching organizations"
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      );
 
-    fetchOrganizations();
+      if (response.success) {
+        setOrganizations(response.organizations);
+        return true;
+      } else {
+        toast.error(response.error || "Error fetching organizations");
+        return false;
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error fetching organizations"
+      );
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
+
+  const handleRefresh = async () => {
+    const success = await fetchOrganizations();
+    if (success) {
+      toast.success("Organizations refreshed successfully.");
+    }
+  };
 
   const handleMirrorOrg = async ({ orgId }: { orgId: string }) => {
     try {
@@ -116,7 +126,9 @@ export function Organization() {
         toast.error(response.error || "Error starting mirror job");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error starting mirror job");
+      toast.error(
+        error instanceof Error ? error.message : "Error starting mirror job"
+      );
     } finally {
       setLoadingOrgIds((prev) => {
         const newSet = new Set(prev);
@@ -125,7 +137,7 @@ export function Organization() {
       });
     }
   };
-  
+
   const handleMirrorAllOrgs = async () => {
     try {
       if (!user || !user.id || organizations.length === 0) {
@@ -133,24 +145,23 @@ export function Organization() {
       }
 
       // Filter out organizations that are already mirrored to avoid duplicate operations
-      const eligibleOrgs = organizations.filter(org => 
-        org.status !== "mirroring" && 
-        org.status !== "mirrored" && 
-        org.id
+      const eligibleOrgs = organizations.filter(
+        (org) =>
+          org.status !== "mirroring" && org.status !== "mirrored" && org.id
       );
-      
+
       if (eligibleOrgs.length === 0) {
         toast.info("No eligible organizations to mirror");
         return;
       }
-      
+
       // Get all organization IDs
-      const orgIds = eligibleOrgs.map(org => org.id as string);
-      
+      const orgIds = eligibleOrgs.map((org) => org.id as string);
+
       // Set loading state for all organizations being mirrored
-      setLoadingOrgIds(prev => {
+      setLoadingOrgIds((prev) => {
         const newSet = new Set(prev);
-        orgIds.forEach(id => newSet.add(id));
+        orgIds.forEach((id) => newSet.add(id));
         return newSet;
       });
 
@@ -176,40 +187,12 @@ export function Organization() {
         toast.error(response.error || "Error starting mirror jobs");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error starting mirror jobs");
+      toast.error(
+        error instanceof Error ? error.message : "Error starting mirror jobs"
+      );
     } finally {
       // Reset loading states - we'll let the SSE updates handle status changes
       setLoadingOrgIds(new Set());
-    }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      if (!user || !user.id) {
-        return;
-      }
-
-      setIsLoading(true);
-
-      const response = await apiRequest<OrganizationsApiResponse>(
-        `/github/organizations?userId=${user.id}`,
-        {
-          method: "GET",
-        }
-      );
-
-      if (response.success) {
-        setOrganizations(response.organizations);
-        toast.success("Organizations refreshed successfully.");
-      } else {
-        toast.error(response.error || "Error refreshing organizations");
-      }
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Error refreshing organizations"
-      );
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -217,11 +200,13 @@ export function Organization() {
     <div className="flex flex-col gap-y-8">
       {/* Combine search and actions into a single flex row */}
       <div className="flex flex-row items-center gap-4 w-full">
-        <div className="relative flex-grow"> {/* Use flex-grow for search */}
+        <div className="relative flex-grow">
+          {" "}
+          {/* Use flex-grow for search */}
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search repositories..."
+            placeholder="Search Organizations..."
             className="pl-8 h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             value={filter.searchTerm}
             onChange={(e) =>
@@ -231,40 +216,43 @@ export function Organization() {
         </div>
 
         <Select
-            value={filter.membershipRole || "all"}
-            onValueChange={(value) =>
-              setFilter((prev) => ({
-                ...prev,
-                membershipRole:
-                  value === "all" ? "" : (value as MembershipRole),
-              }))
-            }
-          >
-            <SelectTrigger className="w-[140px] h-9 max-h-9">
-              <SelectValue placeholder="All Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Type</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="member">Member</SelectItem>
-              <SelectItem value="billing_manager">Billing Manager</SelectItem>
-            </SelectContent>
+          value={filter.membershipRole || "all"}
+          onValueChange={(value) =>
+            setFilter((prev) => ({
+              ...prev,
+              membershipRole: value === "all" ? "" : (value as MembershipRole),
+            }))
+          }
+        >
+          <SelectTrigger className="w-[140px] h-9 max-h-9">
+            <SelectValue placeholder="All Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Type</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="member">Member</SelectItem>
+            <SelectItem value="billing_manager">Billing Manager</SelectItem>
+          </SelectContent>
         </Select>
 
         <Button variant="outline">
-            <Filter className="h-4 w-4 mr-2" />
-            More Filters
-          </Button>
+          <Filter className="h-4 w-4 mr-2" />
+          More Filters
+        </Button>
 
         <Button variant="default" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
 
-        <Button variant="default" onClick={handleMirrorAllOrgs} disabled={isLoading || loadingOrgIds.size > 0}>
-            <Users className="h-4 w-4 mr-2" />
-            Mirror All
-          </Button>
+        <Button
+          variant="default"
+          onClick={handleMirrorAllOrgs}
+          disabled={isLoading || loadingOrgIds.size > 0}
+        >
+          <Users className="h-4 w-4 mr-2" />
+          Mirror All
+        </Button>
       </div>
 
       <OrganizationList
