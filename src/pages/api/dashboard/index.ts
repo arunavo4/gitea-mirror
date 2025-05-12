@@ -35,19 +35,19 @@ export const GET: APIRoute = async ({ request }) => {
         .from(repositories)
         .where(eq(repositories.userId, userId))
         .orderBy(sql`${repositories.updatedAt} DESC`)
-        .limit(5),
+        .limit(10),
       db
         .select()
         .from(organizations)
         .where(eq(organizations.userId, userId))
         .orderBy(sql`${organizations.updatedAt} DESC`)
-        .limit(5),
+        .limit(10), // not really needed in the frontend but just in case
       db
         .select()
         .from(mirrorJobs)
         .where(eq(mirrorJobs.userId, userId))
         .orderBy(sql`${mirrorJobs.timestamp} DESC`)
-        .limit(5),
+        .limit(10),
       db.select().from(configs).where(eq(configs.userId, userId)).limit(1),
       db
         .select({ value: count() })
