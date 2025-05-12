@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import type { RepoStatus } from "@/types/Repository";
+import { repoStatusEnum, type RepoStatus } from "@/types/Repository";
 import ActivityList from "./ActivityList";
 import { useSSE } from "@/hooks/useSEE";
 import { useFilterParams } from "@/hooks/useFilterParams";
@@ -108,13 +108,13 @@ export function ActivityLog() {
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="imported">Imported</SelectItem>
-            <SelectItem value="mirroring">Mirroring</SelectItem>
-            <SelectItem value="mirrored">Mirrored</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="syncing">Syncing</SelectItem>
-            <SelectItem value="synced">Synced</SelectItem>
+            {["all", ...repoStatusEnum.options].map((status) => (
+              <SelectItem key={status} value={status}>
+                {status === "all"
+                  ? "All Status"
+                  : status.charAt(0).toUpperCase() + status.slice(1)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
         <Button variant="outline">

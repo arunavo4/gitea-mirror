@@ -5,9 +5,10 @@ import type { MirrorJob, Organization } from "@/lib/db/schema";
 import { OrganizationList } from "./OrganizationsList";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
-import type {
-  MembershipRole,
-  OrganizationsApiResponse,
+import {
+  membershipRoleEnum,
+  type MembershipRole,
+  type OrganizationsApiResponse,
 } from "@/types/organizations";
 import {
   Select,
@@ -228,10 +229,16 @@ export function Organization() {
             <SelectValue placeholder="All Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Type</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="member">Member</SelectItem>
-            <SelectItem value="billing_manager">Billing Manager</SelectItem>
+            {["all", ...membershipRoleEnum.options].map((role) => (
+              <SelectItem key={role} value={role}>
+                {role === "all"
+                  ? "All Type"
+                  : role
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (c) => c.toUpperCase())}
+                j
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

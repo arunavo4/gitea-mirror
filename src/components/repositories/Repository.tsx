@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import RepositoryTable from "./RepositoryTable";
 import type { MirrorJob, Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
-import type { RepositoryApiResponse, RepoStatus } from "@/types/Repository";
+import {
+  repoStatusEnum,
+  type RepositoryApiResponse,
+  type RepoStatus,
+} from "@/types/Repository";
 import { apiRequest } from "@/lib/utils";
 import {
   Select,
@@ -271,13 +275,13 @@ export default function Repository() {
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="imported">Imported</SelectItem>
-            <SelectItem value="mirroring">Mirroring</SelectItem>
-            <SelectItem value="mirrored">Mirrored</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="syncing">Syncing</SelectItem>
-            <SelectItem value="synced">Synced</SelectItem>
+            {["all", ...repoStatusEnum.options].map((status) => (
+              <SelectItem key={status} value={status}>
+                {status === "all"
+                  ? "All Status"
+                  : status.charAt(0).toUpperCase() + status.slice(1)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

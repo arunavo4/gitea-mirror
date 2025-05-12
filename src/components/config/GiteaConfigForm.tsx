@@ -7,6 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { giteaApi } from "@/lib/api";
 import type { GiteaConfig, GiteaOrgVisibility } from "@/types/config";
 import { toast } from "sonner";
@@ -42,7 +49,9 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
       if (result.success) {
         toast.success("Successfully connected to Gitea!");
       } else {
-        toast.error("Failed to connect to Gitea. Please check your URL and token.");
+        toast.error(
+          "Failed to connect to Gitea. Please check your URL and token."
+        );
       }
     } catch (error) {
       toast.error(
@@ -160,21 +169,32 @@ export function GiteaConfigForm({ config, setConfig }: GiteaConfigFormProps) {
             >
               Organization Visibility
             </label>
-            <select
-              id="visibility"
+            <Select
               name="visibility"
               value={config.visibility}
-              onChange={handleChange}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onValueChange={(value) =>
+                handleChange({
+                  target: { name: "visibility", value },
+                } as React.ChangeEvent<HTMLInputElement>)
+              }
             >
-              {(["public", "private", "limited"] as GiteaOrgVisibility[]).map(
-                (option, index) => (
-                  <option key={index} value={option}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </option>
-                )
-              )}
-            </select>
+              <SelectTrigger className="w-full border border-input dark:bg-background dark:hover:bg-background">
+                <SelectValue placeholder="Select visibility" />
+              </SelectTrigger>
+              <SelectContent className="bg-background text-foreground border border-input shadow-sm">
+                {(["public", "private", "limited"] as GiteaOrgVisibility[]).map(
+                  (option) => (
+                    <SelectItem
+                      key={option}
+                      value={option}
+                      className="cursor-pointer text-sm px-3 py-2 hover:bg-accent focus:bg-accent focus:text-accent-foreground"
+                    >
+                      {option.charAt(0).toUpperCase() + option.slice(1)}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
