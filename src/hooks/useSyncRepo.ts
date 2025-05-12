@@ -6,7 +6,7 @@ interface UseRepoSyncOptions {
   enabled?: boolean;
   interval?: number;
   lastSync?: Date | null;
-  nextSync?: Date | null | string | number;
+  nextSync?: Date | null;
 }
 
 export function useRepoSync({
@@ -35,12 +35,17 @@ export function useRepoSync({
       return new Date(nextSync); // Handles strings and numbers
     };
 
+    const getLastSyncDate = () => {
+      if (!lastSync) return null;
+      if (lastSync instanceof Date) return lastSync;
+      return new Date(lastSync);
+    };
+
     const isTimeToSync = () => {
       const nextSyncDate = getNextSyncDate();
       if (!nextSyncDate) return true; // No nextSync means sync immediately
 
       const currentTime = new Date();
-
       return currentTime >= nextSyncDate;
     };
 
@@ -60,7 +65,7 @@ export function useRepoSync({
           return;
         }
 
-        await refreshUser(); // refreshing user data to get lastest sync times. this could be dont using the schedule-sync-repo endpoint but wont be reliable in case of failure. maybe we need t think of some other better way to do this
+        await refreshUser(); // refresh user data to get latest sync times. this can be taken from the schedule-sync-repo response but might not be reliable in cases of errors
 
         const result = await response.json();
         console.log("Sync successful:", result);
@@ -70,10 +75,12 @@ export function useRepoSync({
       }
     };
 
+    // Check if sync is overdue when the component mounts or interval passes
     if (isTimeToSync()) {
       sync();
     }
 
+    // Periodically check if it's time to sync
     intervalRef.current = setInterval(() => {
       if (isTimeToSync()) {
         sync();
@@ -90,5 +97,6 @@ export function useRepoSync({
     interval,
     userId,
     nextSync instanceof Date ? nextSync.getTime() : nextSync,
+    lastSync instanceof Date ? lastSync.getTime() : lastSync,
   ]);
 }
