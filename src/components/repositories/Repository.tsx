@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { RepositoryTable } from "./RepositoryTable";
+import RepositoryTable from "./RepositoryTable";
 import type { MirrorJob, Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
 import type { RepositoryApiResponse, RepoStatus } from "@/types/Repository";

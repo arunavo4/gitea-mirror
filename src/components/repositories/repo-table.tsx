@@ -18,7 +18,7 @@ interface RepositoryTableProps {
   loadingRepoIds: Set<string>;
 }
 
-export default function RepositoryTable({
+export function RepoTable({
   repositories,
   isLoading,
   filter,
@@ -61,45 +61,29 @@ export default function RepositoryTable({
 
   return isLoading ? (
     <div className="border rounded-md">
-      <div className="h-[45px] flex items-center justify-between border-b bg-muted/50">
-        <div className="h-full p-3 text-sm font-medium flex-[2.5]">
-          Repository
-        </div>
-        <div className="h-full p-3 text-sm font-medium flex-[1]">Owner</div>
-        <div className="h-full p-3 text-sm font-medium flex-[1]">
-          Organization
-        </div>
-        <div className="h-full p-3 text-sm font-medium flex-[1]">
-          Last Mirrored
-        </div>
-        <div className="h-full p-3 text-sm font-medium flex-[1]">Status</div>
-        <div className="h-full p-3 text-sm font-medium flex-[1] text-right">
-          Actions
-        </div>
-      </div>
-
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div className="h-[65px] flex items-center justify-between border-b bg-transparent">
-          <div className="h-full p-3 text-sm font-medium flex-[2.5]">
-            <Skeleton className="h-full w-full" />
-          </div>
-          <div className="h-full p-3 text-sm font-medium flex-[1]">
-            <Skeleton className="h-full w-full" />
-          </div>
-          <div className="h-full p-3 text-sm font-medium flex-[1]">
-            <Skeleton className="h-full w-full" />
-          </div>
-          <div className="h-full p-3 text-sm font-medium flex-[1]">
-            <Skeleton className="h-full w-full" />
-          </div>
-          <div className="h-full p-3 text-sm font-medium flex-[1]">
-            <Skeleton className="h-full w-full" />
-          </div>
-          <div className="h-full p-3 text-sm font-medium flex-[1] text-right">
-            <Skeleton className="h-full w-full" />
-          </div>
-        </div>
-      ))}
+      <table className="w-full">
+        <thead>
+          <tr className="border-b bg-muted/50">
+            <th className="text-left p-3 text-sm font-medium">Repository</th>
+            <th className="text-left p-3 text-sm font-medium">Owner</th>
+            <th className="text-left p-3 text-sm font-medium">Organization</th>
+            <th className="text-left p-3 text-sm font-medium">Last Mirrored</th>
+            <th className="text-left p-3 text-sm font-medium">Status</th>
+            <th className="text-right p-3 text-sm font-medium">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <tr key={i} className="border-b">
+              {Array.from({ length: 6 }).map((_, j) => (
+                <td key={j} className="p-3">
+                  <Skeleton className="h-10 w-full" />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   ) : filteredRepositories.length === 0 ? (
     <div className="flex flex-col items-center justify-center py-12 text-center">
