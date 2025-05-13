@@ -76,10 +76,5 @@
     "tsx": "^4.19.3",
     "vitest": "^3.1.1"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "better-sqlite3"
-    ]
-  },
   "packageManager": "pnpm@10.10.0"
 }

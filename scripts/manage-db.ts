@@ -25,6 +25,130 @@ const dbPath =
   process.env.DATABASE_URL || `file:${path.join(dataDir, "gitea-mirror.db")}`;
 
 /**
+ * Ensure all required tables exist
+ */
+async function ensureTablesExist() {
+  const requiredTables = ["users", "configs", "repositories", "organizations", "mirror_jobs"];
+
+  for (const table of requiredTables) {
+    try {
+      await client.execute(`SELECT 1 FROM ${table} LIMIT 1`);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('SQLITE_ERROR')) {
+        console.warn(`⚠️  Table '${table}' is missing. Creating it now...`);
+        switch (table) {
+          case "users":
+            await client.execute(
+              `CREATE TABLE users (
+                id TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                password TEXT NOT NULL,
+                email TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+              )`
+            );
+            break;
+          case "configs":
+            await client.execute(
+              `CREATE TABLE configs (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                github_config TEXT NOT NULL,
+                gitea_config TEXT NOT NULL,
+                include TEXT NOT NULL DEFAULT '[]',
+                exclude TEXT NOT NULL DEFAULT '[]',
+                schedule_config TEXT NOT NULL,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+              )`
+            );
+            break;
+          case "repositories":
+            await client.execute(
+              `CREATE TABLE repositories (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                config_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                full_name TEXT NOT NULL,
+                url TEXT NOT NULL,
+                clone_url TEXT NOT NULL,
+                owner TEXT NOT NULL,
+                organization TEXT,
+                is_private INTEGER NOT NULL DEFAULT 0,
+                is_fork INTEGER NOT NULL DEFAULT 0,
+                forked_from TEXT,
+                has_issues INTEGER NOT NULL DEFAULT 0,
+                is_starred INTEGER NOT NULL DEFAULT 0,
+                is_archived INTEGER NOT NULL DEFAULT 0,
+                size INTEGER NOT NULL DEFAULT 0,
+                has_lfs INTEGER NOT NULL DEFAULT 0,
+                has_submodules INTEGER NOT NULL DEFAULT 0,
+                default_branch TEXT NOT NULL,
+                visibility TEXT NOT NULL DEFAULT 'public',
+                status TEXT NOT NULL DEFAULT 'imported',
+                last_mirrored INTEGER,
+                error_message TEXT,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (config_id) REFERENCES configs(id)
+              )`
+            );
+            break;
+          case "organizations":
+            await client.execute(
+              `CREATE TABLE organizations (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                config_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                avatar_url TEXT NOT NULL,
+                membership_role TEXT NOT NULL DEFAULT 'member',
+                is_included INTEGER NOT NULL DEFAULT 1,
+                status TEXT NOT NULL DEFAULT 'imported',
+                last_mirrored INTEGER,
+                error_message TEXT,
+                repository_count INTEGER NOT NULL DEFAULT 0,
+                created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+                FOREIGN KEY (user_id) REFERENCES users(id),
+                FOREIGN KEY (config_id) REFERENCES configs(id)
+              )`
+            );
+            break;
+          case "mirror_jobs":
+            await client.execute(
+              `CREATE TABLE mirror_jobs (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                repository_id TEXT,
+                repository_name TEXT,
+                organization_id TEXT,
+                organization_name TEXT,
+                details TEXT,
+                status TEXT NOT NULL DEFAULT 'imported',
+                message TEXT NOT NULL,
+                timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+              )`
+            );
+            break;
+        }
+        console.log(`✅ Table '${table}' created successfully.`);
+      } else {
+        console.error(`❌ Error checking table '${table}':`, error);
+        process.exit(1);
+      }
+    }
+  }
+}
+
+/**
  * Check database status
  */
 async function checkDatabase() {
@@ -179,7 +303,7 @@ async function initializeDatabase() {
     // NOTE: We no longer create a default admin user - user will create one via signup page
 
     await client.execute(
-      `CREATE TABLE configs (
+      `CREATE TABLE IF NOT EXISTS configs (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   name TEXT NOT NULL,
@@ -197,7 +321,7 @@ async function initializeDatabase() {
     );
 
     await client.execute(
-      `CREATE TABLE repositories (
+      `CREATE TABLE IF NOT EXISTS repositories (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   config_id TEXT NOT NULL,
@@ -237,7 +361,7 @@ async function initializeDatabase() {
     );
 
     await client.execute(
-      `CREATE TABLE organizations (
+      `CREATE TABLE IF NOT EXISTS organizations (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   config_id TEXT NOT NULL,
@@ -264,7 +388,7 @@ async function initializeDatabase() {
     );
 
     await client.execute(
-      `CREATE TABLE mirror_jobs (
+      `CREATE TABLE IF NOT EXISTS mirror_jobs (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   repository_id TEXT,
@@ -523,6 +647,10 @@ async function fixDatabaseIssues() {
  */
 async function main() {
   console.log(`Database Management Tool for Gitea Mirror`);
+  
+  // Ensure all required tables exist
+  console.log("Ensuring all required tables exist...");
+  await ensureTablesExist();
   
   switch(command) {
     case 'check':
