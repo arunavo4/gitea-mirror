@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import Fuse from "fuse.js";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { GitFork, ExternalLink, RefreshCw } from "lucide-react";
 import type { Repository } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ interface RepositoryTableProps {
   loadingRepoIds: Set<string>;
 }
 
-export function RepositoryTable({
+export default function RepositoryTable({
   repositories,
   isLoading,
   filter,
@@ -26,6 +27,8 @@ export function RepositoryTable({
   onSync,
   loadingRepoIds,
 }: RepositoryTableProps) {
+  const tableParentRef = useRef<HTMLDivElement>(null);
+
   const hasAnyFilter = Object.values(filter).some(
     (val) => val?.toString().trim() !== ""
   );
@@ -49,31 +52,57 @@ export function RepositoryTable({
     return result;
   }, [repositories, filter]);
 
+  const rowVirtualizer = useVirtualizer({
+    count: filteredRepositories.length,
+    getScrollElement: () => tableParentRef.current,
+    estimateSize: () => 65,
+    overscan: 5,
+  });
+
   return isLoading ? (
     <div className="border rounded-md">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="text-left p-3 text-sm font-medium">Repository</th>
-            <th className="text-left p-3 text-sm font-medium">Owner</th>
-            <th className="text-left p-3 text-sm font-medium">Organization</th>
-            <th className="text-left p-3 text-sm font-medium">Last Mirrored</th>
-            <th className="text-left p-3 text-sm font-medium">Status</th>
-            <th className="text-right p-3 text-sm font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <tr key={i} className="border-b">
-              {Array.from({ length: 6 }).map((_, j) => (
-                <td key={j} className="p-3">
-                  <Skeleton className="h-10 w-full" />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="h-[45px] flex items-center justify-between border-b bg-muted/50">
+        <div className="h-full p-3 text-sm font-medium flex-[2.5]">
+          Repository
+        </div>
+        <div className="h-full p-3 text-sm font-medium flex-[1]">Owner</div>
+        <div className="h-full p-3 text-sm font-medium flex-[1]">
+          Organization
+        </div>
+        <div className="h-full p-3 text-sm font-medium flex-[1]">
+          Last Mirrored
+        </div>
+        <div className="h-full p-3 text-sm font-medium flex-[1]">Status</div>
+        <div className="h-full p-3 text-sm font-medium flex-[1] text-right">
+          Actions
+        </div>
+      </div>
+
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-[65px] flex items-center justify-between border-b bg-transparent"
+        >
+          <div className="h-full p-3 text-sm font-medium flex-[2.5]">
+            <Skeleton className="h-full w-full" />
+          </div>
+          <div className="h-full p-3 text-sm font-medium flex-[1]">
+            <Skeleton className="h-full w-full" />
+          </div>
+          <div className="h-full p-3 text-sm font-medium flex-[1]">
+            <Skeleton className="h-full w-full" />
+          </div>
+          <div className="h-full p-3 text-sm font-medium flex-[1]">
+            <Skeleton className="h-full w-full" />
+          </div>
+          <div className="h-full p-3 text-sm font-medium flex-[1]">
+            <Skeleton className="h-full w-full" />
+          </div>
+          <div className="h-full p-3 text-sm font-medium flex-[1] text-right">
+            <Skeleton className="h-full w-full" />
+          </div>
+        </div>
+      ))}
     </div>
   ) : filteredRepositories.length === 0 ? (
     <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -103,114 +132,155 @@ export function RepositoryTable({
       )}
     </div>
   ) : (
-    <div className="border rounded-md">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="text-left p-3 text-sm font-medium">Repository</th>
-            <th className="text-left p-3 text-sm font-medium">Owner</th>
-            <th className="text-left p-3 text-sm font-medium">Organization</th>
-            <th className="text-left p-3 text-sm font-medium">Last Mirrored</th>
-            <th className="text-left p-3 text-sm font-medium">Status</th>
-            <th className="text-right p-3 text-sm font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredRepositories.map((repo, index) => {
+    <div className="flex flex-col border rounded-md">
+      {/* table header */}
+      <div className="h-[45px] flex items-center justify-between border-b bg-muted/50">
+        <div className="h-full p-3 text-sm font-medium flex-[2.5]">
+          Repository
+        </div>
+        <div className="h-full p-3 text-sm font-medium flex-[1]">Owner</div>
+        <div className="h-full p-3 text-sm font-medium flex-[1]">
+          Organization
+        </div>
+        <div className="h-full p-3 text-sm font-medium flex-[1]">
+          Last Mirrored
+        </div>
+        <div className="h-full p-3 text-sm font-medium flex-[1]">Status</div>
+        <div className="h-full p-3 text-sm font-medium flex-[1] text-right">
+          Actions
+        </div>
+      </div>
+
+      {/* table body wrapper (for a parent in virtualization) */}
+      <div
+        ref={tableParentRef}
+        className="flex flex-col max-h-[calc(100dvh-236px)] overflow-y-auto" //the height is set according to the other contents
+      >
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            position: "relative",
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualRow, index) => {
+            const repo = filteredRepositories[virtualRow.index];
             const isLoading = loadingRepoIds.has(repo.id ?? "");
 
             return (
-              <tr key={index} className="border-b hover:bg-muted/50">
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    <GitFork className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <div className="font-medium">{repo.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {repo.fullName}
-                      </div>
+              <div
+                key={index}
+                ref={rowVirtualizer.measureElement}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  transform: `translateY(${virtualRow.start}px)`,
+                  width: "100%",
+                }}
+                data-index={virtualRow.index}
+                className="h-[65px] flex items-center justify-between bg-transparent border-b hover:bg-muted/50" //the height is set according to the row content. right now the highest row is in the repo column which is arround 64.99px
+              >
+                {/* Repository  */}
+                <div className="h-full p-3 flex items-center gap-2 flex-[2.5]">
+                  <GitFork className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">{repo.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {repo.fullName}
                     </div>
-                    {repo.isPrivate && (
-                      <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
-                        Private
-                      </span>
-                    )}
                   </div>
-                </td>
-                <td className="p-3 text-sm">{repo.owner}</td>
-                <td className="p-3 text-sm">{repo.organization || "-"}</td>
-                <td className="p-3 text-sm">
-                  {repo.lastMirrored
-                    ? formatDate(new Date(repo.lastMirrored))
-                    : "Never"}
-                </td>
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`h-2 w-2 rounded-full ${getStatusColor(
-                        repo.status
-                      )}`}
-                    />
-                    <span className="text-sm capitalize">{repo.status}</span>
-                  </div>
-                </td>
-                <td className="p-3 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    {repo.status === "mirrored" ||
-                    repo.status === "syncing" ||
-                    repo.status === "synced" ? (
-                      <Button
-                        variant="ghost"
-                        disabled={repo.status === "syncing" || isLoading}
-                        onClick={() => onSync({ repoId: repo.id ?? "" })}
-                      >
-                        {isLoading ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 animate-spin mr-1" />
-                            Sync
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-1" />
-                            Sync
-                          </>
-                        )}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        disabled={repo.status === "mirroring" || isLoading}
-                        onClick={() => onMirror({ repoId: repo.id ?? "" })}
-                      >
-                        {isLoading ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 animate-spin mr-1" />
-                            Mirror
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-1" />
-                            Mirror
-                          </>
-                        )}
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" asChild>
-                      <a
-                        href={repo.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
+                  {repo.isPrivate && (
+                    <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">
+                      Private
+                    </span>
+                  )}
+                </div>
+
+                {/* Owner  */}
+                <div className="h-full p-3 flex items-center flex-[1]">
+                  <p className="text-sm">{repo.owner}</p>
+                </div>
+
+                {/* Organization  */}
+                <div className="h-full p-3 flex items-center flex-[1]">
+                  <p className="text-sm"> {repo.organization || "-"}</p>
+                </div>
+
+                {/* Last Mirrored  */}
+                <div className="h-full p-3 flex items-center flex-[1]">
+                  <p className="text-sm">
+                    {repo.lastMirrored
+                      ? formatDate(new Date(repo.lastMirrored))
+                      : "Never"}
+                  </p>
+                </div>
+
+                {/* Status  */}
+                <div className="h-full p-3 flex items-center gap-x-2 flex-[1]">
+                  <div
+                    className={`h-2 w-2 rounded-full ${getStatusColor(
+                      repo.status
+                    )}`}
+                  />
+                  <span className="text-sm capitalize">{repo.status}</span>
+                </div>
+
+                {/* Actions  */}
+                <div className="h-full p-3 flex items-center justify-end gap-x-2 flex-[1]">
+                  {repo.status === "mirrored" ||
+                  repo.status === "syncing" ||
+                  repo.status === "synced" ? (
+                    <Button
+                      variant="ghost"
+                      disabled={repo.status === "syncing" || isLoading}
+                      onClick={() => onSync({ repoId: repo.id ?? "" })}
+                    >
+                      {isLoading ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+                          Sync
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          Sync
+                        </>
+                      )}
                     </Button>
-                  </div>
-                </td>
-              </tr>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      disabled={repo.status === "mirroring" || isLoading}
+                      onClick={() => onMirror({ repoId: repo.id ?? "" })}
+                    >
+                      {isLoading ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+                          Mirror
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-1" />
+                          Mirror
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="icon" asChild>
+                    <a
+                      href={repo.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                </div>
+              </div>
             );
           })}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 }

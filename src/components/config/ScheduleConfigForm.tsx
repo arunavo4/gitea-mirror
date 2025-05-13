@@ -2,6 +2,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "../ui/checkbox";
 import type { ScheduleConfig } from "@/types/config";
 import { formatDate } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface ScheduleConfigFormProps {
   config: ScheduleConfig;
@@ -33,6 +40,7 @@ export function ScheduleConfigForm({
 
   // Predefined intervals
   const intervals: { value: number; label: string }[] = [
+    // { value: 120, label: "2 minutes" }, //for testing
     { value: 900, label: "15 minutes" },
     { value: 1800, label: "30 minutes" },
     { value: 3600, label: "1 hour" },
@@ -80,20 +88,32 @@ export function ScheduleConfigForm({
             >
               Mirroring Interval
             </label>
-            <select
-              id="interval"
+
+            <Select
               name="interval"
-              value={config.interval}
-              onChange={handleChange}
-              disabled={!config.enabled}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+              value={String(config.interval)}
+              onValueChange={(value) =>
+                handleChange({
+                  target: { name: "interval", value },
+                } as React.ChangeEvent<HTMLInputElement>)
+              }
             >
-              {intervals.map((interval, index) => (
-                <option key={index} value={interval.value}>
-                  {interval.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full border border-input dark:bg-background dark:hover:bg-background">
+                <SelectValue placeholder="Select interval" />
+              </SelectTrigger>
+              <SelectContent className="bg-background text-foreground border border-input shadow-sm">
+                {intervals.map((interval) => (
+                  <SelectItem
+                    key={interval.value}
+                    value={interval.value.toString()}
+                    className="cursor-pointer text-sm px-3 py-2 hover:bg-accent focus:bg-accent focus:text-accent-foreground"
+                  >
+                    {interval.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <p className="text-xs text-muted-foreground mt-1">
               How often the mirroring process should run.
             </p>

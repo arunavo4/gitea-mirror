@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { RepositoryTable } from "./RepositoryTable";
+import RepositoryTable from "./RepositoryTable";
 import type { MirrorJob, Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
-import type { RepositoryApiResponse, RepoStatus } from "@/types/Repository";
+import {
+  repoStatusEnum,
+  type RepositoryApiResponse,
+  type RepoStatus,
+} from "@/types/Repository";
 import { apiRequest } from "@/lib/utils";
 import {
   Select,
@@ -51,47 +55,11 @@ export default function Repository() {
     onMessage: handleNewMessage,
   });
 
-  useEffect(() => {
-    const fetchRepositories = async () => {
-      try {
-        if (!user) {
-          return;
-        }
+  const fetchRepositories = useCallback(async () => {
+    if (!user) return;
 
-        setIsLoading(true);
-
-        const response = await apiRequest<RepositoryApiResponse>(
-          `/github/repositories?userId=${user.id}`,
-          {
-            method: "GET",
-          }
-        );
-
-        if (response.success) {
-          setRepositories(response.repositories);
-        } else {
-          toast.error(response.error || "Error fetching repositories");
-        }
-      } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Error fetching repositories"
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRepositories();
-  }, [user]);
-
-  const handleRefresh = async () => {
+    setIsLoading(true);
     try {
-      if (!user) {
-        return;
-      }
-
-      setIsLoading(true);
-
       const response = await apiRequest<RepositoryApiResponse>(
         `/github/repositories?userId=${user.id}`,
         {
@@ -101,16 +69,29 @@ export default function Repository() {
 
       if (response.success) {
         setRepositories(response.repositories);
-        toast.success("Repositories refreshed successfully.");
+        return true;
       } else {
-        toast.error(response.error || "Error refreshing repositories");
+        toast.error(response.error || "Error fetching repositories");
+        return false;
       }
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Error refreshing repositories"
+        error instanceof Error ? error.message : "Error fetching repositories"
       );
+      return false;
     } finally {
       setIsLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchRepositories();
+  }, [fetchRepositories]);
+
+  const handleRefresh = async () => {
+    const success = await fetchRepositories();
+    if (success) {
+      toast.success("Repositories refreshed successfully.");
     }
   };
 
@@ -263,7 +244,7 @@ export default function Repository() {
   };
 
   return (
-    <div className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-y-8">
       {/* Combine search and actions into a single flex row */}
       <div className="flex flex-row items-center gap-4 w-full">
         <div className="relative flex-grow">
@@ -294,13 +275,13 @@ export default function Repository() {
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="imported">Imported</SelectItem>
-            <SelectItem value="mirroring">Mirroring</SelectItem>
-            <SelectItem value="mirrored">Mirrored</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="syncing">Syncing</SelectItem>
-            <SelectItem value="synced">Synced</SelectItem>
+            {["all", ...repoStatusEnum.options].map((status) => (
+              <SelectItem key={status} value={status}>
+                {status === "all"
+                  ? "All Status"
+                  : status.charAt(0).toUpperCase() + status.slice(1)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 

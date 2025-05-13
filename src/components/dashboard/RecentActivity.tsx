@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MirrorJob } from "@/lib/db/schema";
 import { formatDate, getStatusColor } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 interface RecentActivityProps {
   activities: MirrorJob[];
@@ -9,10 +10,13 @@ interface RecentActivityProps {
 export function RecentActivity({ activities }: RecentActivityProps) {
   return (
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Recent Activity</CardTitle>
+        <Button variant="outline" asChild>
+          <a href="/activity">View All</a>
+        </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[calc(100dvh-22.5rem)] overflow-y-auto">
         <div className="flex flex-col divide-y divide-border">
           {activities.length === 0 ? (
             <p className="text-sm text-muted-foreground">No recent activity</p>

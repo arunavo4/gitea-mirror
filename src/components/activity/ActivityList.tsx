@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { MirrorJob } from "@/lib/db/schema";
 import Fuse from "fuse.js";
 import { Button } from "../ui/button";
@@ -22,6 +23,8 @@ export default function ActivityList({
   setFilter,
 }: ActivityListProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
   const filteredActivities = useMemo(() => {
     let result = activities;
@@ -32,15 +35,29 @@ export default function ActivityList({
 
     if (filter.searchTerm) {
       const fuse = new Fuse(result, {
-        keys: ["message", "repositoryName"],
+        keys: ["message", "details", "organizationName", "repositoryName"],
         threshold: 0.3,
       });
-
       result = fuse.search(filter.searchTerm).map((res) => res.item);
     }
 
     return result;
   }, [activities, filter]);
+
+  const virtualizer = useVirtualizer({
+    count: filteredActivities.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => {
+      const activity = filteredActivities[index];
+      return expandedItems.has(activity.id || "") ? 217 : 120;
+    },
+    overscan: 5,
+    measureElement: (el) => el.getBoundingClientRect().height + 8,
+  });
+
+  useEffect(() => {
+    virtualizer.measure();
+  }, [expandedItems, virtualizer]);
 
   return isLoading ? (
     <div className="flex flex-col gap-y-4">
@@ -61,10 +78,7 @@ export default function ActivityList({
         <Button
           variant="outline"
           onClick={() => {
-            setFilter({
-              searchTerm: "",
-              status: "",
-            });
+            setFilter({ searchTerm: "", status: "" });
           }}
         >
           Clear Filters
@@ -77,70 +91,97 @@ export default function ActivityList({
       )}
     </div>
   ) : (
-    <Card className="border rounded-md divide-y">
-      {filteredActivities.map((activity, index) => (
-        <div key={index} className="p-4">
-          <div className="flex items-start gap-4">
-            <div className="relative mt-2">
-              <div
-                className={`h-2 w-2 rounded-full ${getStatusColor(
-                  activity.status
-                )}`}
-              />
-            </div>
-            <div className="flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
-                <p className="font-medium">{activity.message}</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatDate(activity.timestamp)}
-                </p>
-              </div>
+    <Card
+      className="border rounded-md max-h-[calc(100dvh-191px)] overflow-y-auto relative"
+      ref={parentRef}
+    >
+      <div
+        style={{
+          height: virtualizer.getTotalSize(),
+          position: "relative",
+          width: "100%",
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const activity = filteredActivities[virtualRow.index];
+          const isExpanded = expandedItems.has(activity.id || "");
+          const key = activity.id || String(virtualRow.index);
 
-              {activity.repositoryName && (
-                <p className="text-sm text-muted-foreground mb-2">
-                  Repository: {activity.repositoryName}
-                </p>
-              )}
+          return (
+            <div
+              key={key}
+              ref={(node) => {
+                if (node) {
+                  rowRefs.current.set(key, node);
+                  virtualizer.measureElement(node);
+                }
+              }}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${virtualRow.start}px)`,
+                paddingBottom: "8px",
+              }}
+              className="border-b px-4 pt-4"
+            >
+              <div className="flex items-start gap-4">
+                <div className="relative mt-2">
+                  <div
+                    className={`h-2 w-2 rounded-full ${getStatusColor(
+                      activity.status
+                    )}`}
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1">
+                    <p className="font-medium">{activity.message}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(activity.timestamp)}
+                    </p>
+                  </div>
 
-              {activity.organizationName && (
-                <p className="text-sm text-muted-foreground mb-2">
-                  Organization: {activity.organizationName}
-                </p>
-              )}
+                  {activity.repositoryName && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Repository: {activity.repositoryName}
+                    </p>
+                  )}
 
-              {activity.details && (
-                <div className="mt-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setExpandedItems((prev) => {
-                        const newExpandedItems = new Set(prev);
-                        if (newExpandedItems.has(activity.id || "")) {
-                          newExpandedItems.delete(activity.id || "");
-                        } else {
-                          newExpandedItems.add(activity.id || "");
-                        }
-                        return newExpandedItems;
-                      });
-                    }}
-                    className="text-xs h-7 px-2"
-                  >
-                    {expandedItems.has(activity.id || "")
-                      ? "Hide Details"
-                      : "Show Details"}
-                  </Button>
+                  {activity.organizationName && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Organization: {activity.organizationName}
+                    </p>
+                  )}
 
-                  {expandedItems.has(activity.id || "") && (
-                    <pre className="mt-2 p-3 bg-muted rounded-md text-xs overflow-auto">
-                      {activity.details}
-                    </pre>
+                  {activity.details && (
+                    <div className="mt-2">
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          const newSet = new Set(expandedItems);
+                          const id = activity.id || "";
+                          newSet.has(id) ? newSet.delete(id) : newSet.add(id);
+                          setExpandedItems(newSet);
+                        }}
+                        className="text-xs h-7 px-2"
+                      >
+                        {isExpanded ? "Hide Details" : "Show Details"}
+                      </Button>
+
+                      {isExpanded && (
+                        <pre className="mt-2 p-3 bg-muted rounded-md text-xs overflow-auto whitespace-pre-wrap min-h-[100px]">
+                          {activity.details}
+                        </pre>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </div>
-      ))}
+          );
+        })}
+      </div>
     </Card>
   );
 }

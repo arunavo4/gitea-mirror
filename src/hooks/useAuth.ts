@@ -34,7 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Function to refetch the user data
   const refreshUser = async () => {
-    setIsLoading(true);
+    // not using loading state to keep the ui seamless and refresh the data in bg
+    // setIsLoading(true);
     try {
       const user = await authApi.getCurrentUser();
 
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       console.error("Failed to refresh user data", err);
     } finally {
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   };
 

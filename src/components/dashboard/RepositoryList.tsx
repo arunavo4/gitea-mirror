@@ -11,14 +11,14 @@ interface RepositoryListProps {
 export function RepositoryList({ repositories }: RepositoryListProps) {
   return (
     <Card className="w-full">
+      {/* calculating the max height based non the other elements and sizing styles */}
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Repositories</CardTitle>
         <Button variant="outline" asChild>
           <a href="/repositories">View All</a>
         </Button>
       </CardHeader>
-
-      <CardContent>
+      <CardContent className="max-h-[calc(100dvh-22.5rem)] overflow-y-auto">
         {repositories.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <GitFork className="h-10 w-10 text-muted-foreground mb-4" />
