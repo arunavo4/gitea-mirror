@@ -11,15 +11,31 @@ try {
   // Fetch activity from mirror jobs
   const jobs = await db.select().from(mirrorJobs).limit(20);
   activityData = jobs.flatMap((job: any) => {
-    const log = JSON.parse(job.log);
-    return log.map((entry: any) => ({
-      id: `${job.id}-${entry.timestamp}`,
-      message: entry.message,
-      timestamp: new Date(entry.timestamp),
-      status: entry.level,
-      details: entry.details,
-      repositoryName: entry.repositoryName,
-    }));
+    // Check if log exists before parsing
+    if (!job.log) {
+      console.warn(`Job ${job.id} has no log data`);
+      return [];
+    }
+    
+    try {
+      const log = JSON.parse(job.log);
+      if (!Array.isArray(log)) {
+        console.warn(`Job ${job.id} log is not an array`);
+        return [];
+      }
+      
+      return log.map((entry: any) => ({
+        id: `${job.id}-${entry.timestamp}`,
+        message: entry.message,
+        timestamp: new Date(entry.timestamp),
+        status: entry.level,
+        details: entry.details,
+        repositoryName: entry.repositoryName,
+      }));
+    } catch (parseError) {
+      console.error(`Failed to parse log for job ${job.id}:`, parseError);
+      return [];
+    }
   }).slice(0, 20);
 } catch (error) {
   console.error('Error fetching activity:', error);
