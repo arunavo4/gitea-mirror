@@ -63,6 +63,27 @@ export function ConfigTabs() {
   const [dockerCode, setDockerCode] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isConfigSaved, setIsConfigSaved] = useState<boolean>(false);
+
+  // Check if all required fields are filled to enable the Save Configuration button
+  const isConfigFormValid = (): boolean => {
+    const { githubConfig, giteaConfig } = config;
+
+    // Check GitHub required fields
+    const isGitHubValid = !!(
+      githubConfig.username?.trim() &&
+      githubConfig.token?.trim()
+    );
+
+    // Check Gitea required fields
+    const isGiteaValid = !!(
+      giteaConfig.url?.trim() &&
+      giteaConfig.username?.trim() &&
+      giteaConfig.token?.trim()
+    );
+
+    return isGitHubValid && isGiteaValid;
+  };
 
   useEffect(() => {
     const updateLastAndNextRun = () => {
@@ -142,6 +163,7 @@ export function ConfigTabs() {
 
       if (result.success) {
         await refreshUser();
+        setIsConfigSaved(true);
 
         toast.success(
           "Configuration saved successfully! Now import your GitHub data to begin."
@@ -183,6 +205,11 @@ export function ConfigTabs() {
             giteaConfig: response.giteaConfig || config.giteaConfig,
             scheduleConfig: response.scheduleConfig || config.scheduleConfig,
           });
+
+          // If we got a valid config from the server, it means it was previously saved
+          if (response.id) {
+            setIsConfigSaved(true);
+          }
         }
         // If there's an error, we'll just use the default config defined in state
 
@@ -253,7 +280,17 @@ services:
           </div>
 
           <div className="flex gap-x-4">
-            <Button onClick={handleImportGitHubData} disabled={isSyncing}>
+            <Button
+              onClick={handleImportGitHubData}
+              disabled={isSyncing || !isConfigSaved}
+              title={
+                !isConfigSaved
+                  ? "Save configuration first"
+                  : isSyncing
+                  ? "Import in progress"
+                  : "Import GitHub Data"
+              }
+            >
               {isSyncing ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin mr-1" />
@@ -266,7 +303,17 @@ services:
                 </>
               )}
             </Button>
-            <Button onClick={handleSaveConfig}>Save Configuration</Button>
+            <Button
+              onClick={handleSaveConfig}
+              disabled={!isConfigFormValid()}
+              title={
+                !isConfigFormValid()
+                  ? "Please fill all required fields"
+                  : "Save Configuration"
+              }
+            >
+              Save Configuration
+            </Button>
           </div>
         </CardHeader>
 
