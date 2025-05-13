@@ -236,7 +236,6 @@ export function Organization() {
                   : role
                       .replace(/_/g, " ")
                       .replace(/\b\w/g, (c) => c.toUpperCase())}
-                j
               </SelectItem>
             ))}
           </SelectContent>
