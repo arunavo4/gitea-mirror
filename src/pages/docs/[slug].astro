@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+import MainLayout from '../../layouts/main.astro';
+
+// Enable prerendering for this dynamic route
+export const prerender = true;
+
+// Generate static paths for all documentation pages
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map(entry => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+// Get the documentation entry from props
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+
+<MainLayout title={entry.data.title}>
+  <main class="prose dark:prose-invert max-w-4xl mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a href="/docs/" class="text-blue-500 hover:underline">&larr; Back to Documentation</a>
+    </div>
+
+    <Content />
+  </main>
+</MainLayout>

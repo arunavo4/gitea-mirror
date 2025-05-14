@@ -1,3 +1,10 @@
+---
+title: "Quick Start Guide"
+description: "Get started with Gitea Mirror quickly."
+order: 3
+updatedDate: 2023-10-15
+---
+
 # Gitea Mirror Quick Start Guide
 
 This guide will help you get Gitea Mirror up and running quickly.
@@ -89,18 +96,3 @@ Before you begin, make sure you have:
 4. Click "Mirror Selected" to start the mirroring process
 5. Monitor the progress on the Activity page
 6. You'll receive toast notifications about the success or failure of operations
-
-## Next Steps
-
-- See the [Configuration Guide](configuration.md) for detailed configuration options
-- Set up automatic mirroring with a schedule
-- Configure repository filtering to include/exclude specific repositories
-
-## Troubleshooting
-
-If you encounter issues:
-
-1. Check the Activity page for error messages
-2. Verify your GitHub and Gitea tokens have the correct permissions
-3. Ensure your Gitea server is accessible
-4. Check GitHub API rate limits if you're mirroring many repositories

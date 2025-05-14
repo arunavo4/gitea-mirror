@@ -1,23 +1,27 @@
 ---
-title: "Documentation"
-layout: "../../layouts/main.astro"
+import { getCollection } from 'astro:content';
+import MainLayout from '../../layouts/main.astro';
+
+// Get all documentation entries, sorted by order
+const docs = await getCollection('docs');
+const sortedDocs = docs.sort((a, b) => {
+  const orderA = a.data.order || 999;
+  const orderB = b.data.order || 999;
+  return orderA - orderB;
+});
 ---
 
-<main class="prose dark:prose-invert max-w-4xl mx-auto px-4 py-8">
-  <h1>Gitea Mirror Documentation</h1>
-  
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-    <a href="/docs/architecture" class="block p-6 border rounded-lg hover:bg-secondary/20 transition-colors">
-      <h2 class="text-xl font-semibold">Architecture</h2>
-      <p>Comprehensive overview of the Gitea Mirror application architecture.</p>
-    </a>
-    <a href="/docs/configuration" class="block p-6 border rounded-lg hover:bg-secondary/20 transition-colors">
-      <h2 class="text-xl font-semibold">Configuration</h2>
-      <p>Guide to configuring Gitea Mirror for your environment.</p>
-    </a>
-    <a href="/docs/quickstart" class="block p-6 border rounded-lg hover:bg-secondary/20 transition-colors">
-      <h2 class="text-xl font-semibold">Quick Start Guide</h2>
-      <p>Get started with Gitea Mirror quickly.</p>
-    </a>
-  </div>
-</main>
+<MainLayout title="Documentation">
+  <main class="prose dark:prose-invert max-w-4xl mx-auto px-4 py-8">
+    <h1>Gitea Mirror Documentation</h1>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+      {sortedDocs.map(doc => (
+        <a href={`/docs/${doc.slug}`} class="block p-6 border rounded-lg hover:bg-secondary/20 transition-colors">
+          <h2 class="text-xl font-semibold">{doc.data.title}</h2>
+          <p>{doc.data.description}</p>
+        </a>
+      ))}
+    </div>
+  </main>
+</MainLayout>
