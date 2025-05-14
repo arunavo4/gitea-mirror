@@ -5,8 +5,6 @@ order: 2
 updatedDate: 2023-10-15
 ---
 
-# Gitea Mirror Configuration Guide
-
 <div class="mb-6">
   <h1 class="text-2xl font-bold text-foreground">Gitea Mirror Configuration Guide</h1>
   <p class="text-muted-foreground mt-2">This guide provides detailed information on how to configure Gitea Mirror for your environment.</p>

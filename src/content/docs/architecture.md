@@ -5,9 +5,6 @@ order: 1
 updatedDate: 2023-10-15
 ---
 
-
-# Gitea Mirror Architecture
-
 <div class="mb-6">
   <h1 class="text-2xl font-bold text-foreground">Gitea Mirror Architecture</h1>
   <p class="text-muted-foreground mt-2">This document provides a comprehensive overview of the Gitea Mirror application architecture, including component diagrams, project structure, and detailed explanations of each part of the system.</p>
