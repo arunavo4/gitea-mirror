@@ -1,0 +1,63 @@
+/* Enhanced Markdown/Docs styling for Tailwind Typography */
+.prose {
+  --tw-prose-body: #e5e7eb;
+  --tw-prose-headings: #fff;
+  --tw-prose-links: #60a5fa;
+  --tw-prose-bold: #fff;
+  --tw-prose-codes: #fbbf24;
+  --tw-prose-pre-bg: #18181b;
+  --tw-prose-pre-color: #f3f4f6;
+  --tw-prose-hr: #374151;
+  --tw-prose-quotes: #a3e635;
+  font-size: 1.1rem;
+  line-height: 1.8;
+}
+
+.prose h1, .prose h2, .prose h3 {
+  font-weight: 700;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.prose pre {
+  background: #18181b;
+  color: #f3f4f6;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.prose code {
+  background: #23272e;
+  color: #fbbf24;
+  border-radius: 0.3rem;
+  padding: 0.2em 0.4em;
+  font-size: 0.95em;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.prose th, .prose td {
+  border: 1px solid #374151;
+  padding: 0.5rem 1rem;
+}
+
+.prose blockquote {
+  border-left: 4px solid #60a5fa;
+  background: #1e293b;
+  color: #a3e635;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+}
+
+/* Mermaid diagrams should be responsive */
+.prose .mermaid svg {
+  width: 100% !important;
+  height: auto !important;
+  background: transparent;
+}
