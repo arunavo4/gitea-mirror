@@ -1,64 +1,56 @@
 import { useState, useEffect } from "react";
-import type { MembershipRole } from "@/types/organizations";
-import type { RepoStatus } from "@/types/Repository";
 import type { FilterParams } from "@/types/filter";
 
-export const useFilterParams = (defaultFilters: FilterParams) => {
-  // Helper function to get the initial filter state from URL parameters
+const FILTER_KEYS: (keyof FilterParams)[] = [
+  "searchTerm",
+  "status",
+  "membershipRole",
+  "owner",
+  "organization",
+  "type",
+  "name",
+];
+
+export const useFilterParams = (
+  defaultFilters: FilterParams,
+  debounceDelay = 300
+) => {
   const getInitialFilter = (): FilterParams => {
-    if (typeof window === "undefined") {
-      return defaultFilters;
-    }
+    if (typeof window === "undefined") return defaultFilters;
+
     const params = new URLSearchParams(window.location.search);
-    return {
-      searchTerm: params.get("searchTerm") || defaultFilters.searchTerm,
-      status: (params.get("status") || defaultFilters.status) as
-        | RepoStatus
-        | "",
-      membershipRole: (params.get("membershipRole") ||
-        defaultFilters.membershipRole) as MembershipRole | "",
-      owner: params.get("owner") || defaultFilters.owner,
-      organization: params.get("organization") || defaultFilters.organization,
-      type: params.get("type") || defaultFilters.type,
-      name: params.get("name") || defaultFilters.name,
-    };
+    const result: FilterParams = { ...defaultFilters };
+
+    FILTER_KEYS.forEach((key) => {
+      const value = params.get(key);
+      if (value !== null) {
+        (result as any)[key] = value;
+      }
+    });
+
+    return result;
   };
 
-  // State to hold filter values
-  const [filter, setFilter] = useState<FilterParams>(getInitialFilter());
+  const [filter, setFilter] = useState<FilterParams>(() => getInitialFilter());
 
-  // Function to update the URL with the current filter state
-  const updateUrlParams = (newFilter: FilterParams) => {
-    const params = new URLSearchParams();
-    if (newFilter.searchTerm) {
-      params.set("searchTerm", newFilter.searchTerm);
-    }
-    if (newFilter.status) {
-      params.set("status", newFilter.status);
-    }
-    if (newFilter.membershipRole) {
-      params.set("membershipRole", newFilter.membershipRole);
-    }
-    if (newFilter.owner) {
-      params.set("owner", newFilter.owner);
-    }
-    if (newFilter.organization) {
-      params.set("organization", newFilter.organization);
-    }
-    if (newFilter.type) {
-      params.set("type", newFilter.type);
-    }
-    if (newFilter.name) {
-      params.set("name", newFilter.name);
-    }
-    const newUrl = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, "", newUrl);
-  };
-
-  // Update the URL whenever the filter changes
+  // Debounced URL update
   useEffect(() => {
-    updateUrlParams(filter);
-  }, [filter]);
+    const handler = setTimeout(() => {
+      const params = new URLSearchParams();
+
+      FILTER_KEYS.forEach((key) => {
+        const value = filter[key];
+        if (value) {
+          params.set(key, String(value));
+        }
+      });
+
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, "", newUrl);
+    }, debounceDelay);
+
+    return () => clearTimeout(handler); // Cleanup on unmount or when `filter` changes
+  }, [filter, debounceDelay]);
 
   return {
     filter,
