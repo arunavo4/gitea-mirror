@@ -17,7 +17,7 @@ const sortedDocs = docs.sort((a, b) => {
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
       {sortedDocs.map(doc => (
-        <a href={`/docs/${doc.slug}`} target="_blank" rel="noopener noreferrer" class="block p-6 border rounded-lg hover:bg-secondary/20 transition-colors">
+        <a href={`/docs/${doc.slug}`} class="block p-6 border rounded-lg hover:bg-secondary/20 transition-colors">
           <h2 class="text-xl font-semibold">{doc.data.title}</h2>
           <p>{doc.data.description}</p>
         </a>
