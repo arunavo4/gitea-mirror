@@ -295,6 +295,23 @@ export async function mirrorGitHubRepoToGiteaOrg({
       throw new Error("Gitea config is required.");
     }
 
+    const isExisting = await isRepoPresentInGitea({
+      config,
+      owner: orgName,
+      repoName: repository.name,
+    });
+
+    if (isExisting) {
+      console.log(
+        `Repository ${repository.name} already exists in Gitea. Skipping migration.`
+      );
+      return;
+    }
+
+    console.log(
+      `Mirroring repository ${repository.name} to organization ${orgName}`
+    );
+
     let cloneAddress = repository.cloneUrl;
 
     if (repository.isPrivate) {
@@ -309,10 +326,6 @@ export async function mirrorGitHubRepoToGiteaOrg({
         `https://${config.githubConfig.token}@`
       );
     }
-
-    console.log(
-      `Mirroring repository ${repository.name} to organization ${orgName}`
-    );
 
     // Mark repos as "mirroring" in DB
     await db

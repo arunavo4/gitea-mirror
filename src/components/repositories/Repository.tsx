@@ -168,7 +168,7 @@ export default function Repository() {
       // Filter out repositories that are already mirroring to avoid duplicate operations. also filter out mirrored (mirrored can be synced and not mirrored again)
       const eligibleRepos = repositories.filter(
         (repo) =>
-          repo.status !== "mirroring" && repo.status !== "mirrored" && repo.id
+          repo.status !== "mirroring" && repo.status !== "mirrored" && repo.id //not ignoring failed ones because we want to retry them if not mirrored. if mirrored, gitea fucnion handlers will silently ignore them
       );
 
       if (eligibleRepos.length === 0) {
