@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, ExternalLink, RefreshCw } from "lucide-react";
+import { Plus, Users, RefreshCw } from "lucide-react";
+import { SiGithub } from "react-icons/si";
 import type { Organization } from "@/lib/db/schema";
 import type { FilterParams } from "@/types/filter";
 import Fuse from "fuse.js";
@@ -149,7 +150,7 @@ export function OrganizationList({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <ExternalLink className="h-4 w-4" />
+                   <SiGithub className="h-4 w-4" />
                 </a>
               </Button>
             </div>

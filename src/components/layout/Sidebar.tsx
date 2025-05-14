@@ -72,7 +72,7 @@ export function Sidebar({ className }: SidebarProps) {
               className="flex items-center gap-1 text-xs text-primary hover:underline"
             >
               Documentation
-              <ExternalLink className="h-3 w-3" />
+               <ExternalLink className="h-3 w-3" />
             </a>
           </div>
         </div>

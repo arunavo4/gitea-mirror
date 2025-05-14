@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GitFork, ExternalLink } from "lucide-react";
+import { GitFork } from "lucide-react";
+import { SiGithub } from "react-icons/si";
 import type { Repository } from "@/lib/db/schema";
 import { getStatusColor } from "@/lib/utils";
 
@@ -76,9 +77,9 @@ export function RepositoryList({ repositories }: RepositoryListProps) {
                       href={repo.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
+                      >
+                       <SiGithub className="h-4 w-4" />
+                      </a>
                   </Button>
                 </div>
               </div>

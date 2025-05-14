@@ -1,7 +1,8 @@
 import { useMemo, useRef } from "react";
 import Fuse from "fuse.js";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { GitFork, ExternalLink, RefreshCw } from "lucide-react";
+import { GitFork, RefreshCw } from "lucide-react";
+import { SiGithub } from "react-icons/si";
 import type { Repository } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { formatDate, getStatusColor } from "@/lib/utils";
@@ -272,7 +273,7 @@ export default function RepositoryTable({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <ExternalLink className="h-4 w-4" />
+                      <SiGithub className="h-4 w-4" />
                     </a>
                   </Button>
                 </div>
