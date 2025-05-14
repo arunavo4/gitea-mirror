@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, RefreshCw, Filter, Users } from "lucide-react";
+import { Search, RefreshCw, Filter, Users, FlipHorizontal } from "lucide-react";
 import type { MirrorJob, Organization } from "@/lib/db/schema";
 import { OrganizationList } from "./OrganizationsList";
 import { useAuth } from "@/hooks/useAuth";
@@ -256,7 +256,7 @@ export function Organization() {
           onClick={handleMirrorAllOrgs}
           disabled={isLoading || loadingOrgIds.size > 0}
         >
-          <Users className="h-4 w-4 mr-2" />
+          <FlipHorizontal className="h-4 w-4 mr-2" />
           Mirror All
         </Button>
       </div>

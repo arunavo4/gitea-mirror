@@ -1,8 +1,7 @@
 import { StatusCard } from "./StatusCard";
 import { RecentActivity } from "./RecentActivity";
 import { RepositoryList } from "./RepositoryList";
-import { Button } from "@/components/ui/button";
-import { GitFork, Users, GitMerge, Clock } from "lucide-react";
+import { GitFork, Clock, FlipHorizontal, Building2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { MirrorJob, Organization, Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
@@ -106,13 +105,13 @@ export function Dashboard() {
         <StatusCard
           title="Mirrored"
           value={mirroredCount}
-          icon={<GitMerge className="h-4 w-4" />}
+          icon={<FlipHorizontal className="h-4 w-4" />}
           description="Successfully mirrored"
         />
         <StatusCard
           title="Organizations"
           value={orgCount}
-          icon={<Users className="h-4 w-4" />}
+          icon={<Building2 className="h-4 w-4" />}
           description="GitHub organizations"
         />
         <StatusCard

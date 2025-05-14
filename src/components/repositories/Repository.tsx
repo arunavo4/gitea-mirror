@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, RefreshCw, GitFork } from "lucide-react";
+import { Search, Filter, RefreshCw, GitFork, FlipHorizontal } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 import { useSSE } from "@/hooks/useSEE";
 import { useFilterParams } from "@/hooks/useFilterParams";
@@ -300,7 +300,7 @@ export default function Repository() {
           onClick={handleMirrorAllRepos}
           disabled={isLoading || loadingRepoIds.size > 0}
         >
-          <GitFork className="h-4 w-4 mr-2" />
+          <FlipHorizontal className="h-4 w-4 mr-2" />
           Mirror All
         </Button>
       </div>
