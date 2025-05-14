@@ -315,7 +315,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
       <CardFooter className="flex-col items-start">
         <Alert variant="note" className="w-full">
-          <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-1 mr-2" />
+          <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
           <AlertDescription className="text-sm">
             <div className="font-semibold mb-1">Note:</div>
             <div className="mb-1">
