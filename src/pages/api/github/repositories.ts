@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
-import { db, repositories } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { db, repositories, configs } from "@/lib/db";
+import { and, eq, sql } from "drizzle-orm";
 import {
   repositoryVisibilityEnum,
   repoStatusEnum,
@@ -20,11 +20,48 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   try {
-    // Return the latest data from DB
+    // Fetch the user's active configuration
+    const [config] = await db
+      .select()
+      .from(configs)
+      .where(and(eq(configs.userId, userId), eq(configs.isActive, true)));
+
+    if (!config) {
+      return jsonResponse({
+        data: {
+          success: false,
+          error: "No active configuration found for this user",
+        },
+        status: 404,
+      });
+    }
+
+    const githubConfig = config.githubConfig as {
+      mirrorStarred: boolean;
+      skipForks: boolean;
+      privateRepositories: boolean;
+    };
+
+    // Build query conditions based on config
+    const conditions = [eq(repositories.userId, userId)];
+
+    if (!githubConfig.mirrorStarred) {
+      conditions.push(eq(repositories.isStarred, false));
+    }
+
+    if (githubConfig.skipForks) {
+      conditions.push(eq(repositories.isForked, false));
+    }
+
+    if (!githubConfig.privateRepositories) {
+      conditions.push(eq(repositories.isPrivate, false));
+    }
+
     const rawRepositories = await db
       .select()
       .from(repositories)
-      .where(eq(repositories.userId, userId));
+      .where(and(...conditions))
+      .orderBy(sql`name COLLATE NOCASE`);
 
     const response: RepositoryApiResponse = {
       success: true,
