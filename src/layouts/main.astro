@@ -1,7 +1,10 @@
 ---
 import '../styles/global.css';
+import '../styles/docs.css';
 import ThemeScript from '@/components/theme/ThemeScript.astro';
-const { content } = Astro.props;
+
+// Accept title as a prop with a default value
+const { title = 'Gitea Mirror' } = Astro.props;
 ---
 
 <html lang="en">
@@ -9,7 +12,7 @@ const { content } = Astro.props;
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<title>{content.title}</title>
+		<title>{title}</title>
 		<ThemeScript />
 	</head>
 	<body>
