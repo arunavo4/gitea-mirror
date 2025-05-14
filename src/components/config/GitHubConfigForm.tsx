@@ -12,6 +12,8 @@ import type { GitHubConfig } from "@/types/config";
 import { Input } from "../ui/input";
 import { Checkbox } from "../ui/checkbox";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "../ui/alert";
 
 interface GitHubConfigFormProps {
   config: GitHubConfig;
@@ -311,8 +313,34 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
         </div>
       </CardContent>
 
-      <CardFooter>
-        {/* Footer content can be added here if needed */}
+      <CardFooter className="flex-col items-start">
+        <Alert variant="note" className="w-full">
+          <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-1 mr-2" />
+          <AlertDescription className="text-sm">
+            <div className="font-semibold mb-1">Note:</div>
+            <div className="mb-1">
+              You need to create a <span className="font-semibold">Classic GitHub PAT Token</span> with following scopes:
+            </div>
+            <ul className="ml-4 mb-1 list-disc">
+              <li><code>repo</code></li>
+              <li><code>admin:org</code></li>
+            </ul>
+            <div className="mb-1">
+              The organization access is required for mirroring organization repositories.
+            </div>
+            <div>
+              You can generate tokens at{' '}
+              <a
+                href="https://github.com/settings/tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline font-medium hover:text-blue-900 dark:hover:text-blue-200"
+              >
+                github.com/settings/tokens
+              </a>.
+            </div>
+          </AlertDescription>
+        </Alert>
       </CardFooter>
     </Card>
   );
