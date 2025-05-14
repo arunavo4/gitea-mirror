@@ -57,11 +57,23 @@ services:
       - HOST=0.0.0.0
       - PORT=4321
       - JWT_SECRET=dev-secret-key
-      - GITHUB_TOKEN=${GITHUB_TOKEN:-your-github-token}
+      # GitHub/Gitea Mirror Config
       - GITHUB_USERNAME=${GITHUB_USERNAME:-your-github-username}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-your-github-token}
+      - SKIP_FORKS=${SKIP_FORKS:-false}
+      - PRIVATE_REPOSITORIES=${PRIVATE_REPOSITORIES:-false}
+      - MIRROR_ISSUES=${MIRROR_ISSUES:-false}
+      - MIRROR_STARRED=${MIRROR_STARRED:-false}
+      - MIRROR_ORGANIZATIONS=${MIRROR_ORGANIZATIONS:-false}
+      - PRESERVE_ORG_STRUCTURE=${PRESERVE_ORG_STRUCTURE:-false}
+      - ONLY_MIRROR_ORGS=${ONLY_MIRROR_ORGS:-false}
+      - SKIP_STARRED_ISSUES=${SKIP_STARRED_ISSUES:-false}
       - GITEA_URL=http://gitea:3000
       - GITEA_TOKEN=${GITEA_TOKEN:-your-local-gitea-token}
       - GITEA_USERNAME=${GITEA_USERNAME:-your-local-gitea-username}
+      - GITEA_ORGANIZATION=${GITEA_ORGANIZATION:-github-mirrors}
+      - GITEA_ORG_VISIBILITY=${GITEA_ORG_VISIBILITY:-public}
+      - DELAY=${DELAY:-3600}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4321/"]
       interval: 30s

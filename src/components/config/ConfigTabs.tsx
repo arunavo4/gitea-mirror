@@ -238,11 +238,14 @@ services:
       - GITEA_URL=${config.giteaConfig.url}
       - GITEA_TOKEN=${config.giteaConfig.token}
       - GITHUB_TOKEN=${config.githubConfig.token}
+      - SKIP_FORKS=${config.githubConfig.skipForks}
+      - PRIVATE_REPOSITORIES=${config.githubConfig.privateRepositories}
       - MIRROR_ISSUES=${config.githubConfig.mirrorIssues}
       - MIRROR_STARRED=${config.githubConfig.mirrorStarred}
       - MIRROR_ORGANIZATIONS=${config.githubConfig.mirrorOrganizations}
       - PRESERVE_ORG_STRUCTURE=${config.githubConfig.preserveOrgStructure}
       - ONLY_MIRROR_ORGS=${config.githubConfig.onlyMirrorOrgs}
+      - SKIP_STARRED_ISSUES=${config.githubConfig.skipStarredIssues}
       - GITEA_ORGANIZATION=${config.giteaConfig.organization}
       - GITEA_ORG_VISIBILITY=${config.giteaConfig.visibility}
       - DELAY=${config.scheduleConfig.interval}`;
