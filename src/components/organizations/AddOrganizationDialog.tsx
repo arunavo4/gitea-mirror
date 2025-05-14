@@ -12,7 +12,7 @@ import {
 interface AddOrganizationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, type: "member" | "public") => void;
+  onAdd: (name: string, type: "member" | "admin" | "billing_manager") => void;
 }
 
 export function AddOrganizationDialog({
@@ -21,7 +21,7 @@ export function AddOrganizationDialog({
   onAdd,
 }: AddOrganizationDialogProps) {
   const [name, setName] = useState("");
-  const [type, setType] = useState<"member" | "public">("public");
+  const [type, setType] = useState<"member" | "admin" | "billing_manager">("member");
   const [error, setError] = useState("");
 
   if (!isOpen) return null;
@@ -36,7 +36,7 @@ export function AddOrganizationDialog({
 
     onAdd(name, type);
     setName("");
-    setType("public");
+    setType("member");
     setError("");
     onClose();
   };
@@ -70,7 +70,7 @@ export function AddOrganizationDialog({
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Organization Type
+                  Membership Role
                 </label>
                 <div className="space-y-2">
                   <div className="flex items-center">
@@ -84,21 +84,35 @@ export function AddOrganizationDialog({
                       className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
                     />
                     <label htmlFor="type-member" className="ml-2 block text-sm">
-                      Member Organization (you are a member)
+                      Member (regular organization member)
                     </label>
                   </div>
                   <div className="flex items-center">
                     <input
-                      id="type-public"
+                      id="type-admin"
                       type="radio"
                       name="type"
-                      value="public"
-                      checked={type === "public"}
-                      onChange={() => setType("public")}
+                      value="admin"
+                      checked={type === "admin"}
+                      onChange={() => setType("admin")}
                       className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
                     />
-                    <label htmlFor="type-public" className="ml-2 block text-sm">
-                      Public Organization (anyone can access)
+                    <label htmlFor="type-admin" className="ml-2 block text-sm">
+                      Admin (with administrative privileges)
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      id="type-billing"
+                      type="radio"
+                      name="type"
+                      value="billing_manager"
+                      checked={type === "billing_manager"}
+                      onChange={() => setType("billing_manager")}
+                      className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="type-billing" className="ml-2 block text-sm">
+                      Billing Manager (manages org billing)
                     </label>
                   </div>
                 </div>

@@ -17,6 +17,7 @@ interface OrganizationListProps {
   setFilter: (filter: FilterParams) => void;
   onMirror: ({ orgId }: { orgId: string }) => Promise<void>;
   loadingOrgIds: Set<string>;
+  onAddOrganization?: () => void;
 }
 
 export function OrganizationList({
@@ -26,6 +27,7 @@ export function OrganizationList({
   setFilter,
   onMirror,
   loadingOrgIds,
+  onAddOrganization,
 }: OrganizationListProps) {
   const hasAnyFilter = Object.values(filter).some(
     (val) => val?.toString().trim() !== ""
@@ -81,7 +83,7 @@ export function OrganizationList({
           Clear Filters
         </Button>
       ) : (
-        <Button>
+        <Button onClick={onAddOrganization}>
           <Plus className="h-4 w-4 mr-2" />
           Add Organization
         </Button>

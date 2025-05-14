@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, RefreshCw, Users, FlipHorizontal } from "lucide-react";
+import { Search, RefreshCw, Users, FlipHorizontal, Plus } from "lucide-react";
 import { OwnerCombobox } from "../repositories/RepositoryComboboxes";
 import type { MirrorJob, Organization } from "@/lib/db/schema";
 import { OrganizationList } from "./OrganizationsList";
+import { AddOrganizationDialog } from "./AddOrganizationDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import {
@@ -26,6 +27,7 @@ import { toast } from "sonner";
 export function Organization() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState<boolean>(false);
   const { user } = useAuth();
   const { filter, setFilter } = useFilterParams({
     searchTerm: "",
@@ -138,6 +140,55 @@ export function Organization() {
         newSet.delete(orgId);
         return newSet;
       });
+    }
+  };
+
+  const handleAddOrganization = async (name: string, membershipRole: "member" | "admin" | "billing_manager") => {
+    try {
+      if (!user || !user.id) {
+        toast.error("You must be logged in to add an organization");
+        return;
+      }
+
+      // Add loading state
+      setIsLoading(true);
+
+      // Create new organization object with required fields
+      const newOrg: Partial<Organization> = {
+        userId: user.id,
+        name,
+        membershipRole,
+        avatarUrl: `https://github.com/${name}.png`, // Default GitHub org avatar URL
+        status: "imported",
+        isIncluded: false,
+        repositoryCount: 0
+      };
+
+      // Make API request to add the organization
+      const response = await apiRequest<{ success: boolean; organization?: Organization; error?: string }>(
+        `/github/organizations`, 
+        {
+          method: "POST",
+          data: { 
+            userId: user.id, 
+            organization: newOrg 
+          }
+        }
+      );
+
+      if (response.success && response.organization) {
+        // Add the new organization to the list
+        setOrganizations(prev => [...prev, response.organization as Organization]);
+        toast.success(`Organization ${name} added successfully`);
+      } else {
+        toast.error(response.error || "Error adding organization");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error adding organization"
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -291,6 +342,22 @@ export function Organization() {
         setFilter={setFilter}
         loadingOrgIds={loadingOrgIds}
         onMirror={handleMirrorOrg}
+        onAddOrganization={() => setIsAddDialogOpen(true)}
+      />
+
+      {/* Add Organization button */}
+      <Button
+        onClick={() => setIsAddDialogOpen(true)}
+        className="fixed bottom-6 right-6 rounded-full h-12 w-12 shadow-lg p-0"
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
+      {/* Add Organization Dialog */}
+      <AddOrganizationDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onAdd={handleAddOrganization}
       />
     </div>
   );
