@@ -7,15 +7,18 @@ updatedDate: 2023-10-15
 
 # Gitea Mirror Quick Start Guide
 
-This guide will help you get Gitea Mirror up and running quickly.
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-foreground">Gitea Mirror Quick Start Guide</h1>
+  <p class="text-muted-foreground mt-2">This guide will help you get Gitea Mirror up and running quickly.</p>
+</div>
 
 ## Prerequisites
 
 Before you begin, make sure you have:
 
-1. A GitHub account with a personal access token
-2. A Gitea instance with an access token
-3. Docker and docker-compose (recommended) or Node.js 18+ installed
+1. <span class="font-semibold text-foreground">A GitHub account with a personal access token</span>
+2. <span class="font-semibold text-foreground">A Gitea instance with an access token</span>
+3. <span class="font-semibold text-foreground">Docker and docker-compose (recommended) or Node.js 18+ installed</span>
 
 ## Installation Options
 

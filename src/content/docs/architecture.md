@@ -5,21 +5,27 @@ order: 1
 updatedDate: 2023-10-15
 ---
 
+
 # Gitea Mirror Architecture
 
-This document provides a comprehensive overview of the Gitea Mirror application architecture, including component diagrams, project structure, and detailed explanations of each part of the system.
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-foreground">Gitea Mirror Architecture</h1>
+  <p class="text-muted-foreground mt-2">This document provides a comprehensive overview of the Gitea Mirror application architecture, including component diagrams, project structure, and detailed explanations of each part of the system.</p>
+</div>
 
 ## System Overview
 
-Gitea Mirror is a web application that automates the mirroring of GitHub repositories to Gitea instances. It provides a user-friendly interface for configuring, monitoring, and managing mirroring operations without requiring users to edit configuration files or run Docker commands.
+<div class="mb-4">
+  <p class="text-muted-foreground">Gitea Mirror is a web application that automates the mirroring of GitHub repositories to Gitea instances. It provides a user-friendly interface for configuring, monitoring, and managing mirroring operations without requiring users to edit configuration files or run Docker commands.</p>
+</div>
 
 The application is built using:
 
-- **Astro**: Web framework for the frontend
-- **React**: Component library for interactive UI elements
-- **Shadcn UI**: UI component library built on Tailwind CSS
-- **SQLite**: Database for storing configuration and state
-- **Node.js**: Runtime environment for the backend
+- <span class="font-semibold text-foreground">Astro</span>: Web framework for the frontend
+- <span class="font-semibold text-foreground">React</span>: Component library for interactive UI elements
+- <span class="font-semibold text-foreground">Shadcn UI</span>: UI component library built on Tailwind CSS
+- <span class="font-semibold text-foreground">SQLite</span>: Database for storing configuration and state
+- <span class="font-semibold text-foreground">Node.js</span>: Runtime environment for the backend
 
 ## Architecture Diagram
 

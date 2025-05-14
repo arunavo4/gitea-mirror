@@ -7,14 +7,17 @@ updatedDate: 2023-10-15
 
 # Gitea Mirror Configuration Guide
 
-This guide provides detailed information on how to configure Gitea Mirror for your environment.
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-foreground">Gitea Mirror Configuration Guide</h1>
+  <p class="text-muted-foreground mt-2">This guide provides detailed information on how to configure Gitea Mirror for your environment.</p>
+</div>
 
 ## Configuration Methods
 
 Gitea Mirror can be configured using:
 
-1. **Environment Variables**: Set configuration options through environment variables
-2. **Web UI**: Configure the application through the web interface after installation
+1. <span class="font-semibold text-foreground">Environment Variables</span>: Set configuration options through environment variables
+2. <span class="font-semibold text-foreground">Web UI</span>: Configure the application through the web interface after installation
 
 ## Environment Variables
 

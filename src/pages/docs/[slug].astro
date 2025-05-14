@@ -20,16 +20,16 @@ const { Content } = await entry.render();
 ---
 
 <MainLayout title={entry.data.title}>
-  <main class="prose dark:prose-invert max-w-4xl mx-auto px-4 py-8">
+  <main class="max-w-5xl mx-auto px-4 py-12">
     <div class="sticky top-4 z-10 mb-6">
       <a
         href="/docs/"
-        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-gray-800 text-gray-200 hover:bg-gray-700 transition"
+        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-card text-foreground hover:bg-muted transition-colors border border-border focus:ring-2 focus:ring-ring outline-none"
       >
         <span aria-hidden="true">&larr;</span> Back to Documentation
       </a>
     </div>
-    <article class="bg-gray-900/60 rounded-xl shadow-lg p-6">
+    <article class="bg-card rounded-2xl shadow-lg p-6 border border-border">
       <Content />
     </article>
     <script type="module">
