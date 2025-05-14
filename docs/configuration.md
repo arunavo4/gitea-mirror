@@ -158,7 +158,7 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=sqlite://data/gitea-mirror.db
       - HOST=0.0.0.0
-      - PORT=3000
+      - PORT=4321
       - JWT_SECRET=your-secure-random-string
 
 # Define named volumes for database persistence

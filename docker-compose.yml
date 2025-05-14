@@ -19,6 +19,8 @@ services:
       - "4321:4321"
     volumes:
       - gitea-mirror-data:/app/data
+    depends_on:
+      - redis
     environment:
       - NODE_ENV=production
       - DATABASE_URL=sqlite://data/gitea-mirror.db
@@ -50,6 +52,16 @@ services:
       start_period: 15s
     profiles: ["production"]
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
 # Define named volumes for database persistence
 volumes:
   gitea-mirror-data:    # Database volume
+  redis-data:

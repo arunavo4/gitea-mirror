@@ -51,6 +51,9 @@ services:
       - "4321:4321"
     volumes:
       - gitea-mirror-data:/app/data
+    depends_on:
+      - gitea
+      - redis
     environment:
       - NODE_ENV=development
       - DATABASE_URL=sqlite://data/gitea-mirror.db
@@ -80,9 +83,17 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
-    depends_on:
-      gitea:
-        condition: service_healthy
+    networks:
+      - gitea-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
     networks:
       - gitea-network
 
@@ -91,6 +102,8 @@ volumes:
   gitea-data:    # Gitea data volume
   gitea-config:  # Gitea config volume
   gitea-mirror-data:  # Gitea Mirror database volume
+
+  redis-data:
 
 # Define networks
 networks:

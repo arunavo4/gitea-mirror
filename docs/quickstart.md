@@ -25,7 +25,7 @@ Before you begin, make sure you have:
    docker-compose --profile production up -d
    ```
 
-3. Access the application at http://localhost:3000
+3. Access the application at http://localhost:4321
 
 ### Manual Installation
 
@@ -54,7 +54,7 @@ Before you begin, make sure you have:
    pnpm start
    ```
 
-5. Access the application at http://localhost:3000
+5. Access the application at http://localhost:4321
 
 ## Initial Configuration
 
