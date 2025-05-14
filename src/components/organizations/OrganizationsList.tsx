@@ -35,9 +35,11 @@ export function OrganizationList({
     let result = organizations;
 
     if (filter.membershipRole) {
-      result = result.filter(
-        (org) => org.membershipRole === filter.membershipRole
-      );
+      result = result.filter((org) => org.membershipRole === filter.membershipRole);
+    }
+
+    if (filter.status) {
+      result = result.filter((org) => org.status === filter.status);
     }
 
     if (filter.searchTerm) {
@@ -45,7 +47,6 @@ export function OrganizationList({
         keys: ["name", "type"],
         threshold: 0.3,
       });
-
       result = fuse.search(filter.searchTerm).map((res) => res.item);
     }
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, RefreshCw, Filter, Users, FlipHorizontal } from "lucide-react";
+import { Search, RefreshCw, Users, FlipHorizontal } from "lucide-react";
+import { OwnerCombobox } from "../repositories/RepositoryComboboxes";
 import type { MirrorJob, Organization } from "@/lib/db/schema";
 import { OrganizationList } from "./OrganizationsList";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +30,7 @@ export function Organization() {
   const { filter, setFilter } = useFilterParams({
     searchTerm: "",
     membershipRole: "",
+    status: "",
   });
   const [loadingOrgIds, setLoadingOrgIds] = useState<Set<string>>(new Set()); // this is used when the api actions are performed
 
@@ -197,13 +199,16 @@ export function Organization() {
     }
   };
 
+  // Get unique organization names for combobox (since Organization has no owner field)
+  const ownerOptions = Array.from(
+    new Set(organizations.map((org) => org.name).filter((v): v is string => !!v))
+  ).sort();
+
   return (
     <div className="flex flex-col gap-y-8">
       {/* Combine search and actions into a single flex row */}
-      <div className="flex flex-row items-center gap-4 w-full">
+      <div className="flex flex-row items-center gap-4 w-full flex-wrap">
         <div className="relative flex-grow">
-          {" "}
-          {/* Use flex-grow for search */}
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
@@ -216,6 +221,7 @@ export function Organization() {
           />
         </div>
 
+        {/* Membership Role Filter */}
         <Select
           value={filter.membershipRole || "all"}
           onValueChange={(value) =>
@@ -226,25 +232,42 @@ export function Organization() {
           }
         >
           <SelectTrigger className="w-[140px] h-9 max-h-9">
-            <SelectValue placeholder="All Type" />
+            <SelectValue placeholder="All Roles" />
           </SelectTrigger>
           <SelectContent>
             {["all", ...membershipRoleEnum.options].map((role) => (
               <SelectItem key={role} value={role}>
                 {role === "all"
-                  ? "All Type"
-                  : role
-                      .replace(/_/g, " ")
-                      .replace(/\b\w/g, (c) => c.toUpperCase())}
+                  ? "All Roles"
+                  : role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        <Button variant="outline">
-          <Filter className="h-4 w-4 mr-2" />
-          More Filters
-        </Button>
+        {/* Status Filter */}
+        <Select
+          value={filter.status || "all"}
+          onValueChange={(value) =>
+            setFilter((prev) => ({
+              ...prev,
+              status: value === "all" ? "" : value,
+            }))
+          }
+        >
+          <SelectTrigger className="w-[140px] h-9 max-h-9">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            {["all", "imported", "mirroring", "mirrored", "failed", "syncing", "synced"].map((status) => (
+              <SelectItem key={status} value={status}>
+                {status === "all"
+                  ? "All Statuses"
+                  : status.charAt(0).toUpperCase() + status.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Button variant="default" onClick={handleRefresh}>
           <RefreshCw className="h-4 w-4 mr-2" />

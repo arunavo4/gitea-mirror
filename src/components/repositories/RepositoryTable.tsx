@@ -41,12 +41,19 @@ export default function RepositoryTable({
       result = result.filter((repo) => repo.status === filter.status);
     }
 
+    if (filter.owner) {
+      result = result.filter((repo) => repo.owner === filter.owner);
+    }
+
+    if (filter.organization) {
+      result = result.filter((repo) => repo.organization === filter.organization);
+    }
+
     if (filter.searchTerm) {
       const fuse = new Fuse(result, {
         keys: ["name", "fullName", "owner", "organization"],
         threshold: 0.3,
       });
-
       result = fuse.search(filter.searchTerm).map((res) => res.item);
     }
 

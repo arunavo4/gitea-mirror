@@ -22,6 +22,7 @@ import { useSSE } from "@/hooks/useSEE";
 import { useFilterParams } from "@/hooks/useFilterParams";
 import { toast } from "sonner";
 import type { SyncRepoRequest, SyncRepoResponse } from "@/types/sync";
+import { OwnerCombobox, OrganizationCombobox } from "./RepositoryComboboxes";
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -243,13 +244,19 @@ export default function Repository() {
     }
   };
 
+  // Get unique owners and organizations for comboboxes
+  const ownerOptions = Array.from(
+    new Set(repositories.map((repo) => repo.owner).filter((v): v is string => !!v))
+  ).sort();
+  const orgOptions = Array.from(
+    new Set(repositories.map((repo) => repo.organization).filter((v): v is string => !!v))
+  ).sort();
+
   return (
     <div className="flex flex-col gap-y-8">
       {/* Combine search and actions into a single flex row */}
-      <div className="flex flex-row items-center gap-4 w-full">
-        <div className="relative flex-grow">
-          {" "}
-          {/* Use flex-grow for search */}
+      <div className="flex flex-row items-center gap-4 w-full flex-wrap">
+        <div className="relative flex-grow min-w-[180px]">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
@@ -261,6 +268,20 @@ export default function Repository() {
             }
           />
         </div>
+
+        {/* Owner Combobox */}
+        <OwnerCombobox
+          options={ownerOptions}
+          value={filter.owner || ""}
+          onChange={(owner: string) => setFilter((prev) => ({ ...prev, owner }))}
+        />
+
+        {/* Organization Combobox */}
+        <OrganizationCombobox
+          options={orgOptions}
+          value={filter.organization || ""}
+          onChange={(organization: string) => setFilter((prev) => ({ ...prev, organization }))}
+        />
 
         <Select
           value={filter.status || "all"}
@@ -284,11 +305,6 @@ export default function Repository() {
             ))}
           </SelectContent>
         </Select>
-
-        <Button variant="outline">
-          <Filter className="h-4 w-4 mr-2" />
-          More Filters
-        </Button>
 
         <Button variant="default" onClick={handleRefresh}>
           <RefreshCw className="h-4 w-4 mr-2" />
