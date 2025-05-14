@@ -33,6 +33,21 @@ export default function ActivityList({
       result = result.filter((activity) => activity.status === filter.status);
     }
 
+    if (filter.type) {
+      if (filter.type === 'repository') {
+        result = result.filter((activity) => !!activity.repositoryId);
+      } else if (filter.type === 'organization') {
+        result = result.filter((activity) => !!activity.organizationId);
+      }
+    }
+
+    if (filter.name) {
+      result = result.filter((activity) => 
+        activity.repositoryName === filter.name || 
+        activity.organizationName === filter.name
+      );
+    }
+
     if (filter.searchTerm) {
       const fuse = new Fuse(result, {
         keys: ["message", "details", "organizationName", "repositoryName"],
@@ -70,15 +85,15 @@ export default function ActivityList({
       <RefreshCw className="h-12 w-12 text-muted-foreground mb-4" />
       <h3 className="text-lg font-medium">No activities found</h3>
       <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-md">
-        {filter.searchTerm || filter.status
+        {filter.searchTerm || filter.status || filter.type || filter.name
           ? "Try adjusting your search or filter criteria."
           : "No mirroring activities have been recorded yet."}
       </p>
-      {filter.searchTerm || filter.status ? (
+      {filter.searchTerm || filter.status || filter.type || filter.name ? (
         <Button
           variant="outline"
           onClick={() => {
-            setFilter({ searchTerm: "", status: "" });
+            setFilter({ searchTerm: "", status: "", type: "", name: "" });
           }}
         >
           Clear Filters

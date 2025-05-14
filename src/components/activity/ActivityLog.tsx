@@ -14,6 +14,7 @@ import {
 } from "../ui/select";
 import { repoStatusEnum, type RepoStatus } from "@/types/Repository";
 import ActivityList from "./ActivityList";
+import { ActivityNameCombobox } from "./ActivityNameCombobox";
 import { useSSE } from "@/hooks/useSEE";
 import { useFilterParams } from "@/hooks/useFilterParams";
 import { toast } from "sonner";
@@ -25,6 +26,8 @@ export function ActivityLog() {
   const { filter, setFilter } = useFilterParams({
     searchTerm: "",
     status: "",
+    type: "",
+    name: "",
   });
 
   const handleNewMessage = useCallback((data: MirrorJob) => {
@@ -117,10 +120,34 @@ export function ActivityLog() {
             ))}
           </SelectContent>
         </Select>
-        <Button variant="outline">
-          <Filter className="h-4 w-4 mr-2" />
-          More Filters
-        </Button>
+
+        {/* Repository/Organization Name Combobox */}
+        <ActivityNameCombobox
+          activities={activities}
+          value={filter.name || ""}
+          onChange={(name: string) => setFilter((prev) => ({ ...prev, name }))}
+        />
+        {/* Filter by type: repository/org/all */}
+        <Select
+          value={filter.type || "all"}
+          onValueChange={(value) =>
+            setFilter((prev) => ({
+              ...prev,
+              type: value === "all" ? "" : value,
+            }))
+          }
+        >
+          <SelectTrigger className="w-[140px] h-9 max-h-9">
+            <SelectValue placeholder="All Types" />
+          </SelectTrigger>
+          <SelectContent>
+            {['all', 'repository', 'organization'].map((type) => (
+              <SelectItem key={type} value={type}>
+                {type === 'all' ? 'All Types' : type.charAt(0).toUpperCase() + type.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button variant="outline">
           <Download className="h-4 w-4 mr-2" />
           Export

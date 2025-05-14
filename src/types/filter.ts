@@ -7,4 +7,6 @@ export interface FilterParams {
   membershipRole?: MembershipRole | "";
   owner?: string;
   organization?: string;
+  type?: string;
+  name?: string;
 }
