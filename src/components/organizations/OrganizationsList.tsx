@@ -97,7 +97,12 @@ export function OrganizationList({
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-muted-foreground" />
-                <h3 className="font-medium">{org.name}</h3>
+                <a 
+                  href={`/repositories?organization=${encodeURIComponent(org.name || '')}`}
+                  className="font-medium hover:underline cursor-pointer"
+                >
+                  {org.name}
+                </a>
               </div>
               <span
                 className={`text-xs px-2 py-1 rounded-full capitalize ${
