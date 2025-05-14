@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import Fuse from "fuse.js";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { GitFork, RefreshCw } from "lucide-react";
+import { GitFork, RefreshCw, RotateCcw } from "lucide-react";
 import { SiGithub } from "react-icons/si";
 import type { Repository } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface RepositoryTableProps {
   setFilter: (filter: FilterParams) => void;
   onMirror: ({ repoId }: { repoId: string }) => Promise<void>;
   onSync: ({ repoId }: { repoId: string }) => Promise<void>;
+  onRetry: ({ repoId }: { repoId: string }) => Promise<void>;
   loadingRepoIds: Set<string>;
 }
 
@@ -26,6 +27,7 @@ export default function RepositoryTable({
   setFilter,
   onMirror,
   onSync,
+  onRetry,
   loadingRepoIds,
 }: RepositoryTableProps) {
   const tableParentRef = useRef<HTMLDivElement>(null);
@@ -46,7 +48,9 @@ export default function RepositoryTable({
     }
 
     if (filter.organization) {
-      result = result.filter((repo) => repo.organization === filter.organization);
+      result = result.filter(
+        (repo) => repo.organization === filter.organization
+      );
     }
 
     if (filter.searchTerm) {
@@ -235,7 +239,7 @@ export default function RepositoryTable({
 
                 {/* Actions  */}
                 <div className="h-full p-3 flex items-center justify-end gap-x-2 flex-[1]">
-                  {repo.status === "mirrored" ||
+                  {/* {repo.status === "mirrored" ||
                   repo.status === "syncing" ||
                   repo.status === "synced" ? (
                     <Button
@@ -273,7 +277,17 @@ export default function RepositoryTable({
                         </>
                       )}
                     </Button>
-                  )}
+                  )} */}
+
+                  <RepoActionButton
+                    repo={{ id: repo.id ?? "", status: repo.status }}
+                    isLoading={isLoading}
+                    onMirror={({ repoId }) =>
+                      onMirror({ repoId: repo.id ?? "" })
+                    }
+                    onSync={({ repoId }) => onSync({ repoId: repo.id ?? "" })}
+                    onRetry={({ repoId }) => onRetry({ repoId: repo.id ?? "" })}
+                  />
                   <Button variant="ghost" size="icon" asChild>
                     <a
                       href={repo.url}
@@ -290,5 +304,60 @@ export default function RepositoryTable({
         </div>
       </div>
     </div>
+  );
+}
+
+function RepoActionButton({
+  repo,
+  isLoading,
+  onMirror,
+  onSync,
+  onRetry,
+}: {
+  repo: { id: string; status: string };
+  isLoading: boolean;
+  onMirror: ({ repoId }: { repoId: string }) => void;
+  onSync: ({ repoId }: { repoId: string }) => void;
+  onRetry: ({ repoId }: { repoId: string }) => void;
+}) {
+  const repoId = repo.id ?? "";
+
+  let label = "";
+  let icon = <></>;
+  let onClick = () => {};
+  let disabled = isLoading;
+
+  if (repo.status === "failed") {
+    label = "Retry";
+    icon = <RotateCcw className="h-4 w-4 mr-1" />;
+    onClick = () => onRetry({ repoId });
+  } else if (["mirrored", "synced", "syncing"].includes(repo.status)) {
+    label = "Sync";
+    icon = <RefreshCw className="h-4 w-4 mr-1" />;
+    onClick = () => onSync({ repoId });
+    disabled ||= repo.status === "syncing";
+  } else if (["imported", "mirroring"].includes(repo.status)) {
+    label = "Mirror";
+    icon = <RefreshCw className="h-4 w-4 mr-1" />;
+    onClick = () => onMirror({ repoId });
+    disabled ||= repo.status === "mirroring";
+  } else {
+    return null; // unsupported status
+  }
+
+  return (
+    <Button variant="ghost" disabled={disabled} onClick={onClick}>
+      {isLoading ? (
+        <>
+          <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+          {label}
+        </>
+      ) : (
+        <>
+          {icon}
+          {label}
+        </>
+      )}
+    </Button>
   );
 }

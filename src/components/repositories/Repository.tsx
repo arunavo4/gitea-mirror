@@ -16,13 +16,20 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, RefreshCw, GitFork, FlipHorizontal } from "lucide-react";
+import {
+  Search,
+  Filter,
+  RefreshCw,
+  GitFork,
+  FlipHorizontal,
+} from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 import { useSSE } from "@/hooks/useSEE";
 import { useFilterParams } from "@/hooks/useFilterParams";
 import { toast } from "sonner";
 import type { SyncRepoRequest, SyncRepoResponse } from "@/types/sync";
 import { OwnerCombobox, OrganizationCombobox } from "./RepositoryComboboxes";
+import type { RetryRepoRequest, RetryRepoResponse } from "@/types/retry";
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -33,14 +40,14 @@ export default function Repository() {
     status: "",
     organization: "",
   });
-  
+
   // Read organization filter from URL when component mounts
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const orgParam = urlParams.get('organization');
-    
+    const orgParam = urlParams.get("organization");
+
     if (orgParam) {
-      setFilter(prev => ({ ...prev, organization: orgParam }));
+      setFilter((prev) => ({ ...prev, organization: orgParam }));
     }
   }, [setFilter]);
 
@@ -255,12 +262,60 @@ export default function Repository() {
     }
   };
 
+  const handleRetryRepoAction = async ({ repoId }: { repoId: string }) => {
+    try {
+      if (!user || !user.id) {
+        return;
+      }
+
+      setLoadingRepoIds((prev) => new Set(prev).add(repoId));
+
+      const reqPayload: RetryRepoRequest = {
+        userId: user.id,
+        repositoryIds: [repoId],
+      };
+
+      const response = await apiRequest<RetryRepoResponse>("/job/retry-repo", {
+        method: "POST",
+        data: reqPayload,
+      });
+
+      if (response.success) {
+        toast.success(`Retrying job for repository ID: ${repoId}`);
+        setRepositories((prevRepos) =>
+          prevRepos.map((repo) => {
+            const updated = response.repositories.find((r) => r.id === repo.id);
+            return updated ? updated : repo;
+          })
+        );
+      } else {
+        toast.error(response.error || "Error retrying job");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error retrying job"
+      );
+    } finally {
+      setLoadingRepoIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(repoId);
+        return newSet;
+      });
+    }
+  };
+
   // Get unique owners and organizations for comboboxes
   const ownerOptions = Array.from(
-    new Set(repositories.map((repo) => repo.owner).filter((v): v is string => !!v))
+    new Set(
+      repositories.map((repo) => repo.owner).filter((v): v is string => !!v)
+    )
   ).sort();
   const orgOptions = Array.from(
-    new Set(repositories.map((repo) => repo.organization).filter((v): v is string => !!v))
+    new Set(
+      repositories
+        .map((repo) => repo.organization)
+        .filter((v): v is string => !!v)
+    )
   ).sort();
 
   return (
@@ -284,14 +339,18 @@ export default function Repository() {
         <OwnerCombobox
           options={ownerOptions}
           value={filter.owner || ""}
-          onChange={(owner: string) => setFilter((prev) => ({ ...prev, owner }))}
+          onChange={(owner: string) =>
+            setFilter((prev) => ({ ...prev, owner }))
+          }
         />
 
         {/* Organization Combobox */}
         <OrganizationCombobox
           options={orgOptions}
           value={filter.organization || ""}
-          onChange={(organization: string) => setFilter((prev) => ({ ...prev, organization }))}
+          onChange={(organization: string) =>
+            setFilter((prev) => ({ ...prev, organization }))
+          }
         />
 
         <Select
@@ -339,6 +398,7 @@ export default function Repository() {
         setFilter={setFilter}
         onMirror={handleMirrorRepo}
         onSync={handleSyncRepo}
+        onRetry={handleRetryRepoAction}
         loadingRepoIds={loadingRepoIds}
       />
     </div>
