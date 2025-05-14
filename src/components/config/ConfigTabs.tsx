@@ -38,8 +38,6 @@ export function ConfigTabs() {
       privateRepositories: false,
       mirrorIssues: false,
       mirrorStarred: false,
-      mirrorOrganizations: false,
-      onlyMirrorOrgs: false,
       preserveOrgStructure: false,
       skipStarredIssues: false,
     },
@@ -71,8 +69,7 @@ export function ConfigTabs() {
 
     // Check GitHub required fields
     const isGitHubValid = !!(
-      githubConfig.username?.trim() &&
-      githubConfig.token?.trim()
+      githubConfig.username?.trim() && githubConfig.token?.trim()
     );
 
     // Check Gitea required fields
@@ -242,9 +239,7 @@ services:
       - PRIVATE_REPOSITORIES=${config.githubConfig.privateRepositories}
       - MIRROR_ISSUES=${config.githubConfig.mirrorIssues}
       - MIRROR_STARRED=${config.githubConfig.mirrorStarred}
-      - MIRROR_ORGANIZATIONS=${config.githubConfig.mirrorOrganizations}
       - PRESERVE_ORG_STRUCTURE=${config.githubConfig.preserveOrgStructure}
-      - ONLY_MIRROR_ORGS=${config.githubConfig.onlyMirrorOrgs}
       - SKIP_STARRED_ISSUES=${config.githubConfig.skipStarredIssues}
       - GITEA_ORGANIZATION=${config.giteaConfig.organization}
       - GITEA_ORG_VISIBILITY=${config.giteaConfig.visibility}

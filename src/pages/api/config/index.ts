@@ -179,8 +179,6 @@ export const GET: APIRoute = async ({ request }) => {
             privateRepositories: false,
             mirrorIssues: false,
             mirrorStarred: true,
-            mirrorOrganizations: true,
-            onlyMirrorOrgs: false,
             useSpecificUser: false,
             preserveOrgStructure: true,
             skipStarredIssues: false,

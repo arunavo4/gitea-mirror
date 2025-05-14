@@ -166,30 +166,6 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
             <div className="flex items-center">
               <Checkbox
-                id="mirror-issues"
-                name="mirrorIssues"
-                checked={config.mirrorIssues}
-                onCheckedChange={(checked) =>
-                  handleChange({
-                    target: {
-                      name: "mirrorIssues",
-                      type: "checkbox",
-                      checked: Boolean(checked),
-                      value: "",
-                    },
-                  } as React.ChangeEvent<HTMLInputElement>)
-                }
-              />
-              <label
-                htmlFor="mirror-issues"
-                className="ml-2 block text-sm select-none"
-              >
-                Mirror Issues
-              </label>
-            </div>
-
-            <div className="flex items-center">
-              <Checkbox
                 id="mirror-starred"
                 name="mirrorStarred"
                 checked={config.mirrorStarred}
@@ -216,13 +192,13 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
           <div className="space-y-3">
             <div className="flex items-center">
               <Checkbox
-                id="mirror-organizations"
-                name="mirrorOrganizations"
-                checked={config.mirrorOrganizations}
+                id="mirror-issues"
+                name="mirrorIssues"
+                checked={config.mirrorIssues}
                 onCheckedChange={(checked) =>
                   handleChange({
                     target: {
-                      name: "mirrorOrganizations",
+                      name: "mirrorIssues",
                       type: "checkbox",
                       checked: Boolean(checked),
                       value: "",
@@ -231,34 +207,10 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 }
               />
               <label
-                htmlFor="mirror-organizations"
+                htmlFor="mirror-issues"
                 className="ml-2 block text-sm select-none"
               >
-                Mirror Organizations
-              </label>
-            </div>
-
-            <div className="flex items-center">
-              <Checkbox
-                id="only-mirror-orgs"
-                name="onlyMirrorOrgs"
-                checked={config.onlyMirrorOrgs}
-                onCheckedChange={(checked) =>
-                  handleChange({
-                    target: {
-                      name: "onlyMirrorOrgs",
-                      type: "checkbox",
-                      checked: Boolean(checked),
-                      value: "",
-                    },
-                  } as React.ChangeEvent<HTMLInputElement>)
-                }
-              />
-              <label
-                htmlFor="only-mirror-orgs"
-                className="ml-2 block text-sm select-none"
-              >
-                Only Mirror Organizations
+                Mirror Issues
               </label>
             </div>
 
@@ -319,17 +271,24 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
           <AlertDescription className="text-sm">
             <div className="font-semibold mb-1">Note:</div>
             <div className="mb-1">
-              You need to create a <span className="font-semibold">Classic GitHub PAT Token</span> with following scopes:
+              You need to create a{" "}
+              <span className="font-semibold">Classic GitHub PAT Token</span>{" "}
+              with following scopes:
             </div>
             <ul className="ml-4 mb-1 list-disc">
-              <li><code>repo</code></li>
-              <li><code>admin:org</code></li>
+              <li>
+                <code>repo</code>
+              </li>
+              <li>
+                <code>admin:org</code>
+              </li>
             </ul>
             <div className="mb-1">
-              The organization access is required for mirroring organization repositories.
+              The organization access is required for mirroring organization
+              repositories.
             </div>
             <div>
-              You can generate tokens at{' '}
+              You can generate tokens at{" "}
               <a
                 href="https://github.com/settings/tokens"
                 target="_blank"
@@ -337,7 +296,8 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 className="underline font-medium hover:text-blue-900 dark:hover:text-blue-200"
               >
                 github.com/settings/tokens
-              </a>.
+              </a>
+              .
             </div>
           </AlertDescription>
         </Alert>
