@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, RefreshCw, GitFork, FlipHorizontal } from "lucide-react";
+import { Search, RefreshCw, FlipHorizontal } from "lucide-react";
 import type { MirrorRepoRequest, MirrorRepoResponse } from "@/types/mirror";
 import { useSSE } from "@/hooks/useSEE";
 import { useFilterParams } from "@/hooks/useFilterParams";
@@ -33,12 +33,12 @@ export default function Repository() {
     status: "",
     organization: "",
   });
-  
+
   // Read organization filter from URL when component mounts
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const orgParam = urlParams.get('organization');
-    
+
     if (orgParam) {
       setFilter(prev => ({ ...prev, organization: orgParam }));
     }

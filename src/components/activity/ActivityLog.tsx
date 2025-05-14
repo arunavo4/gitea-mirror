@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Download, RefreshCw, ChevronDown } from "lucide-react";
+import { Search, Download, RefreshCw, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,16 +88,16 @@ export function ActivityLog() {
       toast.success("Activities refreshed successfully.");
     }
   };
-  
+
   // Get the currently filtered activities
   const getFilteredActivities = () => {
     return activities.filter(activity => {
       let isIncluded = true;
-      
+
       if (filter.status) {
         isIncluded = isIncluded && activity.status === filter.status;
       }
-      
+
       if (filter.type) {
         if (filter.type === 'repository') {
           isIncluded = isIncluded && !!activity.repositoryId;
@@ -105,17 +105,17 @@ export function ActivityLog() {
           isIncluded = isIncluded && !!activity.organizationId;
         }
       }
-      
+
       if (filter.name) {
         isIncluded = isIncluded && (
-          activity.repositoryName === filter.name || 
+          activity.repositoryName === filter.name ||
           activity.organizationName === filter.name
         );
       }
-      
+
       // Note: We're not applying the search term filter here as that would require
       // re-implementing the Fuse.js search logic
-      
+
       return isIncluded;
     });
   };
@@ -123,12 +123,12 @@ export function ActivityLog() {
   // Function to export activities as CSV
   const exportAsCSV = () => {
     const filteredActivities = getFilteredActivities();
-    
+
     if (filteredActivities.length === 0) {
       toast.error("No activities to export.");
       return;
     }
-    
+
     // Create CSV content
     const headers = ["Timestamp", "Message", "Status", "Repository", "Organization", "Details"];
     const csvRows = [
@@ -143,7 +143,7 @@ export function ActivityLog() {
           }
           return field;
         };
-        
+
         return [
           formattedDate,
           escapeCsvField(activity.message),
@@ -154,24 +154,24 @@ export function ActivityLog() {
         ].join(',');
       })
     ];
-    
+
     const csvContent = csvRows.join('\n');
-    
+
     // Download the CSV file
     downloadFile(csvContent, 'text/csv;charset=utf-8;', 'activity_log_export.csv');
-    
+
     toast.success("Activity log exported as CSV successfully.");
   };
-  
+
   // Function to export activities as JSON
   const exportAsJSON = () => {
     const filteredActivities = getFilteredActivities();
-    
+
     if (filteredActivities.length === 0) {
       toast.error("No activities to export.");
       return;
     }
-    
+
     // Format the activities for export (removing any sensitive or unnecessary fields if needed)
     const activitiesForExport = filteredActivities.map(activity => ({
       id: activity.id,
@@ -185,27 +185,27 @@ export function ActivityLog() {
       organizationName: activity.organizationName,
       details: activity.details
     }));
-    
+
     const jsonContent = JSON.stringify(activitiesForExport, null, 2);
-    
+
     // Download the JSON file
     downloadFile(jsonContent, 'application/json', 'activity_log_export.json');
-    
+
     toast.success("Activity log exported as JSON successfully.");
   };
-  
+
   // Generic function to download a file
   const downloadFile = (content: string, mimeType: string, filename: string) => {
     // Add date to filename
     const date = new Date();
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const filenameWithDate = filename.replace('.', `_${dateStr}.`);
-    
+
     // Create a download link
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    
+
     link.href = url;
     link.setAttribute('download', filenameWithDate);
     document.body.appendChild(link);
