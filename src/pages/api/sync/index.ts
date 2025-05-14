@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { db, organizations, repositories, configs, mirrorJobs } from "@/lib/db";
+import { db, organizations, repositories, configs } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { createMirrorJob } from "@/lib/helpers";
@@ -44,7 +44,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     const octokit = createGitHubClient(token);
 
-    // Fetch all GitHub data in parallel
+    // Fetch GitHub data in parallel
     const [basicAndForkedRepos, starredRepos, gitOrgs] = await Promise.all([
       getGithubRepositories({ octokit, config }),
       config.githubConfig?.mirrorStarred
@@ -53,24 +53,9 @@ export const POST: APIRoute = async ({ request }) => {
       getGithubOrganizations({ octokit, config }),
     ]);
 
-    // Combine all repositories and organizations after deduplication (if a repo is present in both starred and basic repos, take item from the starred array is ignored and is taken from the basic array)
-    // const repoMap = new Map<string, GitRepo>();
-
-    // [...basicAndForkedRepos, ...starredRepos].forEach((repo) => {
-    //   const normalizedRepo = {
-    //     ...repo,
-    //     status: repo.status as GitRepo["status"],
-    //   };
-    //   if (!repoMap.has(repo.fullName)) {
-    //     repoMap.set(repo.fullName, normalizedRepo);
-    //   }
-    // });
-
-    // const allGithubRepos = Array.from(repoMap.values());
-
     const allGithubRepos = [...basicAndForkedRepos, ...starredRepos];
 
-    // Prepare new repositories and organizations
+    // Prepare full list of repos and orgs
     const newRepos = allGithubRepos.map((repo) => ({
       id: uuidv4(),
       userId,
@@ -113,21 +98,42 @@ export const POST: APIRoute = async ({ request }) => {
       updatedAt: new Date(),
     }));
 
-    // Perform everything in a single transaction
-    await db.transaction(async (tx) => {
-      // Clean old data
-      await tx.delete(repositories).where(eq(repositories.userId, userId));
-      await tx.delete(organizations).where(eq(organizations.userId, userId));
-      await tx.delete(mirrorJobs).where(eq(mirrorJobs.userId, userId));
+    let insertedRepos: typeof newRepos = [];
+    let insertedOrgs: typeof newOrgs = [];
 
-      // Insert new data
-      if (newRepos.length > 0) await tx.insert(repositories).values(newRepos);
-      if (newOrgs.length > 0) await tx.insert(organizations).values(newOrgs);
+    // Transaction to insert only new items
+    await db.transaction(async (tx) => {
+      const [existingRepos, existingOrgs] = await Promise.all([
+        tx
+          .select({ fullName: repositories.fullName })
+          .from(repositories)
+          .where(eq(repositories.userId, userId)),
+        tx
+          .select({ name: organizations.name })
+          .from(organizations)
+          .where(eq(organizations.userId, userId)),
+      ]);
+
+      const existingRepoNames = new Set(existingRepos.map((r) => r.fullName));
+      const existingOrgNames = new Set(existingOrgs.map((o) => o.name));
+
+      insertedRepos = newRepos.filter(
+        (r) => !existingRepoNames.has(r.fullName)
+      );
+      insertedOrgs = newOrgs.filter((o) => !existingOrgNames.has(o.name));
+
+      if (insertedRepos.length > 0) {
+        await tx.insert(repositories).values(insertedRepos);
+      }
+
+      if (insertedOrgs.length > 0) {
+        await tx.insert(organizations).values(insertedOrgs);
+      }
     });
 
-    // Mirror jobs (can happen outside of transaction)
+    // Create mirror jobs only for newly inserted items
     const mirrorJobPromises = [
-      ...newRepos.map((repo) =>
+      ...insertedRepos.map((repo) =>
         createMirrorJob({
           userId,
           repositoryId: repo.id,
@@ -137,7 +143,7 @@ export const POST: APIRoute = async ({ request }) => {
           details: `Repository ${repo.name} was fetched from GitHub`,
         })
       ),
-      ...newOrgs.map((org) =>
+      ...insertedOrgs.map((org) =>
         createMirrorJob({
           userId,
           organizationId: org.id,
@@ -155,6 +161,8 @@ export const POST: APIRoute = async ({ request }) => {
       data: {
         success: true,
         message: "Repositories and organizations synced successfully",
+        newRepositories: insertedRepos.length,
+        newOrganizations: insertedOrgs.length,
       },
     });
   } catch (error) {
