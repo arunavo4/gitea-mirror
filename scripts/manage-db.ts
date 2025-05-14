@@ -1,24 +1,24 @@
-import fs from 'fs';
-import path from 'path';
-import { client, db } from '../src/lib/db';
-import { configs } from '../src/lib/db';
-import { v4 as uuidv4 } from 'uuid';
+import fs from "fs";
+import path from "path";
+import { client, db } from "../src/lib/db";
+import { configs } from "../src/lib/db";
+import { v4 as uuidv4 } from "uuid";
 
 // Command line arguments
 const args = process.argv.slice(2);
-const command = args[0] || 'check';
+const command = args[0] || "check";
 
 // Ensure data directory exists
-const dataDir = path.join(process.cwd(), 'data');
+const dataDir = path.join(process.cwd(), "data");
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
 // Database paths
-const rootDbFile = path.join(process.cwd(), 'gitea-mirror.db');
-const rootDevDbFile = path.join(process.cwd(), 'gitea-mirror-dev.db');
-const dataDbFile = path.join(dataDir, 'gitea-mirror.db');
-const dataDevDbFile = path.join(dataDir, 'gitea-mirror-dev.db');
+const rootDbFile = path.join(process.cwd(), "gitea-mirror.db");
+const rootDevDbFile = path.join(process.cwd(), "gitea-mirror-dev.db");
+const dataDbFile = path.join(dataDir, "gitea-mirror.db");
+const dataDevDbFile = path.join(dataDir, "gitea-mirror-dev.db");
 
 // Database path - ensure we use absolute path
 const dbPath =
@@ -28,13 +28,19 @@ const dbPath =
  * Ensure all required tables exist
  */
 async function ensureTablesExist() {
-  const requiredTables = ["users", "configs", "repositories", "organizations", "mirror_jobs"];
+  const requiredTables = [
+    "users",
+    "configs",
+    "repositories",
+    "organizations",
+    "mirror_jobs",
+  ];
 
   for (const table of requiredTables) {
     try {
       await client.execute(`SELECT 1 FROM ${table} LIMIT 1`);
     } catch (error) {
-      if (error instanceof Error && error.message.includes('SQLITE_ERROR')) {
+      if (error instanceof Error && error.message.includes("SQLITE_ERROR")) {
         console.warn(`⚠️  Table '${table}' is missing. Creating it now...`);
         switch (table) {
           case "users":
@@ -152,50 +158,67 @@ async function ensureTablesExist() {
  * Check database status
  */
 async function checkDatabase() {
-  console.log('Checking database status...');
-  
+  console.log("Checking database status...");
+
   // Check for database files in the root directory (which is incorrect)
   if (fs.existsSync(rootDbFile)) {
-    console.warn('⚠️  WARNING: Database file found in root directory: gitea-mirror.db');
-    console.warn('   This file should be in the data directory.');
-    console.warn('   Run "pnpm manage-db fix" to fix this issue or "pnpm cleanup-db" to remove it.');
+    console.warn(
+      "⚠️  WARNING: Database file found in root directory: gitea-mirror.db"
+    );
+    console.warn("   This file should be in the data directory.");
+    console.warn(
+      '   Run "pnpm manage-db fix" to fix this issue or "pnpm cleanup-db" to remove it.'
+    );
   }
 
   // Check if database files exist in the data directory (which is correct)
   if (fs.existsSync(dataDbFile)) {
-    console.log('✅ Database file found in data directory: data/gitea-mirror.db');
-    
+    console.log(
+      "✅ Database file found in data directory: data/gitea-mirror.db"
+    );
+
     // Check for users
     try {
-      const userCountResult = await client.execute(`SELECT COUNT(*) as count FROM users`);
+      const userCountResult = await client.execute(
+        `SELECT COUNT(*) as count FROM users`
+      );
       const userCount = userCountResult.rows[0].count;
-      
+
       if (userCount === 0) {
-        console.log('ℹ️  No users found in the database.');
-        console.log('   When you start the application, you will be directed to the signup page');
-        console.log('   to create an initial admin account.');
+        console.log("ℹ️  No users found in the database.");
+        console.log(
+          "   When you start the application, you will be directed to the signup page"
+        );
+        console.log("   to create an initial admin account.");
       } else {
         console.log(`✅ ${userCount} user(s) found in the database.`);
-        console.log('   The application will show the login page on startup.');
+        console.log("   The application will show the login page on startup.");
       }
-      
+
       // Check for configurations
-      const configCountResult = await client.execute(`SELECT COUNT(*) as count FROM configs`);
+      const configCountResult = await client.execute(
+        `SELECT COUNT(*) as count FROM configs`
+      );
       const configCount = configCountResult.rows[0].count;
-      
+
       if (configCount === 0) {
-        console.log('ℹ️  No configurations found in the database.');
-        console.log('   You will need to set up your GitHub and Gitea configurations after login.');
+        console.log("ℹ️  No configurations found in the database.");
+        console.log(
+          "   You will need to set up your GitHub and Gitea configurations after login."
+        );
       } else {
-        console.log(`✅ ${configCount} configuration(s) found in the database.`);
+        console.log(
+          `✅ ${configCount} configuration(s) found in the database.`
+        );
       }
-      
     } catch (error) {
-      console.error('❌ Error connecting to the database:', error);
-      console.warn('   The database file might be corrupted. Consider running "pnpm manage-db init" to recreate it.');
+      console.error("❌ Error connecting to the database:", error);
+      console.warn(
+        '   The database file might be corrupted. Consider running "pnpm manage-db init" to recreate it.'
+      );
     }
   } else {
-    console.warn('⚠️  WARNING: Database file not found in data directory.');
+    console.warn("⚠️  WARNING: Database file not found in data directory.");
     console.warn('   Run "pnpm manage-db init" to create it.');
   }
 }
@@ -205,61 +228,80 @@ async function checkDatabase() {
  */
 async function updateSchema() {
   console.log(`Checking and updating database schema at ${dbPath}...`);
-  
+
   // Check if the database exists
   if (!fs.existsSync(dataDbFile)) {
-    console.log("⚠️  Database file doesn't exist. Run 'pnpm manage-db init' first to create it.");
+    console.log(
+      "⚠️  Database file doesn't exist. Run 'pnpm manage-db init' first to create it."
+    );
     return;
   }
-  
+
   try {
-    console.log('Checking for missing columns in mirror_jobs table...');
-    
+    console.log("Checking for missing columns in mirror_jobs table...");
+
     // Check if repository_id column exists in mirror_jobs table
-    const tableInfoResult = await client.execute(`PRAGMA table_info(mirror_jobs)`);
-    
+    const tableInfoResult = await client.execute(
+      `PRAGMA table_info(mirror_jobs)`
+    );
+
     // Get column names
-    const columns = tableInfoResult.rows.map(row => row.name);
-    
+    const columns = tableInfoResult.rows.map((row) => row.name);
+
     // Check for repository_id column
-    if (!columns.includes('repository_id')) {
-      console.log('Adding missing repository_id column to mirror_jobs table...');
-      await client.execute(`ALTER TABLE mirror_jobs ADD COLUMN repository_id TEXT;`);
-      console.log('✅ Added repository_id column to mirror_jobs table.');
+    if (!columns.includes("repository_id")) {
+      console.log(
+        "Adding missing repository_id column to mirror_jobs table..."
+      );
+      await client.execute(
+        `ALTER TABLE mirror_jobs ADD COLUMN repository_id TEXT;`
+      );
+      console.log("✅ Added repository_id column to mirror_jobs table.");
     }
-    
+
     // Check for repository_name column
-    if (!columns.includes('repository_name')) {
-      console.log('Adding missing repository_name column to mirror_jobs table...');
-      await client.execute(`ALTER TABLE mirror_jobs ADD COLUMN repository_name TEXT;`);
-      console.log('✅ Added repository_name column to mirror_jobs table.');
+    if (!columns.includes("repository_name")) {
+      console.log(
+        "Adding missing repository_name column to mirror_jobs table..."
+      );
+      await client.execute(
+        `ALTER TABLE mirror_jobs ADD COLUMN repository_name TEXT;`
+      );
+      console.log("✅ Added repository_name column to mirror_jobs table.");
     }
-    
+
     // Check for organization_id column
-    if (!columns.includes('organization_id')) {
-      console.log('Adding missing organization_id column to mirror_jobs table...');
-      await client.execute(`ALTER TABLE mirror_jobs ADD COLUMN organization_id TEXT;`);
-      console.log('✅ Added organization_id column to mirror_jobs table.');
+    if (!columns.includes("organization_id")) {
+      console.log(
+        "Adding missing organization_id column to mirror_jobs table..."
+      );
+      await client.execute(
+        `ALTER TABLE mirror_jobs ADD COLUMN organization_id TEXT;`
+      );
+      console.log("✅ Added organization_id column to mirror_jobs table.");
     }
-    
+
     // Check for organization_name column
-    if (!columns.includes('organization_name')) {
-      console.log('Adding missing organization_name column to mirror_jobs table...');
-      await client.execute(`ALTER TABLE mirror_jobs ADD COLUMN organization_name TEXT;`);
-      console.log('✅ Added organization_name column to mirror_jobs table.');
+    if (!columns.includes("organization_name")) {
+      console.log(
+        "Adding missing organization_name column to mirror_jobs table..."
+      );
+      await client.execute(
+        `ALTER TABLE mirror_jobs ADD COLUMN organization_name TEXT;`
+      );
+      console.log("✅ Added organization_name column to mirror_jobs table.");
     }
-    
+
     // Check for details column
-    if (!columns.includes('details')) {
-      console.log('Adding missing details column to mirror_jobs table...');
+    if (!columns.includes("details")) {
+      console.log("Adding missing details column to mirror_jobs table...");
       await client.execute(`ALTER TABLE mirror_jobs ADD COLUMN details TEXT;`);
-      console.log('✅ Added details column to mirror_jobs table.');
+      console.log("✅ Added details column to mirror_jobs table.");
     }
-    
-    console.log('✅ Schema update completed successfully.');
-    
+
+    console.log("✅ Schema update completed successfully.");
   } catch (error) {
-    console.error('❌ Error updating schema:', error);
+    console.error("❌ Error updating schema:", error);
     process.exit(1);
   }
 }
@@ -270,18 +312,24 @@ async function updateSchema() {
 async function initializeDatabase() {
   // Check if database already exists first
   if (fs.existsSync(dataDbFile)) {
-    console.log('⚠️  Database already exists at data/gitea-mirror.db');
-    console.log('   If you want to recreate the database, run "pnpm cleanup-db" first.');
-    console.log('   Or use "pnpm manage-db reset-users" to just remove users without recreating tables.');
-    
+    console.log("⚠️  Database already exists at data/gitea-mirror.db");
+    console.log(
+      '   If you want to recreate the database, run "pnpm cleanup-db" first.'
+    );
+    console.log(
+      '   Or use "pnpm manage-db reset-users" to just remove users without recreating tables.'
+    );
+
     // Check if we can connect to it
     try {
       await client.execute(`SELECT COUNT(*) as count FROM users`);
-      console.log('✅ Database is valid and accessible.');
+      console.log("✅ Database is valid and accessible.");
       return;
     } catch (error) {
-      console.error('❌ Error connecting to the existing database:', error);
-      console.log('   The database might be corrupted. Proceeding with reinitialization...');
+      console.error("❌ Error connecting to the existing database:", error);
+      console.log(
+        "   The database might be corrupted. Proceeding with reinitialization..."
+      );
     }
   }
 
@@ -424,8 +472,6 @@ async function initializeDatabase() {
           privateRepositories: false,
           mirrorIssues: false,
           mirrorStarred: true,
-          mirrorOrganizations: true,
-          onlyMirrorOrgs: false,
           useSpecificUser: false,
           preserveOrgStructure: true,
           skipStarredIssues: false,
@@ -484,11 +530,13 @@ async function resetUsers() {
 
   try {
     // Check if the database exists
-    const dbFilePath = dbPath.replace('file:', '');
+    const dbFilePath = dbPath.replace("file:", "");
     const doesDbExist = fs.existsSync(dbFilePath);
-    
+
     if (!doesDbExist) {
-      console.log("❌ Database file doesn't exist. Run 'pnpm manage-db init' first to create it.");
+      console.log(
+        "❌ Database file doesn't exist. Run 'pnpm manage-db init' first to create it."
+      );
       return;
     }
 
@@ -511,8 +559,12 @@ async function resetUsers() {
     const configCount = await client.execute(
       `SELECT COUNT(*) as count FROM configs`
     );
-    
-    if (configCount.rows && configCount.rows[0] && Number(configCount.rows[0].count) > 0) {
+
+    if (
+      configCount.rows &&
+      configCount.rows[0] &&
+      Number(configCount.rows[0].count) > 0
+    ) {
       await client.execute(`DELETE FROM configs`);
       console.log(`✅ Deleted ${configCount.rows[0].count} configurations.`);
     }
@@ -521,8 +573,12 @@ async function resetUsers() {
     const repoCount = await client.execute(
       `SELECT COUNT(*) as count FROM repositories`
     );
-    
-    if (repoCount.rows && repoCount.rows[0] && Number(repoCount.rows[0].count) > 0) {
+
+    if (
+      repoCount.rows &&
+      repoCount.rows[0] &&
+      Number(repoCount.rows[0].count) > 0
+    ) {
       await client.execute(`DELETE FROM repositories`);
       console.log(`✅ Deleted ${repoCount.rows[0].count} repositories.`);
     }
@@ -531,8 +587,12 @@ async function resetUsers() {
     const orgCount = await client.execute(
       `SELECT COUNT(*) as count FROM organizations`
     );
-    
-    if (orgCount.rows && orgCount.rows[0] && Number(orgCount.rows[0].count) > 0) {
+
+    if (
+      orgCount.rows &&
+      orgCount.rows[0] &&
+      Number(orgCount.rows[0].count) > 0
+    ) {
       await client.execute(`DELETE FROM organizations`);
       console.log(`✅ Deleted ${orgCount.rows[0].count} organizations.`);
     }
@@ -541,14 +601,19 @@ async function resetUsers() {
     const jobCount = await client.execute(
       `SELECT COUNT(*) as count FROM mirror_jobs`
     );
-    
-    if (jobCount.rows && jobCount.rows[0] && Number(jobCount.rows[0].count) > 0) {
+
+    if (
+      jobCount.rows &&
+      jobCount.rows[0] &&
+      Number(jobCount.rows[0].count) > 0
+    ) {
       await client.execute(`DELETE FROM mirror_jobs`);
       console.log(`✅ Deleted ${jobCount.rows[0].count} mirror jobs.`);
     }
 
-    console.log("✅ Database has been reset. The application will now prompt for a new admin account setup on next run.");
-    
+    console.log(
+      "✅ Database has been reset. The application will now prompt for a new admin account setup on next run."
+    );
   } catch (error) {
     console.error("❌ Error resetting users:", error);
     process.exit(1);
@@ -559,87 +624,107 @@ async function resetUsers() {
  * Fix database location issues
  */
 async function fixDatabaseIssues() {
-  console.log('Checking for database issues...');
+  console.log("Checking for database issues...");
 
   // Check for database files in the root directory
   if (fs.existsSync(rootDbFile)) {
-    console.log('Found database file in root directory: gitea-mirror.db');
-    
+    console.log("Found database file in root directory: gitea-mirror.db");
+
     // If the data directory doesn't have the file, move it there
     if (!fs.existsSync(dataDbFile)) {
-      console.log('Moving database file to data directory...');
+      console.log("Moving database file to data directory...");
       fs.copyFileSync(rootDbFile, dataDbFile);
-      console.log('Database file moved successfully.');
+      console.log("Database file moved successfully.");
     } else {
-      console.log('Database file already exists in data directory. Checking for differences...');
-      
+      console.log(
+        "Database file already exists in data directory. Checking for differences..."
+      );
+
       // Compare file sizes to see which is newer/larger
       const rootStats = fs.statSync(rootDbFile);
       const dataStats = fs.statSync(dataDbFile);
-      
-      if (rootStats.size > dataStats.size || rootStats.mtime > dataStats.mtime) {
-        console.log('Root database file is newer or larger. Backing up data directory file and replacing it...');
+
+      if (
+        rootStats.size > dataStats.size ||
+        rootStats.mtime > dataStats.mtime
+      ) {
+        console.log(
+          "Root database file is newer or larger. Backing up data directory file and replacing it..."
+        );
         fs.copyFileSync(dataDbFile, `${dataDbFile}.backup-${Date.now()}`);
         fs.copyFileSync(rootDbFile, dataDbFile);
-        console.log('Database file replaced successfully.');
+        console.log("Database file replaced successfully.");
       }
     }
-    
+
     // Remove the root file
-    console.log('Removing database file from root directory...');
+    console.log("Removing database file from root directory...");
     fs.unlinkSync(rootDbFile);
-    console.log('Root database file removed.');
+    console.log("Root database file removed.");
   }
 
   // Do the same for dev database
   if (fs.existsSync(rootDevDbFile)) {
-    console.log('Found development database file in root directory: gitea-mirror-dev.db');
-    
+    console.log(
+      "Found development database file in root directory: gitea-mirror-dev.db"
+    );
+
     // If the data directory doesn't have the file, move it there
     if (!fs.existsSync(dataDevDbFile)) {
-      console.log('Moving development database file to data directory...');
+      console.log("Moving development database file to data directory...");
       fs.copyFileSync(rootDevDbFile, dataDevDbFile);
-      console.log('Development database file moved successfully.');
+      console.log("Development database file moved successfully.");
     } else {
-      console.log('Development database file already exists in data directory. Checking for differences...');
-      
+      console.log(
+        "Development database file already exists in data directory. Checking for differences..."
+      );
+
       // Compare file sizes to see which is newer/larger
       const rootStats = fs.statSync(rootDevDbFile);
       const dataStats = fs.statSync(dataDevDbFile);
-      
-      if (rootStats.size > dataStats.size || rootStats.mtime > dataStats.mtime) {
-        console.log('Root development database file is newer or larger. Backing up data directory file and replacing it...');
+
+      if (
+        rootStats.size > dataStats.size ||
+        rootStats.mtime > dataStats.mtime
+      ) {
+        console.log(
+          "Root development database file is newer or larger. Backing up data directory file and replacing it..."
+        );
         fs.copyFileSync(dataDevDbFile, `${dataDevDbFile}.backup-${Date.now()}`);
         fs.copyFileSync(rootDevDbFile, dataDevDbFile);
-        console.log('Development database file replaced successfully.');
+        console.log("Development database file replaced successfully.");
       }
     }
-    
+
     // Remove the root file
-    console.log('Removing development database file from root directory...');
+    console.log("Removing development database file from root directory...");
     fs.unlinkSync(rootDevDbFile);
-    console.log('Root development database file removed.');
+    console.log("Root development database file removed.");
   }
 
   // Check if database files exist in the data directory
   if (!fs.existsSync(dataDbFile)) {
-    console.warn('⚠️  WARNING: Production database file not found in data directory.');
+    console.warn(
+      "⚠️  WARNING: Production database file not found in data directory."
+    );
     console.warn('   Run "pnpm manage-db init" to create it.');
   } else {
-    console.log('✅ Production database file found in data directory.');
-    
+    console.log("✅ Production database file found in data directory.");
+
     // Check if we can connect to the database
     try {
       // Try to query the database
       const configCount = await db.select().from(configs).limit(1);
       console.log(`✅ Successfully connected to the database.`);
     } catch (error) {
-      console.error('❌ Error connecting to the database:', error);
-      console.warn('   The database file might be corrupted. Consider running "pnpm manage-db init" to recreate it.');
+      console.error("❌ Error connecting to the database:", error);
+      console.warn(
+        '   The database file might be corrupted. Consider running "pnpm manage-db init" to recreate it.'
+      );
     }
   }
 
-  console.log('Database check completed.');
+  console.log("Database check completed.");
 }
 
 /**
@@ -647,35 +732,35 @@ async function fixDatabaseIssues() {
  */
 async function main() {
   console.log(`Database Management Tool for Gitea Mirror`);
-  
+
   // Ensure all required tables exist
   console.log("Ensuring all required tables exist...");
   await ensureTablesExist();
-  
-  switch(command) {
-    case 'check':
+
+  switch (command) {
+    case "check":
       await checkDatabase();
       break;
-    case 'init':
+    case "init":
       await initializeDatabase();
       break;
-    case 'fix':
+    case "fix":
       await fixDatabaseIssues();
       break;
-    case 'reset-users':
+    case "reset-users":
       await resetUsers();
       break;
-    case 'update-schema':
+    case "update-schema":
       await updateSchema();
       break;
-    case 'auto':
+    case "auto":
       // Auto mode: check, fix, and initialize if needed
-      console.log('Running in auto mode: check, fix, and initialize if needed');
+      console.log("Running in auto mode: check, fix, and initialize if needed");
       await fixDatabaseIssues();
-      
+
       // Also update schema in auto mode
       await updateSchema();
-      
+
       if (!fs.existsSync(dataDbFile)) {
         await initializeDatabase();
       } else {
@@ -697,7 +782,7 @@ Usage: pnpm manage-db [command]
   }
 }
 
-main().catch(error => {
-  console.error('Error during database management:', error);
+main().catch((error) => {
+  console.error("Error during database management:", error);
   process.exit(1);
 });

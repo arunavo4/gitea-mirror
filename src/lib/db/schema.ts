@@ -27,8 +27,6 @@ export const configSchema = z.object({
     privateRepositories: z.boolean().default(false),
     mirrorIssues: z.boolean().default(false),
     mirrorStarred: z.boolean().default(false),
-    mirrorOrganizations: z.boolean().default(false),
-    onlyMirrorOrgs: z.boolean().default(false),
     useSpecificUser: z.boolean().default(false),
     singleRepo: z.string().optional(),
     includeOrgs: z.array(z.string()).default([]),
