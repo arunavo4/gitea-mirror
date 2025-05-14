@@ -251,7 +251,7 @@ export function Organization() {
           onValueChange={(value) =>
             setFilter((prev) => ({
               ...prev,
-              status: value === "all" ? "" : value,
+              status: value === "all" ? "" : (value as "" | "imported" | "mirroring" | "mirrored" | "failed" | "syncing" | "synced"),
             }))
           }
         >
