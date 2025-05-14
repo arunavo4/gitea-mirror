@@ -39,17 +39,8 @@ export default function Repository() {
     searchTerm: "",
     status: "",
     organization: "",
+    owner: "",
   });
-
-  // Read organization filter from URL when component mounts
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const orgParam = urlParams.get("organization");
-
-    if (orgParam) {
-      setFilter((prev) => ({ ...prev, organization: orgParam }));
-    }
-  }, [setFilter]);
 
   const [loadingRepoIds, setLoadingRepoIds] = useState<Set<string>>(new Set()); // this is used when the api actions are performed
 

@@ -17,6 +17,10 @@ export const useFilterParams = (defaultFilters: FilterParams) => {
         | "",
       membershipRole: (params.get("membershipRole") ||
         defaultFilters.membershipRole) as MembershipRole | "",
+      owner: params.get("owner") || defaultFilters.owner,
+      organization: params.get("organization") || defaultFilters.organization,
+      type: params.get("type") || defaultFilters.type,
+      name: params.get("name") || defaultFilters.name,
     };
   };
 
@@ -34,6 +38,18 @@ export const useFilterParams = (defaultFilters: FilterParams) => {
     }
     if (newFilter.membershipRole) {
       params.set("membershipRole", newFilter.membershipRole);
+    }
+    if (newFilter.owner) {
+      params.set("owner", newFilter.owner);
+    }
+    if (newFilter.organization) {
+      params.set("organization", newFilter.organization);
+    }
+    if (newFilter.type) {
+      params.set("type", newFilter.type);
+    }
+    if (newFilter.name) {
+      params.set("name", newFilter.name);
     }
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState({}, "", newUrl);
