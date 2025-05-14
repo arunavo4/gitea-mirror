@@ -1,0 +1,43 @@
+---
+title: "Quick Start Guide"
+layout: "../../layouts/main.astro"
+---
+
+<main class="prose dark:prose-invert max-w-4xl mx-auto px-4 py-8">
+  <div class="mb-6">
+    <a href="/docs/" class="text-blue-500 hover:underline">&larr; Back to Documentation</a>
+  </div>
+  
+  <h1>Gitea Mirror Quick Start Guide</h1>
+  
+  <p>This guide will help you get Gitea Mirror up and running quickly.</p>
+  
+  <h2>Prerequisites</h2>
+  
+  <p>Before you begin, make sure you have:</p>
+  
+  <ol>
+    <li>A GitHub account with a personal access token</li>
+    <li>A Gitea instance with an access token</li>
+    <li>Docker and docker-compose (recommended) or Node.js 18+ installed</li>
+  </ol>
+  
+  <h2>Installation</h2>
+  
+  <h3>Using Docker (Recommended)</h3>
+  
+  <ol>
+    <li>
+      <p>Clone the repository:</p>
+      <pre><code>git clone https://github.com/arunavo4/gitea-mirror.git
+cd gitea-mirror</code></pre>
+    </li>
+    <li>
+      <p>Start the application in production mode:</p>
+      <pre><code>docker-compose --profile production up -d</code></pre>
+    </li>
+    <li>
+      <p>Access the application at http://localhost:4321</p>
+    </li>
+  </ol>
+</main>

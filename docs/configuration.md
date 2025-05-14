@@ -22,7 +22,7 @@ Gitea Mirror can be conf### Troubleshooting
    - Check GitHub API rate limits
    - Ensure Gitea server is accessible
    - Verify repository permissions
-   - Review toast notification error messagesys:
+   - Review toast notification error messages
 
 1. **Environment Variables**: Set configuration options through environment variables
 2. **Web UI**: Configure the application through the web interface after installation
