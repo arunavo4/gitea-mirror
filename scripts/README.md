@@ -19,7 +19,7 @@ This is a consolidated database management tool that handles all database-relate
 You can execute the database management tool using your package manager with various commands:
 
 ```bash
-# General database management (shows available commands)
+# Checks database status (default action if no command is specified, equivalent to 'pnpm check-db')
 pnpm manage-db
 
 # Check database status

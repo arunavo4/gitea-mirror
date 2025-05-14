@@ -48,14 +48,14 @@ services:
     container_name: gitea-mirror-dev
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "4321:4321"
     volumes:
       - gitea-mirror-data:/app/data
     environment:
       - NODE_ENV=development
       - DATABASE_URL=sqlite://data/gitea-mirror.db
       - HOST=0.0.0.0
-      - PORT=3000
+      - PORT=4321
       - JWT_SECRET=dev-secret-key
       - GITHUB_TOKEN=${GITHUB_TOKEN:-your-github-token}
       - GITHUB_USERNAME=${GITHUB_USERNAME:-your-github-username}
@@ -63,7 +63,7 @@ services:
       - GITEA_TOKEN=${GITEA_TOKEN:-your-local-gitea-token}
       - GITEA_USERNAME=${GITEA_USERNAME:-your-local-gitea-username}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4321/"]
       interval: 30s
       timeout: 5s
       retries: 3

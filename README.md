@@ -37,14 +37,6 @@ See the [Quick Start Guide](docs/quickstart.md) for detailed instructions on get
 - A GitHub account with a personal access token
 - A Gitea instance with an access token
 
-### Development and Production Mode
-
-The application can run in two modes:
-
-- **Development Mode**: For local development and testing (`NODE_ENV=development`)
-- **Production Mode**: For real-world deployment (`NODE_ENV=production`)
-
-The application uses the same database structure for both modes.
 
 #### Database
 
@@ -64,7 +56,7 @@ Before running the application in production mode for the first time, you need t
 
 ```bash
 # Initialize the database for production mode
-pnpm init-db
+pnpm setup
 ```
 
 This will create the necessary tables. On first launch, you'll be guided through creating your admin account with a secure password.
@@ -82,13 +74,8 @@ Gitea Mirror provides multi-architecture Docker images that work on both ARM64 (
 docker pull ghcr.io/arunavo4/gitea-mirror:latest
 
 # Run the application
-docker run -d \
-  -p 3000:3000 \
-  -v gitea-mirror-data:/app/data \
-  -e DATABASE_URL=sqlite://data/gitea-mirror.db \
-  -e NODE_ENV=production \
-  -e JWT_SECRET=your-secret-key-change-this-in-production \
-  --name gitea-mirror \
+docker run -d \\
+  -p 4321:4321 \\
   ghcr.io/arunavo4/gitea-mirror:latest
 ```
 
@@ -99,6 +86,7 @@ docker run -d \
 docker-compose --profile production up -d
 
 # For development mode (requires configuration)
+# Ensure you have run pnpm setup first
 docker-compose -f docker-compose.dev.yml up -d
 ```
 
@@ -153,23 +141,11 @@ docker volume create gitea-mirror-data
 
 The Docker container can be configured with the following environment variables:
 
-- `NODE_ENV`: Set to `production` or `development`
 - `DATABASE_URL`: SQLite database URL (default: `sqlite://data/gitea-mirror.db`)
 - `HOST`: Host to bind to (default: `0.0.0.0`)
 - `PORT`: Port to listen on (default: `3000`)
 - `JWT_SECRET`: Secret key for JWT token generation (important for security)
 
-##### Troubleshooting Docker Builds
-
-If you encounter Docker build issues (especially in GitHub Actions):
-
-1. **Network Issues**: Try using `--network=host` flag
-2. **Memory Issues**: Build one platform at a time
-3. **GitHub 502 Errors**: Use the stable workflow with retry options
-4. **Local Build Issues**: Check Docker Desktop resources (increase memory/CPU)
-
-See [Troubleshooting Documentation](./.github/workflows/TROUBLESHOOTING.md) for more details.
-- `JWT_SECRET`: Secret for JWT token generation (required in production)
 
 #### Manual Installation
 
@@ -272,7 +248,7 @@ Gitea Mirror follows a modular architecture with clear separation of concerns. S
 
 ```bash
 # Install dependencies
-pnpm install
+pnpm setup
 
 # Start the development server
 pnpm dev

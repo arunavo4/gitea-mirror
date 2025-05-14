@@ -42,11 +42,17 @@ The script uses environment variables from the `.env` file in the project root:
 
 3. Using with docker-compose:
    ```bash
+   # Ensure dependencies are installed and database is initialized
+   pnpm setup
+
    # First build the image
    ./scripts/build-docker.sh --load
    
-   # Then run using docker-compose
-   docker-compose up -d
+   # Then run using docker-compose for development
+   docker-compose -f ../docker-compose.dev.yml up -d
+
+   # Or for production
+   docker-compose --profile production up -d
    ```
 
 ## Diagnostics Script
