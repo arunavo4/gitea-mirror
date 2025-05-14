@@ -7,22 +7,6 @@ interface SidebarProps {
   className?: string;
 }
 
-// type Paths = "/" | "/repositories" | "/organizations" | "/config" | "/activity";
-
-// interface SidebarItem {
-//   href: Paths;
-//   label: string;
-//   icon: React.ElementType;
-// }
-
-// const links: SidebarItem[] = [
-//   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-//   { href: "/repositories", label: "Repositories", icon: GitFork },
-//   { href: "/organizations", label: "Organizations", icon: Users },
-//   { href: "/config", label: "Configuration", icon: Settings },
-//   { href: "/activity", label: "Activity Log", icon: Activity },
-// ];
-
 export function Sidebar({ className }: SidebarProps) {
   const [currentPath, setCurrentPath] = useState<string>("");
 
@@ -66,13 +50,13 @@ export function Sidebar({ className }: SidebarProps) {
               Check out the documentation for help with setup and configuration.
             </p>
             <a
-              href="https://github.com/arunavo4/gitea-mirror#readme"
+              href="/docs"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-xs text-primary hover:underline"
             >
               Documentation
-               <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3 w-3" />
             </a>
           </div>
         </div>

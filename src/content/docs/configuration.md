@@ -43,6 +43,8 @@ After installing and starting Gitea Mirror, you can configure it through the web
 
 ### GitHub Configuration
 
+The GitHub configuration section allows you to connect to GitHub and specify which repositories to mirror.
+
 | Option | Description | Default |
 |--------|-------------|---------|
 | Username | Your GitHub username | - |
@@ -64,7 +66,16 @@ Your GitHub token needs the following permissions:
 - `read:org` - Read organization membership
 - `read:user` - Read user profile data
 
+To create a GitHub token:
+
+1. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+2. Click "Generate new token"
+3. Select the required permissions
+4. Copy the generated token and paste it into Gitea Mirror
+
 ### Gitea Configuration
+
+The Gitea configuration section allows you to connect to your Gitea instance and specify how repositories should be mirrored.
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -73,3 +84,36 @@ Your GitHub token needs the following permissions:
 | Organization | Default organization for mirrored repositories | - |
 | Visibility | Default visibility for mirrored repositories | `public` |
 | Starred Repos Org | Organization for starred repositories | `github` |
+
+#### Gitea Token Creation
+
+To create a Gitea access token:
+
+1. Log in to your Gitea instance
+2. Go to Settings > Applications
+3. Under "Generate New Token", enter a name for your token
+4. Click "Generate Token"
+5. Copy the generated token and paste it into Gitea Mirror
+
+### Schedule Configuration
+
+You can configure automatic mirroring on a schedule:
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Enable Scheduling | Enable automatic mirroring | `false` |
+| Interval (seconds) | Time between mirroring operations | `3600` (1 hour) |
+
+## Advanced Configuration
+
+### Repository Filtering
+
+You can include or exclude specific repositories using patterns:
+
+- Include patterns: Only repositories matching these patterns will be mirrored
+- Exclude patterns: Repositories matching these patterns will be skipped
+
+Example patterns:
+- `*` - All repositories
+- `org-name/*` - All repositories in a specific organization
+- `username/repo-name` - A specific repository

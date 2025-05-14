@@ -17,9 +17,13 @@ Before you begin, make sure you have:
 2. A Gitea instance with an access token
 3. Docker and docker-compose (recommended) or Node.js 18+ installed
 
-## Installation
+## Installation Options
+
+Choose the installation method that works best for your environment.
 
 ### Using Docker (Recommended)
+
+Docker provides the easiest way to get started with minimal configuration.
 
 1. Clone the repository:
    ```bash
@@ -32,9 +36,11 @@ Before you begin, make sure you have:
    docker-compose --profile production up -d
    ```
 
-3. Access the application at http://localhost:4321
+3. Access the application at [http://localhost:4321](http://localhost:4321)
 
 ### Manual Installation
+
+If you prefer to run the application directly on your system:
 
 1. Clone the repository:
    ```bash
@@ -42,7 +48,7 @@ Before you begin, make sure you have:
    cd gitea-mirror
    ```
 
-2. Quick setup:
+2. Run the quick setup script:
    ```bash
    pnpm setup
    ```
@@ -61,38 +67,60 @@ Before you begin, make sure you have:
    pnpm start
    ```
 
-5. Access the application at http://localhost:4321
+4. Access the application at [http://localhost:4321](http://localhost:4321)
 
 ## Initial Configuration
 
-1. Upon first access, you'll be prompted to create an admin account:
-   - Create your username and password
+Follow these steps to configure Gitea Mirror for first use:
+
+1. **Create Admin Account**
+   - Upon first access, you'll be prompted to create an admin account
+   - Choose a secure username and password
    - This will be your administrator account
 
-2. Go to the Configuration page
-
-3. Configure GitHub settings:
+2. **Configure GitHub Connection**
+   - Navigate to the Configuration page
    - Enter your GitHub username
    - Enter your GitHub personal access token
    - Select which repositories to mirror (all, starred, organizations)
    - Configure repository filtering options
 
-4. Configure Gitea settings:
+3. **Configure Gitea Connection**
    - Enter your Gitea server URL
    - Enter your Gitea access token
    - Configure organization and visibility settings
 
-5. Configure scheduling (optional):
-   - Enable automatic mirroring
-   - Set the mirroring interval
+4. **Set Up Scheduling (Optional)**
+   - Enable automatic mirroring if desired
+   - Set the mirroring interval (in seconds)
 
-6. Save your configuration
+5. **Save Configuration**
+   - Click the "Save" button to store your settings
 
-## First Mirror
+## Performing Your First Mirror
 
-1. After saving your configuration, click "Import GitHub Data" to fetch repositories from GitHub
+After completing the configuration, you can start mirroring repositories:
+
+1. Click "Import GitHub Data" to fetch repositories from GitHub
 2. Go to the Repositories page to view your imported repositories
 3. Select the repositories you want to mirror
 4. Click "Mirror Selected" to start the mirroring process
 5. Monitor the progress on the Activity page
 6. You'll receive toast notifications about the success or failure of operations
+
+## Troubleshooting
+
+If you encounter any issues:
+
+- Check the Activity Log for detailed error messages
+- Verify your GitHub and Gitea tokens have the correct permissions
+- Ensure your Gitea instance is accessible from the machine running Gitea Mirror
+- For Docker installations, check container logs with `docker logs gitea-mirror`
+
+## Next Steps
+
+After your initial setup:
+
+- Explore the dashboard for an overview of your mirroring status
+- Set up automatic mirroring schedules for hands-off operation
+- Configure organization mirroring for team repositories

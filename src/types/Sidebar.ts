@@ -5,8 +5,7 @@ export type Paths =
   | "/repositories"
   | "/organizations"
   | "/config"
-  | "/activity"
-  | "/docs";
+  | "/activity";
 
 export interface SidebarItem {
   href: Paths;

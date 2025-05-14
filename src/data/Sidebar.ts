@@ -4,7 +4,6 @@ import {
   Settings,
   Activity,
   Building2,
-  FileText,
 } from "lucide-react";
 import type { SidebarItem } from "@/types/Sidebar";
 
@@ -14,5 +13,4 @@ export const links: SidebarItem[] = [
   { href: "/organizations", label: "Organizations", icon: Building2 },
   { href: "/config", label: "Configuration", icon: Settings },
   { href: "/activity", label: "Activity Log", icon: Activity },
-  { href: "/docs", label: "Documentation", icon: FileText },
 ];

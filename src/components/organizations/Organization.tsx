@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Search, RefreshCw, Users, FlipHorizontal, Plus } from "lucide-react";
-import { OwnerCombobox } from "../repositories/RepositoryComboboxes";
+import { Search, RefreshCw, FlipHorizontal, Plus } from "lucide-react";
 import type { MirrorJob, Organization } from "@/lib/db/schema";
 import { OrganizationList } from "./OrganizationsList";
 import { AddOrganizationDialog } from "./AddOrganizationDialog";

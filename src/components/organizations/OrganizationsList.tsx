@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, Building2 } from "lucide-react";
 import { SiGithub } from "react-icons/si";
 import type { Organization } from "@/lib/db/schema";
 import type { FilterParams } from "@/types/filter";
@@ -63,7 +63,7 @@ export function OrganizationList({
     </div>
   ) : filteredOrganizations.length === 0 ? (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Users className="h-12 w-12 text-muted-foreground mb-4" />
+      <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
       <h3 className="text-lg font-medium">No organizations found</h3>
       <p className="text-sm text-muted-foreground mt-1 mb-4 max-w-md">
         {hasAnyFilter
@@ -98,7 +98,7 @@ export function OrganizationList({
           <Card key={index} className="overflow-hidden p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-muted-foreground" />
+                <Building2 className="h-5 w-5 text-muted-foreground" />
                 <a 
                   href={`/repositories?organization=${encodeURIComponent(org.name || '')}`}
                   className="font-medium hover:underline cursor-pointer"
