@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
   membershipRoleEnum,
   type OrganizationsApiResponse,
@@ -28,7 +28,8 @@ export const GET: APIRoute = async ({ request }) => {
     const rawOrgs = await db
       .select()
       .from(organizations)
-      .where(eq(organizations.userId, userId));
+      .where(eq(organizations.userId, userId))
+      .orderBy(sql`name COLLATE NOCASE`);
 
     const orgsWithIds: Organization[] = rawOrgs.map((org) => ({
       ...org,
