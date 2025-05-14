@@ -26,7 +26,9 @@ export const GET: APIRoute = async ({ url }) => {
     const activities: MirrorJob[] = jobs.map((job) => ({
       id: job.id,
       userId: job.userId,
+      repositoryId: job.repositoryId ?? undefined,
       repositoryName: job.repositoryName ?? undefined,
+      organizationId: job.organizationId ?? undefined,
       organizationName: job.organizationName ?? undefined,
       status: repoStatusEnum.parse(job.status),
       details: job.details ?? undefined,

@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { db, configs, repositories } from "@/lib/db";
 import { eq, or } from "drizzle-orm";
 import { repoStatusEnum, repositoryVisibilityEnum } from "@/types/Repository";
-import { syncGiteaRepo } from "@/lib/gitea";
+import { isRepoPresentInGitea, syncGiteaRepo } from "@/lib/gitea";
 import type {
   ScheduleSyncRepoRequest,
   ScheduleSyncRepoResponse,
@@ -52,7 +52,8 @@ export const POST: APIRoute = async ({ request }) => {
         eq(repositories.userId, userId) &&
           or(
             eq(repositories.status, "mirrored"),
-            eq(repositories.status, "synced")
+            eq(repositories.status, "synced"),
+            eq(repositories.status, "failed")
           )
       );
 
@@ -60,7 +61,8 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "No repositories found with status mirrored or synced.",
+          error:
+            "No repositories found with status mirrored, synced or failed.",
           repositories: [],
         } satisfies ScheduleSyncRepoResponse),
         { status: 404, headers: { "Content-Type": "application/json" } }
@@ -88,6 +90,19 @@ export const POST: APIRoute = async ({ request }) => {
     setTimeout(async () => {
       for (const repo of repos) {
         try {
+          // Only check Gitea presence if the repo failed previously
+          if (repo.status === "failed") {
+            const isPresent = await isRepoPresentInGitea({
+              config,
+              owner: repo.owner,
+              repoName: repo.name,
+            });
+
+            if (!isPresent) {
+              continue; //silently skip if repo is not present in Gitea
+            }
+          }
+
           await syncGiteaRepo({
             config,
             repository: {
