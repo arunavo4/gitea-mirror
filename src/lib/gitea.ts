@@ -26,15 +26,13 @@ export const getGiteaRepoOwner = ({
     throw new Error("Gitea username is required.");
   }
 
-  let owner: string;
-
+  // if the config has preserveOrgStructure set to true, then use the org name as the owner
   if (config.githubConfig.preserveOrgStructure && repository.organization) {
-    owner = repository.organization;
-  } else {
-    owner = config.giteaConfig.username;
+    return repository.organization;
   }
 
-  return owner;
+  // if the config has preserveOrgStructure set to false, then use the gitea username as the owner
+  return config.giteaConfig.username;
 };
 
 export const isRepoPresentInGitea = async ({
