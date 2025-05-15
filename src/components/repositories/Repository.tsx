@@ -332,7 +332,12 @@ export default function Repository() {
         toast.success(`Repository added successfully`);
         setRepositories((prevRepos) => [...prevRepos, response.repository]);
 
-        fetchRepositories(); // Refresh the repository list
+        await fetchRepositories();
+
+        setFilter((prev) => ({
+          ...prev,
+          searchTerm: repo,
+        }));
       } else {
         toast.error(response.error || "Error adding repository");
       }
