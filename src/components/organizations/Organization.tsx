@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Search, RefreshCw, FlipHorizontal, Plus } from "lucide-react";
 import type { MirrorJob, Organization } from "@/lib/db/schema";
 import { OrganizationList } from "./OrganizationsList";
-import { AddOrganizationDialog } from "./AddOrganizationDialog";
+import AddOrganizationDialog from "./AddOrganizationDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/utils";
 import {
   membershipRoleEnum,
+  type AddOrganizationApiRequest,
+  type AddOrganizationApiResponse,
   type MembershipRole,
   type OrganizationsApiResponse,
 } from "@/types/organizations";
@@ -26,7 +28,7 @@ import { toast } from "sonner";
 export function Organization() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState<boolean>(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const { user } = useAuth();
   const { filter, setFilter } = useFilterParams({
     searchTerm: "",
@@ -142,43 +144,42 @@ export function Organization() {
     }
   };
 
-  const handleAddOrganization = async (name: string, membershipRole: "member" | "admin" | "billing_manager") => {
+  const handleAddOrganization = async ({
+    org,
+    role,
+  }: {
+    org: string;
+    role: MembershipRole;
+  }) => {
     try {
       if (!user || !user.id) {
-        toast.error("You must be logged in to add an organization");
         return;
       }
 
-      // Add loading state
-      setIsLoading(true);
-
-      // Create new organization object with required fields
-      const newOrg: Partial<Organization> = {
+      const reqPayload: AddOrganizationApiRequest = {
         userId: user.id,
-        name,
-        membershipRole,
-        avatarUrl: `https://github.com/${name}.png`, // Default GitHub org avatar URL
-        status: "imported",
-        isIncluded: false,
-        repositoryCount: 0
+        org,
+        role,
       };
 
-      // Make API request to add the organization
-      const response = await apiRequest<{ success: boolean; organization?: Organization; error?: string }>(
-        `/github/organizations`, 
+      const response = await apiRequest<AddOrganizationApiResponse>(
+        "/sync/organization",
         {
           method: "POST",
-          data: { 
-            userId: user.id, 
-            organization: newOrg 
-          }
+          data: reqPayload,
         }
       );
 
-      if (response.success && response.organization) {
-        // Add the new organization to the list
-        setOrganizations(prev => [...prev, response.organization as Organization]);
-        toast.success(`Organization ${name} added successfully`);
+      if (response.success) {
+        toast.success(`Organization added successfully`);
+        setOrganizations((prev) => [...prev, response.organization]);
+
+        await fetchOrganizations();
+
+        setFilter((prev) => ({
+          ...prev,
+          searchTerm: org,
+        }));
       } else {
         toast.error(response.error || "Error adding organization");
       }
@@ -251,7 +252,9 @@ export function Organization() {
 
   // Get unique organization names for combobox (since Organization has no owner field)
   const ownerOptions = Array.from(
-    new Set(organizations.map((org) => org.name).filter((v): v is string => !!v))
+    new Set(
+      organizations.map((org) => org.name).filter((v): v is string => !!v)
+    )
   ).sort();
 
   return (
@@ -289,7 +292,9 @@ export function Organization() {
               <SelectItem key={role} value={role}>
                 {role === "all"
                   ? "All Roles"
-                  : role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  : role
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (c) => c.toUpperCase())}
               </SelectItem>
             ))}
           </SelectContent>
@@ -301,7 +306,17 @@ export function Organization() {
           onValueChange={(value) =>
             setFilter((prev) => ({
               ...prev,
-              status: value === "all" ? "" : (value as "" | "imported" | "mirroring" | "mirrored" | "failed" | "syncing" | "synced"),
+              status:
+                value === "all"
+                  ? ""
+                  : (value as
+                      | ""
+                      | "imported"
+                      | "mirroring"
+                      | "mirrored"
+                      | "failed"
+                      | "syncing"
+                      | "synced"),
             }))
           }
         >
@@ -309,7 +324,15 @@ export function Organization() {
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
-            {["all", "imported", "mirroring", "mirrored", "failed", "syncing", "synced"].map((status) => (
+            {[
+              "all",
+              "imported",
+              "mirroring",
+              "mirrored",
+              "failed",
+              "syncing",
+              "synced",
+            ].map((status) => (
               <SelectItem key={status} value={status}>
                 {status === "all"
                   ? "All Statuses"
@@ -341,22 +364,13 @@ export function Organization() {
         setFilter={setFilter}
         loadingOrgIds={loadingOrgIds}
         onMirror={handleMirrorOrg}
-        onAddOrganization={() => setIsAddDialogOpen(true)}
+        onAddOrganization={() => setIsDialogOpen(true)}
       />
 
-      {/* Add Organization button */}
-      <Button
-        onClick={() => setIsAddDialogOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full h-12 w-12 shadow-lg p-0"
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
-
-      {/* Add Organization Dialog */}
       <AddOrganizationDialog
-        isOpen={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        onAdd={handleAddOrganization}
+        onAddOrganization={handleAddOrganization}
+        isDialogOpen={isDialogOpen}
+        setIsDialogOpen={setIsDialogOpen}
       />
     </div>
   );

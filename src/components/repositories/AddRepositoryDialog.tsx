@@ -12,6 +12,8 @@ import {
 import { LoaderCircle, Plus } from "lucide-react";
 
 interface AddRepositoryDialogProps {
+  isDialogOpen: boolean;
+  setIsDialogOpen: (isOpen: boolean) => void;
   onAddRepository: ({
     repo,
     owner,
@@ -22,9 +24,10 @@ interface AddRepositoryDialogProps {
 }
 
 export default function AddRepositoryDialog({
+  isDialogOpen,
+  setIsDialogOpen,
   onAddRepository,
 }: AddRepositoryDialogProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [repo, setRepo] = useState<string>("");
   const [owner, setOwner] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);

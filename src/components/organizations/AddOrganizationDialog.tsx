@@ -2,131 +2,149 @@ import * as React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
+import { LoaderCircle, Plus } from "lucide-react";
+import type { MembershipRole } from "@/types/organizations";
+import { RadioGroup, RadioGroupItem } from "../ui/radio";
+import { Label } from "../ui/label";
 
 interface AddOrganizationDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onAdd: (name: string, type: "member" | "admin" | "billing_manager") => void;
+  isDialogOpen: boolean;
+  setIsDialogOpen: (isOpen: boolean) => void;
+  onAddOrganization: ({
+    org,
+    role,
+  }: {
+    org: string;
+    role: MembershipRole;
+  }) => Promise<void>;
 }
 
-export function AddOrganizationDialog({
-  isOpen,
-  onClose,
-  onAdd,
+export default function AddOrganizationDialog({
+  isDialogOpen,
+  setIsDialogOpen,
+  onAddOrganization,
 }: AddOrganizationDialogProps) {
-  const [name, setName] = useState("");
-  const [type, setType] = useState<"member" | "admin" | "billing_manager">("member");
-  const [error, setError] = useState("");
+  const [org, setOrg] = useState<string>("");
+  const [role, setRole] = useState<MembershipRole>("member");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim()) {
-      setError("Organization name is required");
+    if (!org || org.trim() === "") {
+      setError("Please enter a valid organization name.");
       return;
     }
 
-    onAdd(name, type);
-    setName("");
-    setType("member");
-    setError("");
-    onClose();
+    try {
+      setIsLoading(true);
+
+      await onAddOrganization({ org, role });
+
+      setError("");
+      setOrg("");
+      setRole("member");
+      setIsDialogOpen(false);
+    } catch (err: any) {
+      setError(err?.message || "Failed to add repository.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md">
-        <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Add Organization</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Organization Name
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  placeholder="e.g., microsoft"
-                />
-                {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
-              </div>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button className="fixed bottom-6 right-6 rounded-full h-12 w-12 shadow-lg p-0">
+          <Plus className="h-6 w-6" />
+        </Button>
+      </DialogTrigger>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Membership Role
-                </label>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <input
-                      id="type-member"
-                      type="radio"
-                      name="type"
-                      value="member"
-                      checked={type === "member"}
-                      onChange={() => setType("member")}
-                      className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <label htmlFor="type-member" className="ml-2 block text-sm">
-                      Member (regular organization member)
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      id="type-admin"
-                      type="radio"
-                      name="type"
-                      value="admin"
-                      checked={type === "admin"}
-                      onChange={() => setType("admin")}
-                      className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <label htmlFor="type-admin" className="ml-2 block text-sm">
-                      Admin (with administrative privileges)
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      id="type-billing"
-                      type="radio"
-                      name="type"
-                      value="billing_manager"
-                      checked={type === "billing_manager"}
-                      onChange={() => setType("billing_manager")}
-                      className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
-                    />
-                    <label htmlFor="type-billing" className="ml-2 block text-sm">
-                      Billing Manager (manages org billing)
-                    </label>
-                  </div>
-                </div>
-              </div>
+      <DialogContent className="sm:max-w-[425px] gap-0 gap-y-6">
+        <DialogHeader>
+          <DialogTitle>Add Organization</DialogTitle>
+          <DialogDescription>
+            You can add public organizations
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-y-6">
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium mb-1.5"
+              >
+                Organization Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={org}
+                onChange={(e) => setOrg(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="e.g., microsoft"
+                autoComplete="off"
+                autoFocus
+                required
+              />
             </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button type="button" variant="outline" onClick={onClose}>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Membership Role
+              </label>
+
+              <RadioGroup
+                value={role}
+                onValueChange={(val) => setRole(val as MembershipRole)}
+                className="flex flex-col gap-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="member" id="r1" />
+                  <Label htmlFor="r1">Member</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="admin" id="r2" />
+                  <Label htmlFor="r2">Admin</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="billing_manager" id="r3" />
+                  <Label htmlFor="r3">Billing Manager</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+          </div>
+
+          <div className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isLoading}
+              onClick={() => setIsDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit">Add Organization</Button>
-          </CardFooter>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                "Add Repository"
+              )}
+            </Button>
+          </div>
         </form>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -38,6 +38,7 @@ export default function Repository() {
     organization: "",
     owner: "",
   });
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
   // Read organization filter from URL when component mounts
   useEffect(() => {
@@ -446,7 +447,11 @@ export default function Repository() {
         loadingRepoIds={loadingRepoIds}
       />
 
-      <AddRepositoryDialog onAddRepository={handleAddRepository} />
+      <AddRepositoryDialog
+        onAddRepository={handleAddRepository}
+        isDialogOpen={isDialogOpen}
+        setIsDialogOpen={setIsDialogOpen}
+      />
     </div>
   );
 }
