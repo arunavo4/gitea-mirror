@@ -24,9 +24,9 @@ interface AddRepositoryDialogProps {
 export default function AddRepositoryDialog({
   onAddRepository,
 }: AddRepositoryDialogProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(true);
-  const [repo, setRepo] = useState<string>("next.js");
-  const [owner, setOwner] = useState<string>("vercel");
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [repo, setRepo] = useState<string>("");
+  const [owner, setOwner] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
@@ -115,7 +115,12 @@ export default function AddRepositoryDialog({
           </div>
 
           <div className="flex justify-between">
-            <Button type="button" variant="outline" disabled={isLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isLoading}
+              onClick={() => setIsDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
