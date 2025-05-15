@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { db, configs, repositories } from "@/lib/db";
 import { eq, inArray } from "drizzle-orm";
-import { isRepoPresentInGitea } from "@/lib/gitea";
+import { getGiteaRepoOwner, isRepoPresentInGitea } from "@/lib/gitea";
 import {
   mirrorGithubRepoToGitea,
   mirrorGitHubOrgRepoToGiteaOrg,
@@ -81,7 +81,11 @@ export const POST: APIRoute = async ({ request }) => {
             forkedFrom: repo.forkedFrom ?? undefined,
           };
 
-          const owner = repo.organization || config.giteaConfig.username;
+          let owner = getGiteaRepoOwner({
+            config,
+            repository: repoData,
+          });
+
           const present = await isRepoPresentInGitea({
             config,
             owner,
@@ -95,6 +99,8 @@ export const POST: APIRoute = async ({ request }) => {
             if (!config.githubConfig.token) {
               throw new Error("GitHub token is missing.");
             }
+
+            console.log(`Importing repo: ${repo.name} ${owner}`);
 
             const octokit = createGitHubClient(config.githubConfig.token);
             if (repo.organization && config.githubConfig.preserveOrgStructure) {
@@ -117,7 +123,6 @@ export const POST: APIRoute = async ({ request }) => {
                 },
               });
             }
-            console.log(`Mirrored new repo: ${repo.name}`);
           }
         } catch (err) {
           console.error(`Failed to retry repo ${repo.name}:`, err);
