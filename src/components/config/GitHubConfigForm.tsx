@@ -251,7 +251,11 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 Preserve Org Structure
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="ml-1 cursor-pointer align-middle text-muted-foreground">
+                    <span
+                      className="ml-1 cursor-pointer align-middle text-muted-foreground"
+                      role="button"
+                      tabindex="0"
+                    >
                       <Info size={16} />
                     </span>
                   </TooltipTrigger>
