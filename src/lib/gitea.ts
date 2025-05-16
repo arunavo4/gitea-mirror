@@ -67,11 +67,19 @@ export const isRepoPresentInGitea = async ({
 
     // If not found and checkAlternateOwner is true, check the alternate location
     if (checkAlternateOwner && !response.ok) {
-      // If preserveOrgStructure is true, also check in username location
-      // If preserveOrgStructure is false, also check in org location
-      const alternateOwner = config.githubConfig?.preserveOrgStructure
-        ? config.giteaConfig.username
-        : repoName.includes('/') ? repoName.split('/')[0] : null;
+      let alternateOwner = null;
+
+      // If preserveOrgStructure is true and we're checking a non-org repo, check username location
+      // If preserveOrgStructure is false and we have org info, check org location
+      if (config.githubConfig?.preserveOrgStructure) {
+        // When preserveOrgStructure is true, we first check in org structure
+        // For individual repos (without org), the alternate is the username
+        alternateOwner = config.giteaConfig.username;
+      } else {
+        // When preserveOrgStructure is false, we first check in username
+        // The alternate is the org name if available
+        alternateOwner = repoName.includes('/') ? repoName.split('/')[0] : null;
+      }
 
       if (alternateOwner) {
         const altResponse = await fetch(
@@ -119,9 +127,19 @@ export const checkRepoLocation = async ({
   }
 
   // If not found at expected location, check alternate location
-  const alternateOwner = config.githubConfig?.preserveOrgStructure
-    ? config.giteaConfig?.username
-    : repository.organization;
+  let alternateOwner = null;
+
+  // If preserveOrgStructure is true and we're checking a non-org repo, check username location
+  // If preserveOrgStructure is false and we have org info, check org location
+  if (config.githubConfig?.preserveOrgStructure) {
+    // When preserveOrgStructure is true, we first check in org structure
+    // For individual repos (without org), the alternate is the username
+    alternateOwner = config.giteaConfig?.username;
+  } else {
+    // When preserveOrgStructure is false, we first check in username
+    // The alternate is the org name if available
+    alternateOwner = repository.organization;
+  }
 
   if (alternateOwner) {
     const altPresent = await isRepoPresentInGitea({
