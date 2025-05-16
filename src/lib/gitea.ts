@@ -39,21 +39,59 @@ export const isRepoPresentInGitea = async ({
   config,
   owner,
   repoName,
+  checkAlternateOwner = false,
 }: {
   config: Partial<Config>;
   owner: string;
   repoName: string;
+  checkAlternateOwner?: boolean;
 }): Promise<boolean> => {
-  const { url, token } = config.giteaConfig!;
-  const apiUrl = `${url}/api/v1/repos/${owner}/${repoName}`;
+  try {
+    if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
+      throw new Error("Gitea config is required.");
+    }
 
-  const res = await fetch(apiUrl, {
-    headers: {
-      Authorization: `token ${token}`,
-    },
-  });
+    // First check with the provided owner
+    const response = await fetch(
+      `${config.giteaConfig.url}/api/v1/repos/${owner}/${repoName}`,
+      {
+        headers: {
+          Authorization: `token ${config.giteaConfig.token}`,
+        },
+      }
+    );
 
-  return res.status === 200;
+    if (response.ok) {
+      return true;
+    }
+
+    // If not found and checkAlternateOwner is true, check the alternate location
+    if (checkAlternateOwner && !response.ok) {
+      // If preserveOrgStructure is true, also check in username location
+      // If preserveOrgStructure is false, also check in org location
+      const alternateOwner = config.githubConfig?.preserveOrgStructure
+        ? config.giteaConfig.username
+        : repoName.includes('/') ? repoName.split('/')[0] : null;
+
+      if (alternateOwner) {
+        const altResponse = await fetch(
+          `${config.giteaConfig.url}/api/v1/repos/${alternateOwner}/${repoName}`,
+          {
+            headers: {
+              Authorization: `token ${config.giteaConfig.token}`,
+            },
+          }
+        );
+
+        return altResponse.ok;
+      }
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error checking if repo exists in Gitea:", error);
+    return false;
+  }
 };
 
 export const mirrorGithubRepoToGitea = async ({
@@ -658,9 +696,45 @@ export const syncGiteaRepo = async ({
       status: repoStatusEnum.parse("syncing"),
     });
 
+    // Get the expected owner based on current config
     const repoOwner = getGiteaRepoOwner({ config, repository });
 
-    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${repoOwner}/${repository.name}/mirror-sync`;
+    // Check if repo exists at the expected location
+    let present = await isRepoPresentInGitea({
+      config,
+      owner: repoOwner,
+      repoName: repository.name,
+    });
+
+    // If not found at expected location, check alternate location
+    let actualOwner = repoOwner;
+    if (!present) {
+      // Check alternate location based on opposite of current preserveOrgStructure setting
+      const alternateOwner = config.githubConfig?.preserveOrgStructure
+        ? config.giteaConfig.username
+        : repository.organization;
+
+      if (alternateOwner) {
+        const altPresent = await isRepoPresentInGitea({
+          config,
+          owner: alternateOwner,
+          repoName: repository.name,
+        });
+
+        if (altPresent) {
+          present = true;
+          actualOwner = alternateOwner;
+          console.log(`Repository found at alternate location: ${alternateOwner}/${repository.name}`);
+        }
+      }
+    }
+
+    if (!present) {
+      throw new Error(`Repository ${repository.name} not found in Gitea at any expected location`);
+    }
+
+    // Use the actual owner where the repo was found
+    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${actualOwner}/${repository.name}/mirror-sync`;
 
     const response = await superagent
       .post(apiUrl)
