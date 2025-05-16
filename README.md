@@ -18,6 +18,8 @@
 
 ## Screenshots
 
+<table> <tr> <td><img src="https://github.com/user-attachments/assets/e62c6560-3da1-4e58-be88-3479e2b3b00b" width="100%"/></td> <td><img src="https://github.com/user-attachments/assets/fd982b81-fae3-4103-bc60-a4d3d5b477dd" width="100%"/></td> </tr> <tr> <td><img src="https://github.com/user-attachments/assets/3f499710-4cfe-45d9-8480-8665ec1efc9e" width="100%"/></td> <td><img src="https://github.com/user-attachments/assets/e032161f-1526-4508-ad13-d91a44458e66" width="100%"/></td> </tr> </table>
+
 ### Dashboard
 The dashboard provides an overview of your mirroring status, including total repositories, successfully mirrored repositories, and recent activity.
 
