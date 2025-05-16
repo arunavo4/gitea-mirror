@@ -299,6 +299,20 @@ async function updateSchema() {
       console.log("✅ Added details column to mirror_jobs table.");
     }
 
+    // Check for mirrored_location column in repositories table
+    const repoColumns = await client.execute(
+      `PRAGMA table_info(repositories)`
+    );
+    const repoColumnNames = repoColumns.rows.map((row: any) => row.name);
+
+    if (!repoColumnNames.includes("mirrored_location")) {
+      console.log("Adding missing mirrored_location column to repositories table...");
+      await client.execute(
+        `ALTER TABLE repositories ADD COLUMN mirrored_location TEXT DEFAULT '';`
+      );
+      console.log("✅ Added mirrored_location column to repositories table.");
+    }
+
     console.log("✅ Schema update completed successfully.");
   } catch (error) {
     console.error("❌ Error updating schema:", error);
@@ -379,6 +393,7 @@ async function initializeDatabase() {
   clone_url TEXT NOT NULL,
   owner TEXT NOT NULL,
   organization TEXT,
+  mirrored_location TEXT DEFAULT '',
 
   is_private INTEGER NOT NULL DEFAULT 0,
   is_fork INTEGER NOT NULL DEFAULT 0,
@@ -776,7 +791,7 @@ Available commands:
   reset-users  - Remove all users and their data
   update-schema - Update the database schema to the latest version
   auto         - Automatic mode: check, fix, and initialize if needed
-      
+
 Usage: pnpm manage-db [command]
 `);
   }

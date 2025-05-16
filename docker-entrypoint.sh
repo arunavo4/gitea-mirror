@@ -26,6 +26,18 @@ else
   elif [ -f "scripts/manage-db.ts" ]; then
     node -r tsx/cjs scripts/manage-db.ts fix
   fi
+
+  # Update the database schema
+  echo "Updating database schema..."
+  if [ -f "scripts/manage-db.ts" ]; then
+    node -r tsx/cjs scripts/manage-db.ts update-schema
+  fi
+
+  # Run migrations
+  echo "Running database migrations..."
+  if [ -f "scripts/run-migrations.ts" ]; then
+    node -r tsx/cjs scripts/run-migrations.ts
+  fi
 fi
 
 # Start the application

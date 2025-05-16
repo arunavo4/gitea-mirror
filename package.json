@@ -15,6 +15,7 @@
     "reset-users": "tsx scripts/manage-db.ts reset-users",
     "update-schema": "tsx scripts/manage-db.ts update-schema",
     "db-auto": "tsx scripts/manage-db.ts auto",
+    "run-migrations": "tsx scripts/run-migrations.ts",
     "preview": "astro preview",
     "start": "node dist/server/entry.mjs",
     "start:fresh": "pnpm cleanup-db && pnpm manage-db init && node dist/server/entry.mjs",
