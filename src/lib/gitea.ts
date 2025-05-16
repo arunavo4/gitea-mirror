@@ -700,34 +700,12 @@ export const syncGiteaRepo = async ({
     const repoOwner = getGiteaRepoOwner({ config, repository });
 
     // Check if repo exists at the expected location
-    let present = await isRepoPresentInGitea({
+    const { present, actualOwner } = await isRepoPresentInGitea({
       config,
       owner: repoOwner,
       repoName: repository.name,
+      checkAlternateOwner: true,
     });
-
-    // If not found at expected location, check alternate location
-    let actualOwner = repoOwner;
-    if (!present) {
-      // Check alternate location based on opposite of current preserveOrgStructure setting
-      const alternateOwner = config.githubConfig?.preserveOrgStructure
-        ? config.giteaConfig.username
-        : repository.organization;
-
-      if (alternateOwner) {
-        const altPresent = await isRepoPresentInGitea({
-          config,
-          owner: alternateOwner,
-          repoName: repository.name,
-        });
-
-        if (altPresent) {
-          present = true;
-          actualOwner = alternateOwner;
-          console.log(`Repository found at alternate location: ${alternateOwner}/${repository.name}`);
-        }
-      }
-    }
 
     if (!present) {
       throw new Error(`Repository ${repository.name} not found in Gitea at any expected location`);
