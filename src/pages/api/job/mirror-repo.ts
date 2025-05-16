@@ -86,6 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
                 errorMessage: repo.errorMessage ?? undefined,
                 forkedFrom: repo.forkedFrom ?? undefined,
                 visibility: repositoryVisibilityEnum.parse(repo.visibility),
+                mirroredLocation: repo.mirroredLocation || "",
               },
             });
           } else {
@@ -99,6 +100,7 @@ export const POST: APIRoute = async ({ request }) => {
                 errorMessage: repo.errorMessage ?? undefined,
                 forkedFrom: repo.forkedFrom ?? undefined,
                 visibility: repositoryVisibilityEnum.parse(repo.visibility),
+                mirroredLocation: repo.mirroredLocation || "",
               },
               config,
             });
@@ -120,6 +122,7 @@ export const POST: APIRoute = async ({ request }) => {
         errorMessage: repo.errorMessage ?? undefined,
         forkedFrom: repo.forkedFrom ?? undefined,
         visibility: repositoryVisibilityEnum.parse(repo.visibility),
+        mirroredLocation: repo.mirroredLocation || "",
       })),
     };
 

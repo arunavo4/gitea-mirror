@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Info } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface GitHubConfigFormProps {
   config: GitHubConfig;
@@ -249,18 +249,16 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 className="ml-2 text-sm select-none flex items-center"
               >
                 Preserve Org Structure
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="ml-1 cursor-pointer align-middle text-muted-foreground">
-                        <Info size={16} />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs text-xs">
-                      When enabled, organization repositories will be mirrored to the same organization structure in Gitea. When disabled, all repositories will be mirrored under your Gitea username.
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="ml-1 cursor-pointer align-middle text-muted-foreground">
+                      <Info size={16} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs text-xs">
+                    When enabled, organization repositories will be mirrored to the same organization structure in Gitea. When disabled, all repositories will be mirrored under your Gitea username.
+                  </TooltipContent>
+                </Tooltip>
               </label>
             </div>
 

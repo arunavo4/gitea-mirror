@@ -94,6 +94,51 @@ export const isRepoPresentInGitea = async ({
   }
 };
 
+/**
+ * Helper function to check if a repository exists in Gitea at the expected location
+ * or at an alternate location based on the preserveOrgStructure setting.
+ */
+export const checkRepoLocation = async ({
+  config,
+  repository,
+  expectedOwner,
+}: {
+  config: Partial<Config>;
+  repository: Repository;
+  expectedOwner: string;
+}): Promise<{ present: boolean; actualOwner: string }> => {
+  // Check if repo exists at the expected location
+  const present = await isRepoPresentInGitea({
+    config,
+    owner: expectedOwner,
+    repoName: repository.name,
+  });
+
+  if (present) {
+    return { present: true, actualOwner: expectedOwner };
+  }
+
+  // If not found at expected location, check alternate location
+  const alternateOwner = config.githubConfig?.preserveOrgStructure
+    ? config.giteaConfig?.username
+    : repository.organization;
+
+  if (alternateOwner) {
+    const altPresent = await isRepoPresentInGitea({
+      config,
+      owner: alternateOwner,
+      repoName: repository.name,
+    });
+
+    if (altPresent) {
+      console.log(`Repository found at alternate location: ${alternateOwner}/${repository.name}`);
+      return { present: true, actualOwner: alternateOwner };
+    }
+  }
+
+  return { present: false, actualOwner: expectedOwner };
+};
+
 export const mirrorGithubRepoToGitea = async ({
   octokit,
   repository,
@@ -198,6 +243,7 @@ export const mirrorGithubRepoToGitea = async ({
         updatedAt: new Date(),
         lastMirrored: new Date(),
         errorMessage: null,
+        mirroredLocation: `${config.giteaConfig.username}/${repository.name}`,
       })
       .where(eq(repositories.id, repository.id!));
 
@@ -445,6 +491,7 @@ export async function mirrorGitHubRepoToGiteaOrg({
         updatedAt: new Date(),
         lastMirrored: new Date(),
         errorMessage: null,
+        mirroredLocation: `${orgName}/${repository.name}`,
       })
       .where(eq(repositories.id, repository.id!));
 
@@ -594,6 +641,7 @@ export async function mirrorGitHubOrgToGitea({
           errorMessage: repo.errorMessage ?? undefined,
           organization: repo.organization ?? undefined,
           forkedFrom: repo.forkedFrom ?? undefined,
+          mirroredLocation: repo.mirroredLocation || "",
         },
         giteaOrgId,
         orgName: organization.name,
@@ -699,12 +747,11 @@ export const syncGiteaRepo = async ({
     // Get the expected owner based on current config
     const repoOwner = getGiteaRepoOwner({ config, repository });
 
-    // Check if repo exists at the expected location
-    const { present, actualOwner } = await isRepoPresentInGitea({
+    // Check if repo exists at the expected location or alternate location
+    const { present, actualOwner } = await checkRepoLocation({
       config,
-      owner: repoOwner,
-      repoName: repository.name,
-      checkAlternateOwner: true,
+      repository,
+      expectedOwner: repoOwner
     });
 
     if (!present) {
@@ -726,6 +773,7 @@ export const syncGiteaRepo = async ({
         updatedAt: new Date(),
         lastMirrored: new Date(),
         errorMessage: null,
+        mirroredLocation: `${actualOwner}/${repository.name}`,
       })
       .where(eq(repositories.id, repository.id!));
 
