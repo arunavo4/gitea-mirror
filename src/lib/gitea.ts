@@ -39,19 +39,17 @@ export const isRepoPresentInGitea = async ({
   config,
   owner,
   repoName,
-  checkAlternateOwner = false,
 }: {
   config: Partial<Config>;
   owner: string;
   repoName: string;
-  checkAlternateOwner?: boolean;
 }): Promise<boolean> => {
   try {
     if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
       throw new Error("Gitea config is required.");
     }
 
-    // First check with the provided owner
+    // Check if the repository exists at the specified owner location
     const response = await fetch(
       `${config.giteaConfig.url}/api/v1/repos/${owner}/${repoName}`,
       {
@@ -61,41 +59,7 @@ export const isRepoPresentInGitea = async ({
       }
     );
 
-    if (response.ok) {
-      return true;
-    }
-
-    // If not found and checkAlternateOwner is true, check the alternate location
-    if (checkAlternateOwner && !response.ok) {
-      let alternateOwner = null;
-
-      // If preserveOrgStructure is true and we're checking a non-org repo, check username location
-      // If preserveOrgStructure is false and we have org info, check org location
-      if (config.githubConfig?.preserveOrgStructure) {
-        // When preserveOrgStructure is true, we first check in org structure
-        // For individual repos (without org), the alternate is the username
-        alternateOwner = config.giteaConfig.username;
-      } else {
-        // When preserveOrgStructure is false, we first check in username
-        // The alternate is the org name if available
-        alternateOwner = repoName.includes('/') ? repoName.split('/')[0] : null;
-      }
-
-      if (alternateOwner) {
-        const altResponse = await fetch(
-          `${config.giteaConfig.url}/api/v1/repos/${alternateOwner}/${repoName}`,
-          {
-            headers: {
-              Authorization: `token ${config.giteaConfig.token}`,
-            },
-          }
-        );
-
-        return altResponse.ok;
-      }
-    }
-
-    return false;
+    return response.ok;
   } catch (error) {
     console.error("Error checking if repo exists in Gitea:", error);
     return false;
