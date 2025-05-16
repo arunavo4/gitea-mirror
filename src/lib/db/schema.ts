@@ -91,7 +91,7 @@ export const repositorySchema = z.object({
   lastMirrored: z.date().optional(),
   errorMessage: z.string().optional(),
 
-  mirroredLocation: z.string().optional(), // Store the full Gitea path where repo was mirrored
+  mirroredLocation: z.string().default(""), // Store the full Gitea path where repo was mirrored
 
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date()),
