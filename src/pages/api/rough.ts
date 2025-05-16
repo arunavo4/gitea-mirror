@@ -53,6 +53,7 @@ export const GET: APIRoute = async ({ request }) => {
         "uiastra",
         "conductor-oss",
         "HackForge-JUSL",
+        "vercel",
       ],
     });
 

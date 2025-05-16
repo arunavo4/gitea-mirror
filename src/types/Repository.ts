@@ -67,3 +67,16 @@ export interface GitRepo {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface AddRepositoriesApiRequest {
+  userId: string;
+  repo: string;
+  owner: string;
+}
+
+export interface AddRepositoriesApiResponse {
+  success: boolean;
+  message: string;
+  repository: Repository;
+  error?: string;
+}

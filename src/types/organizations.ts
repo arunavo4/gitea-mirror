@@ -36,3 +36,16 @@ export interface GitOrg {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface AddOrganizationApiRequest {
+  userId: string;
+  org: string;
+  role: MembershipRole;
+}
+
+export interface AddOrganizationApiResponse {
+  success: boolean;
+  message: string;
+  organization: Organization;
+  error?: string;
+}

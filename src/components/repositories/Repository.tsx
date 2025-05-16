@@ -4,6 +4,8 @@ import type { MirrorJob, Repository } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/useAuth";
 import {
   repoStatusEnum,
+  type AddRepositoriesApiRequest,
+  type AddRepositoriesApiResponse,
   type RepositoryApiResponse,
   type RepoStatus,
 } from "@/types/Repository";
@@ -24,6 +26,7 @@ import { toast } from "sonner";
 import type { SyncRepoRequest, SyncRepoResponse } from "@/types/sync";
 import { OwnerCombobox, OrganizationCombobox } from "./RepositoryComboboxes";
 import type { RetryRepoRequest, RetryRepoResponse } from "@/types/retry";
+import AddRepositoryDialog from "./AddRepositoryDialog";
 
 export default function Repository() {
   const [repositories, setRepositories] = useState<Repository[]>([]);
@@ -35,14 +38,15 @@ export default function Repository() {
     organization: "",
     owner: "",
   });
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
   // Read organization filter from URL when component mounts
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const orgParam = urlParams.get('organization');
+    const orgParam = urlParams.get("organization");
 
     if (orgParam) {
-      setFilter(prev => ({ ...prev, organization: orgParam }));
+      setFilter((prev) => ({ ...prev, organization: orgParam }));
     }
   }, [setFilter]);
 
@@ -299,6 +303,52 @@ export default function Repository() {
     }
   };
 
+  const handleAddRepository = async ({
+    repo,
+    owner,
+  }: {
+    repo: string;
+    owner: string;
+  }) => {
+    try {
+      if (!user || !user.id) {
+        return;
+      }
+
+      const reqPayload: AddRepositoriesApiRequest = {
+        userId: user.id,
+        repo,
+        owner,
+      };
+
+      const response = await apiRequest<AddRepositoriesApiResponse>(
+        "/sync/repository",
+        {
+          method: "POST",
+          data: reqPayload,
+        }
+      );
+
+      if (response.success) {
+        toast.success(`Repository added successfully`);
+        setRepositories((prevRepos) => [...prevRepos, response.repository]);
+
+        await fetchRepositories();
+
+        setFilter((prev) => ({
+          ...prev,
+          searchTerm: repo,
+        }));
+      } else {
+        toast.error(response.error || "Error adding repository");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error adding repository"
+      );
+    }
+  };
+
   // Get unique owners and organizations for comboboxes
   const ownerOptions = Array.from(
     new Set(
@@ -395,6 +445,12 @@ export default function Repository() {
         onSync={handleSyncRepo}
         onRetry={handleRetryRepoAction}
         loadingRepoIds={loadingRepoIds}
+      />
+
+      <AddRepositoryDialog
+        onAddRepository={handleAddRepository}
+        isDialogOpen={isDialogOpen}
+        setIsDialogOpen={setIsDialogOpen}
       />
     </div>
   );

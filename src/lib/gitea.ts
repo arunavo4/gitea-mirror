@@ -11,6 +11,30 @@ import { createMirrorJob } from "./helpers";
 import { db, organizations, repositories } from "./db";
 import { eq } from "drizzle-orm";
 
+export const getGiteaRepoOwner = ({
+  config,
+  repository,
+}: {
+  config: Partial<Config>;
+  repository: Repository;
+}): string => {
+  if (!config.githubConfig || !config.giteaConfig) {
+    throw new Error("GitHub or Gitea config is required.");
+  }
+
+  if (!config.giteaConfig.username) {
+    throw new Error("Gitea username is required.");
+  }
+
+  // if the config has preserveOrgStructure set to true, then use the org name as the owner
+  if (config.githubConfig.preserveOrgStructure && repository.organization) {
+    return repository.organization;
+  }
+
+  // if the config has preserveOrgStructure set to false, then use the gitea username as the owner
+  return config.giteaConfig.username;
+};
+
 export const isRepoPresentInGitea = async ({
   config,
   owner,
@@ -105,6 +129,7 @@ export const mirrorGithubRepoToGitea = async ({
     const response = await superagent
       .post(apiUrl)
       .set("Authorization", `token ${config.giteaConfig.token}`)
+      .set("Content-Type", "application/json")
       .send({
         clone_addr: cloneAddress,
         repo_name: repository.name,
@@ -346,31 +371,19 @@ export async function mirrorGitHubRepoToGiteaOrg({
       status: "mirroring",
     });
 
-    const migrateRes = await fetch(
-      `${config.giteaConfig.url}/api/v1/repos/migrate`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `token ${config.giteaConfig.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          clone_addr: cloneAddress,
-          uid: giteaOrgId,
-          repo_name: repository.name,
-          mirror: true,
-          private: repository.isPrivate,
-        }),
-      }
-    );
+    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/migrate`;
 
-    if (!migrateRes.ok) {
-      const errorText = await migrateRes.text();
-      console.error(
-        `Failed to migrate repository "${repository.name}": ${errorText}`
-      );
-      return;
-    }
+    const migrateRes = await superagent
+      .post(apiUrl)
+      .set("Authorization", `token ${config.giteaConfig.token}`)
+      .set("Content-Type", "application/json")
+      .send({
+        clone_addr: cloneAddress,
+        uid: giteaOrgId,
+        repo_name: repository.name,
+        mirror: true,
+        private: repository.isPrivate,
+      });
 
     // Clone issues
     if (config.githubConfig?.mirrorIssues) {
@@ -406,6 +419,8 @@ export async function mirrorGitHubRepoToGiteaOrg({
       details: `Repository ${repository.name} was mirrored to Gitea`,
       status: "mirrored",
     });
+
+    return migrateRes.body;
   } catch (error) {
     console.error(
       `Error while mirroring repository ${repository.name}: ${
@@ -643,7 +658,9 @@ export const syncGiteaRepo = async ({
       status: repoStatusEnum.parse("syncing"),
     });
 
-    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${repository.owner}/${repository.name}/mirror-sync`;
+    const repoOwner = getGiteaRepoOwner({ config, repository });
+
+    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${repoOwner}/${repository.name}/mirror-sync`;
 
     const response = await superagent
       .post(apiUrl)

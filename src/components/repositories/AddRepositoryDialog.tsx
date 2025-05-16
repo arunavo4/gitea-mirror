@@ -10,48 +10,45 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { LoaderCircle, Plus } from "lucide-react";
-import type { MembershipRole } from "@/types/organizations";
-import { RadioGroup, RadioGroupItem } from "../ui/radio";
-import { Label } from "../ui/label";
 
-interface AddOrganizationDialogProps {
+interface AddRepositoryDialogProps {
   isDialogOpen: boolean;
   setIsDialogOpen: (isOpen: boolean) => void;
-  onAddOrganization: ({
-    org,
-    role,
+  onAddRepository: ({
+    repo,
+    owner,
   }: {
-    org: string;
-    role: MembershipRole;
+    repo: string;
+    owner: string;
   }) => Promise<void>;
 }
 
-export default function AddOrganizationDialog({
+export default function AddRepositoryDialog({
   isDialogOpen,
   setIsDialogOpen,
-  onAddOrganization,
-}: AddOrganizationDialogProps) {
-  const [org, setOrg] = useState<string>("");
-  const [role, setRole] = useState<MembershipRole>("member");
+  onAddRepository,
+}: AddRepositoryDialogProps) {
+  const [repo, setRepo] = useState<string>("");
+  const [owner, setOwner] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!org || org.trim() === "") {
-      setError("Please enter a valid organization name.");
+    if (!repo || !owner || repo.trim() === "" || owner.trim() === "") {
+      setError("Please enter a valid repository name and owner.");
       return;
     }
 
     try {
       setIsLoading(true);
 
-      await onAddOrganization({ org, role });
+      await onAddRepository({ repo, owner });
 
       setError("");
-      setOrg("");
-      setRole("member");
+      setRepo("");
+      setOwner("");
       setIsDialogOpen(false);
     } catch (err: any) {
       setError(err?.message || "Failed to add repository.");
@@ -70,9 +67,9 @@ export default function AddOrganizationDialog({
 
       <DialogContent className="sm:max-w-[425px] gap-0 gap-y-6">
         <DialogHeader>
-          <DialogTitle>Add Organization</DialogTitle>
+          <DialogTitle>Add Repository</DialogTitle>
           <DialogDescription>
-            You can add public organizations
+            You can add public repositories of others
           </DialogDescription>
         </DialogHeader>
 
@@ -83,15 +80,15 @@ export default function AddOrganizationDialog({
                 htmlFor="name"
                 className="block text-sm font-medium mb-1.5"
               >
-                Organization Name
+                Repository Name
               </label>
               <input
                 id="name"
                 type="text"
-                value={org}
-                onChange={(e) => setOrg(e.target.value)}
+                value={repo}
+                onChange={(e) => setRepo(e.target.value)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="e.g., microsoft"
+                placeholder="e.g., next.js"
                 autoComplete="off"
                 autoFocus
                 required
@@ -99,28 +96,22 @@ export default function AddOrganizationDialog({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Membership Role
-              </label>
-
-              <RadioGroup
-                value={role}
-                onValueChange={(val) => setRole(val as MembershipRole)}
-                className="flex flex-col gap-y-2"
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium mb-1.5"
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="member" id="r1" />
-                  <Label htmlFor="r1">Member</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="admin" id="r2" />
-                  <Label htmlFor="r2">Admin</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="billing_manager" id="r3" />
-                  <Label htmlFor="r3">Billing Manager</Label>
-                </div>
-              </RadioGroup>
+                Repository Owner
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={owner}
+                onChange={(e) => setOwner(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder="e.g., vercel"
+                autoComplete="off"
+                required
+              />
             </div>
 
             {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
