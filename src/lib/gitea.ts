@@ -44,16 +44,71 @@ export const isRepoPresentInGitea = async ({
   owner: string;
   repoName: string;
 }): Promise<boolean> => {
-  const { url, token } = config.giteaConfig!;
-  const apiUrl = `${url}/api/v1/repos/${owner}/${repoName}`;
+  try {
+    if (!config.giteaConfig?.url || !config.giteaConfig?.token) {
+      throw new Error("Gitea config is required.");
+    }
 
-  const res = await fetch(apiUrl, {
-    headers: {
-      Authorization: `token ${token}`,
-    },
+    // Check if the repository exists at the specified owner location
+    const response = await fetch(
+      `${config.giteaConfig.url}/api/v1/repos/${owner}/${repoName}`,
+      {
+        headers: {
+          Authorization: `token ${config.giteaConfig.token}`,
+        },
+      }
+    );
+
+    return response.ok;
+  } catch (error) {
+    console.error("Error checking if repo exists in Gitea:", error);
+    return false;
+  }
+};
+
+/**
+ * Helper function to check if a repository exists in Gitea.
+ * First checks the recorded mirroredLocation, then falls back to the expected location.
+ */
+export const checkRepoLocation = async ({
+  config,
+  repository,
+  expectedOwner,
+}: {
+  config: Partial<Config>;
+  repository: Repository;
+  expectedOwner: string;
+}): Promise<{ present: boolean; actualOwner: string }> => {
+  // First check if we have a recorded mirroredLocation and if the repo exists there
+  if (repository.mirroredLocation && repository.mirroredLocation.trim() !== "") {
+    const [mirroredOwner] = repository.mirroredLocation.split('/');
+    if (mirroredOwner) {
+      const mirroredPresent = await isRepoPresentInGitea({
+        config,
+        owner: mirroredOwner,
+        repoName: repository.name,
+      });
+
+      if (mirroredPresent) {
+        console.log(`Repository found at recorded mirrored location: ${repository.mirroredLocation}`);
+        return { present: true, actualOwner: mirroredOwner };
+      }
+    }
+  }
+
+  // If not found at the recorded location, check the expected location
+  const present = await isRepoPresentInGitea({
+    config,
+    owner: expectedOwner,
+    repoName: repository.name,
   });
 
-  return res.status === 200;
+  if (present) {
+    return { present: true, actualOwner: expectedOwner };
+  }
+
+  // Repository not found at any location
+  return { present: false, actualOwner: expectedOwner };
 };
 
 export const mirrorGithubRepoToGitea = async ({
@@ -160,6 +215,7 @@ export const mirrorGithubRepoToGitea = async ({
         updatedAt: new Date(),
         lastMirrored: new Date(),
         errorMessage: null,
+        mirroredLocation: `${config.giteaConfig.username}/${repository.name}`,
       })
       .where(eq(repositories.id, repository.id!));
 
@@ -407,6 +463,7 @@ export async function mirrorGitHubRepoToGiteaOrg({
         updatedAt: new Date(),
         lastMirrored: new Date(),
         errorMessage: null,
+        mirroredLocation: `${orgName}/${repository.name}`,
       })
       .where(eq(repositories.id, repository.id!));
 
@@ -556,6 +613,7 @@ export async function mirrorGitHubOrgToGitea({
           errorMessage: repo.errorMessage ?? undefined,
           organization: repo.organization ?? undefined,
           forkedFrom: repo.forkedFrom ?? undefined,
+          mirroredLocation: repo.mirroredLocation || "",
         },
         giteaOrgId,
         orgName: organization.name,
@@ -658,9 +716,22 @@ export const syncGiteaRepo = async ({
       status: repoStatusEnum.parse("syncing"),
     });
 
+    // Get the expected owner based on current config
     const repoOwner = getGiteaRepoOwner({ config, repository });
 
-    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${repoOwner}/${repository.name}/mirror-sync`;
+    // Check if repo exists at the expected location or alternate location
+    const { present, actualOwner } = await checkRepoLocation({
+      config,
+      repository,
+      expectedOwner: repoOwner
+    });
+
+    if (!present) {
+      throw new Error(`Repository ${repository.name} not found in Gitea at any expected location`);
+    }
+
+    // Use the actual owner where the repo was found
+    const apiUrl = `${config.giteaConfig.url}/api/v1/repos/${actualOwner}/${repository.name}/mirror-sync`;
 
     const response = await superagent
       .post(apiUrl)
@@ -674,6 +745,7 @@ export const syncGiteaRepo = async ({
         updatedAt: new Date(),
         lastMirrored: new Date(),
         errorMessage: null,
+        mirroredLocation: `${actualOwner}/${repository.name}`,
       })
       .where(eq(repositories.id, repository.id!));
 

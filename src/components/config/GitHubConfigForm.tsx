@@ -14,6 +14,8 @@ import { Checkbox } from "../ui/checkbox";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "../ui/alert";
+import { Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface GitHubConfigFormProps {
   config: GitHubConfig;
@@ -25,6 +27,18 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
+
+    // Special handling for preserveOrgStructure changes
+    if (name === "preserveOrgStructure" && config.preserveOrgStructure !== checked) {
+      toast.info(
+        "Changing this setting may affect how repositories are accessed in Gitea. " +
+        "Existing mirrored repositories will still be accessible during sync operations.",
+        {
+          duration: 6000,
+          position: "top-center",
+        }
+      );
+    }
 
     setConfig({
       ...config,
@@ -160,7 +174,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 htmlFor="private-repositories"
                 className="ml-2 block text-sm select-none"
               >
-                Mirror Private Repositories
+                Mirror Private Repos
               </label>
             </div>
 
@@ -184,7 +198,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 htmlFor="mirror-starred"
                 className="ml-2 block text-sm select-none"
               >
-                Mirror Starred Repositories
+                Mirror Starred Repos
               </label>
             </div>
           </div>
@@ -232,9 +246,23 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
               />
               <label
                 htmlFor="preserve-org-structure"
-                className="ml-2 block text-sm select-none"
+                className="ml-2 text-sm select-none flex items-center"
               >
-                Preserve Organization Structure
+                Preserve Org Structure
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className="ml-1 cursor-pointer align-middle text-muted-foreground"
+                      role="button"
+                      tabindex="0"
+                    >
+                      <Info size={16} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs text-xs">
+                    When enabled, organization repositories will be mirrored to the same organization structure in Gitea. When disabled, all repositories will be mirrored under your Gitea username.
+                  </TooltipContent>
+                </Tooltip>
               </label>
             </div>
 
@@ -258,7 +286,7 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                 htmlFor="skip-starred-issues"
                 className="ml-2 block text-sm select-none"
               >
-                Skip Issues for Starred Repositories
+                Skip Issues for Starred Repos
               </label>
             </div>
           </div>

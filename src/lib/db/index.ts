@@ -88,6 +88,7 @@ export const repositories = sqliteTable("repositories", {
   cloneUrl: text("clone_url").notNull(),
   owner: text("owner").notNull(),
   organization: text("organization"),
+  mirroredLocation: text("mirrored_location").default(""),
 
   isPrivate: integer("is_private", { mode: "boolean" })
     .notNull()

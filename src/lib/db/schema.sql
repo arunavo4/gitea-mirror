@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS repositories (
   is_fork BOOLEAN NOT NULL,
   owner TEXT NOT NULL,
   organization TEXT,
+  mirrored_location TEXT DEFAULT '',
   has_issues BOOLEAN NOT NULL,
   is_starred BOOLEAN NOT NULL,
   status TEXT NOT NULL,
