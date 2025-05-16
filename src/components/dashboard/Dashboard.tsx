@@ -81,7 +81,9 @@ export function Dashboard() {
         }
       } catch (error) {
         toast.error(
-          error instanceof Error ? error.message : "Error fetching dashboard data"
+          error instanceof Error
+            ? error.message
+            : "Error fetching dashboard data"
         );
       } finally {
         setIsLoading(false);
@@ -134,7 +136,9 @@ export function Dashboard() {
 
       <div className="flex gap-x-6 items-start">
         <RepositoryList repositories={repositories} />
-        <RecentActivity activities={activities} />
+
+        {/* the api already sends 10 activities only but slicing in case of realtime updates */}
+        <RecentActivity activities={activities.slice(0, 10)} />
       </div>
     </div>
   );

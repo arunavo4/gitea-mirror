@@ -29,10 +29,13 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
     const { name, value, type, checked } = e.target;
 
     // Special handling for preserveOrgStructure changes
-    if (name === "preserveOrgStructure" && config.preserveOrgStructure !== checked) {
+    if (
+      name === "preserveOrgStructure" &&
+      config.preserveOrgStructure !== checked
+    ) {
       toast.info(
         "Changing this setting may affect how repositories are accessed in Gitea. " +
-        "Existing mirrored repositories will still be accessible during sync operations.",
+          "Existing mirrored repositories will still be accessible during sync operations.",
         {
           duration: 6000,
           position: "top-center",
@@ -254,13 +257,15 @@ export function GitHubConfigForm({ config, setConfig }: GitHubConfigFormProps) {
                     <span
                       className="ml-1 cursor-pointer align-middle text-muted-foreground"
                       role="button"
-                      tabindex="0"
+                      tabIndex={0}
                     >
                       <Info size={16} />
                     </span>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="max-w-xs text-xs">
-                    When enabled, organization repositories will be mirrored to the same organization structure in Gitea. When disabled, all repositories will be mirrored under your Gitea username.
+                    When enabled, organization repositories will be mirrored to
+                    the same organization structure in Gitea. When disabled, all
+                    repositories will be mirrored under your Gitea username.
                   </TooltipContent>
                 </Tooltip>
               </label>
