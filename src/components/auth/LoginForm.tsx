@@ -60,7 +60,11 @@ export function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src="/logo.svg" alt="Gitea Mirror" className="h-10 w-10" />
+            <picture>
+              <source srcSet="/logo-dark.svg" media="(prefers-color-scheme: dark)" />
+              <source srcSet="/logo-light.svg" media="(prefers-color-scheme: light)" />
+              {/* <img src="/logo.svg" alt="Gitea Mirror" className="h-10 w-10" /> */}
+            </picture>
           </div>
           <CardTitle className="text-2xl">Gitea Mirror</CardTitle>
           <CardDescription>
