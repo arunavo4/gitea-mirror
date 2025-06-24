@@ -28,3 +28,7 @@ data/gitea-mirror.db
 
 # jetbrains setting folder
 .idea/
+
+# test data
+test-data/
+sqlite:*

@@ -77,9 +77,19 @@ async function initDatabase() {
     fs.mkdirSync(dataDir, { recursive: true });
   }
   
-  // Run migrations to create tables
-  await runMigrations();
-  console.log("✅ Database initialized successfully");
+  // Create empty database and run migrations
+  const sqlite = new Database(dbPath);
+  const db = drizzle(sqlite);
+  
+  try {
+    await migrate(db, { migrationsFolder: "./drizzle" });
+    console.log("✅ Database initialized successfully");
+  } catch (error) {
+    console.error("❌ Database initialization failed:", error);
+    process.exit(1);
+  } finally {
+    sqlite.close();
+  }
 }
 
 async function runMigrations() {
