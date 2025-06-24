@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0-beta.1] - TBD
+
+### ⚠️ BREAKING CHANGES
+- Complete database management rewrite using Drizzle migrations
+- Removed manual database initialization scripts
+- Changed database initialization process
+- Minimum Bun version 1.2.9 required
+
+### Added
+- Proper Drizzle migration system with version tracking
+- Automated schema migrations on startup
+- Database migration history tracking
+- Type-safe schema definitions
+- `drizzle-kit` integration for database management
+- Migration script for upgrading from v2.x
+
+### Changed
+- All database schema now defined in `/src/lib/db/schema.ts`
+- Database initialization uses Drizzle migrations
+- Consolidated all table definitions in one place
+- Improved type safety with inferred types from schema
+
+### Removed
+- All manual SQL table creation
+- Old migration system (`src/lib/db/migrations.ts`)
+- Legacy migration scripts (800+ lines removed)
+- Raw SQL queries throughout codebase
+- Complex upgrade scripts
+- One-time repair utilities
+
+### Migration Guide
+Due to fundamental changes, v3.0.0 requires a fresh start:
+1. Export your configuration from v2.x
+2. Backup old database
+3. Install v3.0.0 fresh
+4. Reconfigure using exported settings
+See [v3 Upgrade Guide](docs/v3-upgrade-guide.md) for details
+
 ## [2.19.1] - 2025-06-24
 
 ### Fixed
