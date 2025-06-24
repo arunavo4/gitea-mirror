@@ -7,11 +7,14 @@
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { getDatabasePath } from "../src/lib/db/migrate";
-import { users } from "../src/lib/db/schema";
-import { eq } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
+
+// Inline getDatabasePath to avoid import issues in production
+function getDatabasePath(): string {
+  const DATABASE_URL = process.env.DATABASE_URL || "file:./data/gitea-mirror.db";
+  return DATABASE_URL.replace("file:", "");
+}
 
 const command = process.argv[2];
 
@@ -117,10 +120,9 @@ async function resetUsers() {
   await new Promise(resolve => setTimeout(resolve, 5000));
   
   const sqlite = new Database(dbPath);
-  const db = drizzle(sqlite, { schema: { users } });
   
   try {
-    await db.delete(users);
+    sqlite.exec("DELETE FROM users");
     console.log("✅ All users deleted");
   } catch (error) {
     console.error("❌ Failed to delete users:", error);
