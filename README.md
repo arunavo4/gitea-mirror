@@ -26,9 +26,15 @@
 - 🏗️ Maintaining organization structure
 - ⚡ Automated scheduled mirroring
 
-## 🎯 Why Did We Move?
+## 🎯 Important Notice - Version 2.20+
 
-This project has been moved to **RayLabsHQ** as part of our organizational restructuring to better support and maintain our open-source projects. The new location will be the primary home for all future development, releases, and community engagement.
+> [!IMPORTANT]
+> **Starting from version 2.20**, all new releases and updates are available exclusively at the new repository location. The Docker images have also moved to the new registry:
+> 
+> ```bash
+> # New Docker image location
+> docker pull ghcr.io/raylabshq/gitea-mirror:latest
+> ```
 
 ## 🔗 Quick Links
 
@@ -36,18 +42,42 @@ This project has been moved to **RayLabsHQ** as part of our organizational restr
 - **Issues**: [https://github.com/RayLabsHQ/gitea-mirror/issues](https://github.com/RayLabsHQ/gitea-mirror/issues)
 - **Discussions**: [https://github.com/RayLabsHQ/gitea-mirror/discussions](https://github.com/RayLabsHQ/gitea-mirror/discussions)
 - **Releases**: [https://github.com/RayLabsHQ/gitea-mirror/releases](https://github.com/RayLabsHQ/gitea-mirror/releases)
+- **Docker Images**: [ghcr.io/raylabshq/gitea-mirror](https://github.com/RayLabsHQ/gitea-mirror/pkgs/container/gitea-mirror)
 
-## 🚨 Important Notice
+## 🚨 Action Required
 
-This repository (`arunavo4/gitea-mirror`) is now **archived** and will no longer receive updates. Please:
+This repository (`arunavo4/gitea-mirror`) is now **archived** and will no longer receive updates. Please take the following actions:
 
-1. **Update your bookmarks** to point to the new repository
-2. **Update any clones** to use the new remote URL:
-   ```bash
-   git remote set-url origin https://github.com/RayLabsHQ/gitea-mirror.git
-   ```
-3. **Star the new repository** to stay updated with latest releases
-4. **Open new issues** at the new location
+### 1. Update Your Bookmarks
+Point all bookmarks to the new repository at [https://github.com/RayLabsHQ/gitea-mirror](https://github.com/RayLabsHQ/gitea-mirror)
+
+### 2. Update Git Remotes
+If you have cloned this repository, update your remote URL:
+```bash
+git remote set-url origin https://github.com/RayLabsHQ/gitea-mirror.git
+```
+
+### 3. Update Docker References
+Update your Docker Compose files or scripts to use the new image:
+```yaml
+# Old (deprecated)
+image: ghcr.io/arunavo4/gitea-mirror:latest
+
+# New (use this)
+image: ghcr.io/raylabshq/gitea-mirror:latest
+```
+
+### 4. Star the New Repository
+Don't forget to ⭐ star the [new repository](https://github.com/RayLabsHQ/gitea-mirror) to stay updated with the latest releases!
+
+## 📝 Why Did We Move?
+
+This project has been moved to **RayLabsHQ** as part of our organizational restructuring to better support and maintain our open-source projects. The new location will be the primary home for all future development, releases, and community engagement.
+
+## 🏷️ Latest Releases
+
+All releases starting from **v2.20** are available at the new repository. For the latest version and release notes, please visit:
+- [https://github.com/RayLabsHQ/gitea-mirror/releases](https://github.com/RayLabsHQ/gitea-mirror/releases)
 
 ---
 
